@@ -138,6 +138,7 @@ export type RootPersonConfig = {
   name: string;
   handle: string;
   role: string;
+  avatarUrl?: string;
   why: string;
   behavior: string;
   evidence: string;

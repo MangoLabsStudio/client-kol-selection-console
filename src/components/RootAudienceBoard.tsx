@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleHelp, LockKeyhole, RotateCcw, Sparkles, XCircle } from "lucide-react";
+import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, RotateCcw, Sparkles, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { RootAudienceConfig, RootPersonConfig } from "../lib/types";
 
@@ -32,7 +32,8 @@ const rejectReasons = ["目标层级不匹配", "议题关联不足", "本轮不
 
 export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
   const [state, setState] = useState<RootAudienceState>(() => readState(config.storageKey));
-  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => Object.fromEntries(config.groups.map((group) => [group.name, Boolean(group.open)])));
+  const [expandedRules, setExpandedRules] = useState<Record<string, boolean>>({});
+  const [activeHandle, setActiveHandle] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem(config.storageKey, JSON.stringify(state));
@@ -140,43 +141,57 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
 
         <div className="root-groups">
           {config.groups.map((group) => {
-            const open = expanded[group.name] ?? false;
+            const rulesOpen = expandedRules[group.name] ?? false;
             return (
               <article className="root-group" key={group.name}>
-                <button className="root-group-head" type="button" onClick={() => setExpanded((current) => ({ ...current, [group.name]: !open }))} aria-expanded={open}>
-                  <span>{group.index}</span>
-                  <div>
-                    <h3>{group.name}</h3>
-                    <p>{group.goal}</p>
-                  </div>
-                  <strong>{group.count}</strong>
-                </button>
+                <aside className="root-group-intro">
+                  <span className="root-group-badge">{group.index} · {group.people.length} roots</span>
+                  <h3>{group.name}</h3>
+                  <p>{group.note}</p>
+                  <div className="root-group-use">{group.use}</div>
+                </aside>
 
-                {open && (
-                  <div className="root-group-body">
-                    <div className="root-group-copy">
-                      <p>{group.note}</p>
-                      <p>{group.use}</p>
-                    </div>
-                    <div className="root-rule-row">
-                      {group.rules.map((section) => (
-                        <details key={section.title} open={section.open}>
-                          <summary>{section.title}</summary>
-                          <ul>
-                            {section.rules.map((rule) => (
-                              <li key={rule}>{rule}</li>
-                            ))}
-                          </ul>
-                        </details>
-                      ))}
-                    </div>
-                    <div className="root-person-grid">
-                      {group.people.map((person) => (
-                        <RootPersonCard key={person.handle} person={person} decision={state.decisions[person.handle]} onDecide={decide} onNote={setNote} lockedCopy={config.lockedCopy} />
-                      ))}
-                    </div>
+                <div className="root-group-main">
+                  <article className={`root-rule-card ${rulesOpen ? "is-open" : ""}`}>
+                    <button className="root-rule-head" type="button" onClick={() => setExpandedRules((current) => ({ ...current, [group.name]: !rulesOpen }))} aria-expanded={rulesOpen}>
+                      <div>
+                        <span>{group.index} · category rule</span>
+                        <h4>{group.name} 的细分规则</h4>
+                        <p>{group.goal}</p>
+                      </div>
+                      <strong>{rulesOpen ? "收起" : "展开"}</strong>
+                    </button>
+                    {rulesOpen && (
+                      <div className="root-rule-window">
+                        {group.rules.map((section) => (
+                          <section key={section.title}>
+                            <h5>{section.title}</h5>
+                            <ul>
+                              {section.rules.map((rule) => (
+                                <li key={rule}>{rule}</li>
+                              ))}
+                            </ul>
+                          </section>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+
+                  <div className="root-person-grid">
+                    {group.people.map((person) => (
+                      <RootPersonCard
+                        key={person.handle}
+                        person={person}
+                        decision={state.decisions[person.handle]}
+                        isActive={activeHandle === person.handle}
+                        onToggle={() => setActiveHandle((current) => (current === person.handle ? null : person.handle))}
+                        onDecide={decide}
+                        onNote={setNote}
+                        lockedCopy={config.lockedCopy}
+                      />
+                    ))}
                   </div>
-                )}
+                </div>
               </article>
             );
           })}
@@ -189,12 +204,16 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
 function RootPersonCard({
   person,
   decision,
+  isActive,
+  onToggle,
   onDecide,
   onNote,
   lockedCopy
 }: {
   person: RootPersonConfig;
   decision?: RootDecision;
+  isActive: boolean;
+  onToggle: () => void;
   onDecide: (person: RootPersonConfig, status: RootStatus, reason?: string) => void;
   onNote: (person: RootPersonConfig, note: string) => void;
   lockedCopy: string;
@@ -203,15 +222,24 @@ function RootPersonCard({
 
   return (
     <article className={`root-person-card is-${status}`}>
-      <div className="root-person-main">
-        <div className="root-avatar" aria-hidden>{initials(person.name)}</div>
+      <button className="root-person-main" type="button" onClick={onToggle} aria-expanded={isActive}>
+        <div className="root-avatar" aria-hidden>
+          {person.avatarUrl ? <img src={person.avatarUrl} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <span>{initials(person.name)}</span>}
+        </div>
         <div className="root-person-name">
           <strong>{person.name}</strong>
-          <span>{person.handle} · {person.role}</span>
+          <span>
+            {person.handle}
+            <ExternalLink size={10} />
+          </span>
         </div>
         <StatusChip status={status} />
-        <aside className="root-person-popover" role="tooltip">
+      </button>
+
+      {isActive && (
+        <aside className="root-person-popover" role="dialog" aria-label={`${person.name} 判断依据`}>
           <strong>判断依据</strong>
+          <p className="root-popover-role">{person.role}</p>
           <dl>
             <dt>为什么相关</dt>
             <dd>{person.why}</dd>
@@ -220,49 +248,49 @@ function RootPersonCard({
             <dt>证据 / 打法</dt>
             <dd>{person.evidence}</dd>
           </dl>
-        </aside>
-      </div>
 
-      <div className="root-decision-row" aria-label={`确认 ${person.name}`}>
-        <button type="button" className={status === "approved" ? "active approve" : "approve"} onClick={() => onDecide(person, "approved")}>
-          <CheckCircle2 size={14} />
-          通过
-        </button>
-        <button type="button" className={status === "rejected" ? "active reject" : "reject"} onClick={() => onDecide(person, "rejected", rejectReasons[0])}>
-          <XCircle size={14} />
-          排除
-        </button>
-        <button type="button" className={status === "question" ? "active question" : "question"} onClick={() => onDecide(person, "question")}>
-          <CircleHelp size={14} />
-          需补充
-        </button>
-      </div>
-
-      {status === "approved" && (
-        <div className="root-inline-state locked">
-          <LockKeyhole size={13} />
-          {lockedCopy}
-        </div>
-      )}
-
-      {status === "rejected" && (
-        <div className="root-inline-state">
-          <span>排除原因</span>
-          <div className="root-reason-row">
-            {rejectReasons.map((reason) => (
-              <button key={reason} type="button" className={decision?.reason === reason ? "selected" : ""} onClick={() => onDecide(person, "rejected", reason)}>
-                {reason}
-              </button>
-            ))}
+          <div className="root-decision-row" aria-label={`确认 ${person.name}`}>
+            <button type="button" className={status === "approved" ? "active approve" : "approve"} onClick={() => onDecide(person, "approved")}>
+              <CheckCircle2 size={14} />
+              通过
+            </button>
+            <button type="button" className={status === "rejected" ? "active reject" : "reject"} onClick={() => onDecide(person, "rejected", rejectReasons[0])}>
+              <XCircle size={14} />
+              排除
+            </button>
+            <button type="button" className={status === "question" ? "active question" : "question"} onClick={() => onDecide(person, "question")}>
+              <CircleHelp size={14} />
+              需补充
+            </button>
           </div>
-        </div>
-      )}
 
-      {status === "question" && (
-        <label className="root-inline-state root-question-field">
-          <span>需补充的问题</span>
-          <textarea value={decision?.note ?? ""} onChange={(event) => onNote(person, event.target.value)} placeholder="写明需要补充确认的判断依据" rows={2} />
-        </label>
+          {status === "approved" && (
+            <div className="root-inline-state locked">
+              <LockKeyhole size={13} />
+              {lockedCopy}
+            </div>
+          )}
+
+          {status === "rejected" && (
+            <div className="root-inline-state">
+              <span>排除原因</span>
+              <div className="root-reason-row">
+                {rejectReasons.map((reason) => (
+                  <button key={reason} type="button" className={decision?.reason === reason ? "selected" : ""} onClick={() => onDecide(person, "rejected", reason)}>
+                    {reason}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {status === "question" && (
+            <label className="root-inline-state root-question-field">
+              <span>需补充的问题</span>
+              <textarea value={decision?.note ?? ""} onChange={(event) => onNote(person, event.target.value)} placeholder="写明需要补充确认的判断依据" rows={2} />
+            </label>
+          )}
+        </aside>
       )}
     </article>
   );

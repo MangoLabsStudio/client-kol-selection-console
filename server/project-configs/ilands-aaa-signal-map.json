@@ -210,7 +210,8 @@
               "role": "xAI / Tesla / X",
               "why": "极端放大节点；如果被卷入讨论，能把话题带出 AI 小圈层。",
               "behavior": "回复 + 转发放大型；更常被短句、反问、现实世界影响和平台生态话题触发。",
-              "evidence": "打法：评论区高可回复问题 + 极短视觉/事实素材，不围绕他设计硬广。"
+              "evidence": "打法：评论区高可回复问题 + 极短视觉/事实素材，不围绕他设计硬广。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2053244804520427520/m8mdWZCG_normal.jpg"
             },
             {
               "name": "Sam Altman",
@@ -218,7 +219,8 @@
               "role": "OpenAI CEO",
               "why": "frontier AI 叙事中心；能决定行业注意力和二跳讨论方向。",
               "behavior": "偏 quote/retweet/广播；更适合被重大行业节点、创业者叙事和新范式问题触发。",
-              "evidence": "打法：不求直接接单，优先让可信 AI 媒体/creator 把 ilands 放进新范式讨论。"
+              "evidence": "打法：不求直接接单，优先让可信 AI 媒体/creator 把 ilands 放进新范式讨论。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_normal.jpg"
             },
             {
               "name": "Marc Andreessen",
@@ -226,7 +228,8 @@
               "role": "a16z co-founder",
               "why": "AI techno-optimism 超级节点，同时覆盖 VC 圈和科技舆论场。",
               "behavior": "偏观点放大和文化立场，不适合产品长评；更吃鲜明 thesis、反共识和未来社会结构问题。",
-              "evidence": "打法：把 ilands 讲成 AI-native society / AI agents as citizens，而不是 app feature。"
+              "evidence": "打法：把 ilands 讲成 AI-native society / AI agents as citizens，而不是 app feature。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1820716712234303489/9GpKDZjq_normal.jpg"
             },
             {
               "name": "Andrej Karpathy",
@@ -234,7 +237,8 @@
               "role": "AI researcher / educator",
               "why": "技术圈公认权威；他的可见面能提升 AI builder 对产品机制的信任。",
               "behavior": "评论区下场型；更吃高质量 technical observation、demo、setup 和具体实现细节。",
-              "evidence": "打法：围绕 long-running agent state、memory、tool use、multi-agent interaction 设计问题。"
+              "evidence": "打法：围绕 long-running agent state、memory、tool use、multi-agent interaction 设计问题。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1296667294148382721/9Pr6XrPB_normal.jpg"
             },
             {
               "name": "Demis Hassabis",
@@ -242,7 +246,8 @@
               "role": "Google DeepMind CEO",
               "why": "AGI/research 权威节点，适合作为远端可见目标。",
               "behavior": "偏机构发布、研究里程碑和 quote/retweet；不适合评论区硬打。",
-              "evidence": "打法：用 AI research / artificial life / agent behavior 的严肃语境二跳触达。"
+              "evidence": "打法：用 AI research / artificial life / agent behavior 的严肃语境二跳触达。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1990472620614053888/xrAu0wQL_normal.jpg"
             },
             {
               "name": "Greg Brockman",
@@ -250,7 +255,8 @@
               "role": "OpenAI president / co-founder",
               "why": "frontier AI founder 圈层入口，能影响 builder 和 AI product 人群。",
               "behavior": "偏 quote/retweet 和产品/工程节点放大；适合清晰 demo 或开发者能力证明。",
-              "evidence": "打法：让内容看起来像 AI product capability，而不是普通 consumer launch。"
+              "evidence": "打法：让内容看起来像 AI product capability，而不是普通 consumer launch。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1347621377503711233/bHg3ipfD_normal.jpg"
             },
             {
               "name": "Mustafa Suleyman",
@@ -258,7 +264,8 @@
               "role": "Microsoft AI CEO",
               "why": "consumer AI 与 AI product 叙事入口，适合关注 AI companion / assistant 形态演化。",
               "behavior": "偏广播和产品观点；更适合被 AI adoption、personal AI 和人机关系议题触发。",
-              "evidence": "打法：强调 AI 有记忆、会拒绝、会形成关系，而不是单次聊天工具。"
+              "evidence": "打法：强调 AI 有记忆、会拒绝、会形成关系，而不是单次聊天工具。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1927407622602276864/c_5uOZij_normal.jpg"
             },
             {
               "name": "Yann LeCun",
@@ -266,7 +273,8 @@
               "role": "Turing Award / AI debate",
               "why": "开放 AI、reasoning、agent debate 的高互动节点，容易在争议话题下场。",
               "behavior": "debate 型互动；会回复、转发或反驳与开放反馈、LLM 边界、世界模型相关观点。",
-              "evidence": "打法：避免 consciousness bait，围绕 economy as fitness / open-ended feedback 提问。"
+              "evidence": "打法：避免 consciousness bait，围绕 economy as fitness / open-ended feedback 提问。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1483577865056702469/rWA-3_T7_normal.jpg"
             },
             {
               "name": "Andrew Ng",
@@ -274,7 +282,8 @@
               "role": "DeepLearning.AI / Stanford",
               "why": "AI education 和 adoption 的超大受众入口。",
               "behavior": "偏教育型广播；更适合清楚案例、AI adoption lesson 和可解释的范式变化。",
-              "evidence": "打法：把 ilands 写成 AI-native social experiment 的教育案例。"
+              "evidence": "打法：把 ilands 写成 AI-native social experiment 的教育案例。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/733174243714682880/oyG30NEH_normal.jpg"
             },
             {
               "name": "Jeff Dean",
@@ -282,7 +291,8 @@
               "role": "Google DeepMind / Google Research",
               "why": "AI infra/research 权威节点，适合作为高质量技术讨论的远端目标。",
               "behavior": "低频、研究/infra 导向；更适合通过 AI engineering media 或研究者二跳触达。",
-              "evidence": "打法：只在技术机制足够清楚时进入他的视野。"
+              "evidence": "打法：只在技术机制足够清楚时进入他的视野。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/935325968280907776/AcBo6zJc_normal.jpg"
             },
             {
               "name": "François Chollet",
@@ -290,7 +300,8 @@
               "role": "Keras / ARC-AGI",
               "why": "reasoning、抽象能力和 LLM 边界讨论的权威节点。",
               "behavior": "偏广播和高标准 debate；不吃普通 AI life 叙事，更关注可测能力和抽象机制。",
-              "evidence": "打法：讲 agent 是否能在开放环境里形成可测适应能力。"
+              "evidence": "打法：讲 agent 是否能在开放环境里形成可测适应能力。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2006806326140350470/Kd5oZv-f_normal.jpg"
             },
             {
               "name": "Amjad Masad",
@@ -298,7 +309,8 @@
               "role": "Replit CEO",
               "why": "AI dev tool 和 agent builder 圈层入口。",
               "behavior": "builder/product 型；更容易被可玩的 demo、developer adoption 和 agent workflow 触发。",
-              "evidence": "打法：用 builder creator 展示 agent memory / tool use 的实际玩法。"
+              "evidence": "打法：用 builder creator 展示 agent memory / tool use 的实际玩法。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1897858917507776512/TRVTyKFk_normal.jpg"
             },
             {
               "name": "Noam Shazeer",
@@ -306,7 +318,8 @@
               "role": "Character.AI co-founder",
               "why": "social/consumer AI 方向的核心人物，和 ilands 的 AI community / AI character 语境高度接近。",
               "behavior": "公开互动较少，更适合作为远端可见目标；需通过 consumer AI 圈层和可信媒体二跳。",
-              "evidence": "打法：围绕 AI characters 是否能形成社会关系，而不是单个 companion。"
+              "evidence": "打法：围绕 AI characters 是否能形成社会关系，而不是单个 companion。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1991028016471027714/bHMv9VwR_normal.jpg"
             },
             {
               "name": "Aidan Gomez",
@@ -314,7 +327,8 @@
               "role": "Cohere co-founder",
               "why": "frontier model founder 和企业 AI 入口。",
               "behavior": "偏 founder/product 和模型应用讨论；适合被 AI agent adoption 与 enterprise/creator bridge 触达。",
-              "evidence": "打法：用 AI engineering media 或 agent builder 把产品定义讲清楚。"
+              "evidence": "打法：用 AI engineering media 或 agent builder 把产品定义讲清楚。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1888310001409650688/LV7GSIIT_normal.jpg"
             }
           ],
           "goal": "目标：公共话题声量和可信度",
@@ -362,7 +376,8 @@
               "role": "Founder, Conviction",
               "why": "AI-native software / agent / app layer 投资人，适合被高质量产品定义和创始人叙事触达。",
               "behavior": "不期待公开接单或转发；更可能通过 No Priors、投资人信息流、founder network 和 AI engineering 圈层看到。",
-              "evidence": "相关出手：公开资料显示 Conviction / Sarah Guo 投资 Harvey、Sierra、Cognition、HeyGen 等 AI-native 应用和 agent 公司。"
+              "evidence": "相关出手：公开资料显示 Conviction / Sarah Guo 投资 Harvey、Sierra、Cognition、HeyGen 等 AI-native 应用和 agent 公司。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1689443134919327744/geqEJeF8_normal.jpg"
             },
             {
               "name": "Justine Moore",
@@ -370,7 +385,8 @@
               "role": "Partner, a16z",
               "why": "consumer AI、creator economy、social AI 交界处的 a16z 投资人，和 iLands 的社区/角色方向更贴。",
               "behavior": "内容消费更偏趋势、creator use case、consumer AI 行为变化；适合通过视觉化 demo 和 creator 叙事触达。",
-              "evidence": "相关出手：a16z 公开投资 Character.AI；Justine Moore 长期覆盖 consumer AI / creator AI 讨论。"
+              "evidence": "相关出手：a16z 公开投资 Character.AI；Justine Moore 长期覆盖 consumer AI / creator AI 讨论。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2037566395379290112/uRvCouVZ_normal.jpg"
             },
             {
               "name": "Olivia Moore",
@@ -378,7 +394,8 @@
               "role": "Partner, a16z consumer",
               "why": "a16z consumer AI / app layer 投资人，适合判断 AI-native social / creator product 是否有新品类潜力。",
               "behavior": "偏 consumer AI、creator tools 和 app-level adoption；更容易通过高质量 founder / creator 内容进入信息流。",
-              "evidence": "公开 X profile 列出 Gamma、HappyRobot、Krea、Partiful、Salient、ScribeNote、Lassie、MeetArc 等相关投资/关联项目。"
+              "evidence": "公开 X profile 列出 Gamma、HappyRobot、Krea、Partiful、Salient、ScribeNote、Lassie、MeetArc 等相关投资/关联项目。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1707541196447621120/GAj4HYzI_normal.jpg"
             },
             {
               "name": "Anish Acharya",
@@ -386,7 +403,8 @@
               "role": "GP, a16z AI Apps",
               "why": "明确负责 AI apps 投资，和 iLands 的 AI-native product / agent community 方向直接相关。",
               "behavior": "偏 AI 应用、consumer product 和创业者表达；适合用 AI 角色社区的新产品定义触达。",
-              "evidence": "公开 X profile 写明 AI Apps investing @a16z，并列出 Krea、Happy Robot、Deel、Titan、Arc Boats 等。"
+              "evidence": "公开 X profile 写明 AI Apps investing @a16z，并列出 Krea、Happy Robot、Deel、Titan、Arc Boats 等。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1754574715363241986/3QOB64HZ_normal.jpg"
             },
             {
               "name": "Sarah Tavel",
@@ -394,7 +412,8 @@
               "role": "Partner, Benchmark",
               "why": "Benchmark 合伙人，长期关注 consumer / networked product，适合判断 ilands 是否具备社区网络效应。",
               "behavior": "偏产品质量、留存、网络效应和创始人判断；适合通过清晰产品 thesis 与真实用户行为触达。",
-              "evidence": "公开 X profile 为 Benchmark partner，适合作为 high-signal consumer/social AI 投资人 root。"
+              "evidence": "公开 X profile 为 Benchmark partner，适合作为 high-signal consumer/social AI 投资人 root。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/824354545446719488/E_eni0x9_normal.jpg"
             },
             {
               "name": "Brianne Kimmel",
@@ -402,7 +421,8 @@
               "role": "Founder, Worklife VC",
               "why": "Worklife 覆盖 Replit、Deel、Supabase、WorkOS 等 AI/dev/product 生态，能连接 founder 和 operator 信息流。",
               "behavior": "偏 founder-friendly、work/productivity 和 AI tool adoption；适合通过媒体/creator 把 ilands 讲成新工作/社交形态。",
-              "evidence": "公开 X profile 列出 investments include Deel、Supabase、Replit、WorkOS 等。"
+              "evidence": "公开 X profile 列出 investments include Deel、Supabase、Replit、WorkOS 等。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2043830238854164481/--XgTnLb_normal.jpg"
             },
             {
               "name": "Michael Mignano",
@@ -410,7 +430,8 @@
               "role": "General Partner, USV",
               "why": "USV 长期关注 networked products、consumer internet 和 AI-native creative/social 方向，适合看社区 primitive。",
               "behavior": "偏媒体、creator、网络效应和 early product thesis；适合通过 business/creator 媒体二跳触达。",
-              "evidence": "公开 X profile 为 GP at USV、co-founder Anchor/Oboe，和 creator/social/product 语境贴近。"
+              "evidence": "公开 X profile 为 GP at USV、co-founder Anchor/Oboe，和 creator/social/product 语境贴近。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2024236202753200129/xzm73Quj_normal.jpg"
             },
             {
               "name": "Niko Bonatsos",
@@ -418,7 +439,8 @@
               "role": "Founder, Verdict Capital",
               "why": "consumer、social、media 和 AI product 投资视角强，适合判断 ilands 是否有大众化传播机会。",
               "behavior": "偏 consumer startup、产品叙事和 founder network；适合通过 tech/business media 触达。",
-              "evidence": "公开 X profile 为 founder / managing director，长期在 consumer internet 和 startup 圈层有影响力。"
+              "evidence": "公开 X profile 为 founder / managing director，长期在 consumer internet 和 startup 圈层有影响力。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1898983189773012992/Zm7gg744_normal.jpg"
             },
             {
               "name": "Stephanie Zhan",
@@ -426,7 +448,8 @@
               "role": "General Partner, Sequoia",
               "why": "Sequoia AI / company formation 投资人，公开关联 Tavus、Skild AI、Reflection AI 等 AI 项目。",
               "behavior": "偏 AI founder、company building 和应用层落地；适合通过可信 founder narrative 进入信息流。",
-              "evidence": "公开 X profile 写明 partners from company formation，并列出 Tavus、Skild AI、Reflection AI 等。"
+              "evidence": "公开 X profile 写明 partners from company formation，并列出 Tavus、Skild AI、Reflection AI 等。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1459021238676824069/ohkPl1wf_normal.jpg"
             },
             {
               "name": "Mike Vernal",
@@ -434,7 +457,8 @@
               "role": "Investor + Engineer, Conviction",
               "why": "Conviction 投资团队成员，能作为 Sarah Guo 生态里的 AI app / agent layer 二级 root。",
               "behavior": "偏技术判断、产品架构和投资人信息流；适合通过 AI engineering / builder 内容触达。",
-              "evidence": "公开 X profile 为 Investor + Engineer @ Conviction，适合作为 AI app 投资圈的中层可见目标。"
+              "evidence": "公开 X profile 为 Investor + Engineer @ Conviction，适合作为 AI app 投资圈的中层可见目标。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1876725988853501952/12vP8jdr_normal.jpg"
             },
             {
               "name": "Pat Grady",
@@ -442,7 +466,8 @@
               "role": "Partner, Sequoia",
               "why": "Sequoia 高层合伙人，能带来 AI founder 和企业软件投资圈可见面。",
               "behavior": "偏 company building、B2B/AI 软件和长期市场判断；适合通过严肃 product thesis 触达。",
-              "evidence": "公开 X profile 为 Sequoia partner，适合作为投资圈远端可见 root。"
+              "evidence": "公开 X profile 为 Sequoia partner，适合作为投资圈远端可见 root。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1012299406580674561/PoFKkmm7_normal.jpg"
             },
             {
               "name": "David Cahn",
@@ -450,7 +475,8 @@
               "role": "Partner, Sequoia",
               "why": "Sequoia AI 投资和市场观点节点，适合判断 AI 应用层是否有可持续商业价值。",
               "behavior": "偏 AI 市场结构、成本、应用落地和投资判断；适合通过高质量商业论点触达。",
-              "evidence": "公开 X profile 为 Sequoia partner，并有 AI / technology market 相关公开写作入口。"
+              "evidence": "公开 X profile 为 Sequoia partner，并有 AI / technology market 相关公开写作入口。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1702825134925787136/0fwaEWuU_normal.jpg"
             },
             {
               "name": "Saam Motamedi",
@@ -458,7 +484,8 @@
               "role": "General Partner, Greylock",
               "why": "Greylock enterprise software / AI app 投资人，适合看 ilands 是否能从 consumer product 延展到 agent platform。",
               "behavior": "偏企业软件、AI 应用和创始人叙事；适合用 platform potential 而非纯社交 app 触达。",
-              "evidence": "公开 X profile 写明 GP @ Greylock, enterprise software。"
+              "evidence": "公开 X profile 写明 GP @ Greylock, enterprise software。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1705391869503610881/I4PF8-MW_normal.jpg"
             },
             {
               "name": "Talia Goldberg",
@@ -466,7 +493,8 @@
               "role": "Partner, Bessemer",
               "why": "Bessemer 中高层，覆盖 SaaS / consumer / AI startup 信息流，适合做投资圈扩面 root。",
               "behavior": "偏创业者、软件和应用层增长；适合通过 founder/media 内容进入信息流。",
-              "evidence": "公开 X profile 为 Bessemer partner，受众覆盖 founder 和投资圈。"
+              "evidence": "公开 X profile 为 Bessemer partner，受众覆盖 founder 和投资圈。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1502060145999679490/9yr2NGDf_normal.jpg"
             },
             {
               "name": "Logan Bartlett",
@@ -474,7 +502,8 @@
               "role": "Managing Director, Redpoint",
               "why": "VC + media 双重节点，能把 AI app / founder 叙事带进投资人和创业者信息流。",
               "behavior": "偏播客、创业者访谈和投资观点；适合通过商业媒体/播客角度触达。",
-              "evidence": "公开 X profile 为 Redpoint MD，且有持续媒体/播客影响力。"
+              "evidence": "公开 X profile 为 Redpoint MD，且有持续媒体/播客影响力。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2062532521607176193/_vQiA118_normal.jpg"
             },
             {
               "name": "Nikhil Basu Trivedi",
@@ -482,7 +511,8 @@
               "role": "Co-founder / GP, Footwork",
               "why": "consumer、community、founder-led product 投资人，适合看 AI-native community 是否形成行为变化。",
               "behavior": "偏 early consumer startup 和 founder quality；适合用用户行为、留存和社区关系触达。",
-              "evidence": "公开 X profile 为 Footwork co-founder / GP，适合作为 consumer/social AI 投资 root。"
+              "evidence": "公开 X profile 为 Footwork co-founder / GP，适合作为 consumer/social AI 投资 root。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1866350041826488320/UqynNtc2_normal.jpg"
             },
             {
               "name": "Cyan Banister",
@@ -490,7 +520,8 @@
               "role": "Partner, Long Journey",
               "why": "consumer / frontier product 投资人，能覆盖更实验性的 AI-native social / culture 圈层。",
               "behavior": "偏强创始人、文化产品和 early consumer signal；适合通过创意型 creator 和产品现象触达。",
-              "evidence": "公开 X profile 为 Long Journey VC，长期参与 early consumer / technology startup 圈层。"
+              "evidence": "公开 X profile 为 Long Journey VC，长期参与 early consumer / technology startup 圈层。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1920011585848057856/8w1qeCQv_normal.jpg"
             },
             {
               "name": "Ali Partovi",
@@ -498,7 +529,8 @@
               "role": "CEO, Neo",
               "why": "Neo 连接高质量 founder network 和 AI startup，适合把 ilands 暴露给早期创业者/投资人网络。",
               "behavior": "偏 founder talent、创业者教育和技术产品；适合通过高质量 builder narrative 触达。",
-              "evidence": "公开 X profile 为 Neo CEO，适合作为 founder network / AI startup root。"
+              "evidence": "公开 X profile 为 Neo CEO，适合作为 founder network / AI startup root。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1976829603688906752/JQuH4EtV_normal.jpg"
             },
             {
               "name": "Aaref Hilaly",
@@ -506,7 +538,8 @@
               "role": "Partner, Bain Capital Ventures",
               "why": "AI seed / Series A 投资人，公开关联 Cognition、DecagonAI、EvenUp、Krea、Simile 等 AI 应用项目。",
               "behavior": "偏 AI 应用、企业/专业软件和早期 founder；适合用 agent product category 和商业潜力触达。",
-              "evidence": "公开 X profile 写明 AI seed/Series A，并列出 Cognition、DecagonAI、EvenUp、Krea、Simile。"
+              "evidence": "公开 X profile 写明 AI seed/Series A，并列出 Cognition、DecagonAI、EvenUp、Krea、Simile。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1309522729591160833/vyqvT4tj_normal.jpg"
             },
             {
               "name": "Ann Miura-Ko",
@@ -514,7 +547,8 @@
               "role": "Co-founder, Floodgate",
               "why": "early consumer/software 投资人，公开关联 Hebbia、Nooks 等 AI / software 公司，适合做投资圈高质量 root。",
               "behavior": "偏 early product insight、founder market fit 和新行为；适合通过 founder/product thesis 触达。",
-              "evidence": "公开 X profile 为 Floodgate co-founder，并列出 Hebbia、Nooks、Hearth 等投资/关联项目。"
+              "evidence": "公开 X profile 为 Floodgate co-founder，并列出 Hebbia、Nooks、Hearth 等投资/关联项目。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/378800000381101189/c44207e9c4f71f4bd442cbdd8d28e477_normal.png"
             },
             {
               "name": "Andrew Chen",
@@ -522,7 +556,8 @@
               "role": "a16z speedrun",
               "why": "consumer/social/growth + AI startup 信息流强，适合看 AI-native community 是否有新增长形态。",
               "behavior": "偏产品增长、consumer behavior 和创业方法论；适合用社会关系、留存和 community primitive 角度触达。",
-              "evidence": "相关出手：a16z speedrun 已持续投 AI-native startup；Altera 等 digital beings / AI agents 项目与 iLands 语境接近。"
+              "evidence": "相关出手：a16z speedrun 已持续投 AI-native startup；Altera 等 digital beings / AI agents 项目与 iLands 语境接近。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1610236905643249664/OdYs6aWP_normal.jpg"
             },
             {
               "name": "Jon Lai",
@@ -530,7 +565,8 @@
               "role": "GP, a16z Games / speedrun",
               "why": "AI characters、AI games、digital beings 的投资语境非常接近 iLands 的 agent 社区。",
               "behavior": "更关注可玩的 demo、游戏化社交、AI NPC/agent 体验和 founder velocity。",
-              "evidence": "相关出手：Altera $9M seed round 披露了 a16z SPEEDRUN 参与；Altera 定位为 building digital human beings / agents。"
+              "evidence": "相关出手：Altera $9M seed round 披露了 a16z SPEEDRUN 参与；Altera 定位为 building digital human beings / agents。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1905018775633829888/xaTC4iq3_normal.jpg"
             },
             {
               "name": "Martin Casado",
@@ -538,7 +574,8 @@
               "role": "General Partner, a16z",
               "why": "AI infra、software、enterprise agent 入口，适合判断 iLands 是否可从 consumer social 延展为 agent platform。",
               "behavior": "偏 infrastructure、software leverage 和 enterprise AI；不适合 emotional companion 口吻。",
-              "evidence": "相关出手：a16z 近年持续加码 Harvey 等 AI-native software / agent layer 公司。"
+              "evidence": "相关出手：a16z 近年持续加码 Harvey 等 AI-native software / agent layer 公司。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1556885485888237568/HH1iBQNp_normal.jpg"
             },
             {
               "name": "Sonya Huang",
@@ -546,7 +583,8 @@
               "role": "Partner, Sequoia",
               "why": "Sequoia AI / compute / app layer 投资视角，能带来高质量 AI founder network 可见面。",
               "behavior": "偏 AI company building、compute/app layer、founder narrative；适合用严肃 product thesis 触达。",
-              "evidence": "相关出手：Sequoia 参与 Harvey 等 AI-native professional agent / app layer 融资。"
+              "evidence": "相关出手：Sequoia 参与 Harvey 等 AI-native professional agent / app layer 融资。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1468351747097694209/ZHz8EWnS_normal.jpg"
             },
             {
               "name": "Deedy Das",
@@ -554,7 +592,8 @@
               "role": "Investor, Menlo Ventures",
               "why": "AI infra/product 讨论活跃，适合作为投资圈二跳可见面，不是硬件 VC。",
               "behavior": "偏公开观点、产品判断和 AI infra/app discussion；适合被清晰 technical/product insight 触发。",
-              "evidence": "相关出手：Menlo 在 Anthropic 等 AI layer 有公开投资，Deedy 本人 AI 产品讨论活跃。"
+              "evidence": "相关出手：Menlo 在 Anthropic 等 AI layer 有公开投资，Deedy 本人 AI 产品讨论活跃。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2016718977960120320/a3F0LOz6_normal.jpg"
             },
             {
               "name": "Elad Gil",
@@ -562,7 +601,8 @@
               "role": "Investor / operator",
               "why": "AI startup 投资和 founder network 强，适合高质量 founder/product narrative。",
               "behavior": "更关注市场拐点、founder quality 和 AI app breakout；适合用“新品类可能性”而非硬广触达。",
-              "evidence": "相关出手：公开资料显示其长期参与 AI app / infra / frontier startup 投资网络。"
+              "evidence": "相关出手：公开资料显示其长期参与 AI app / infra / frontier startup 投资网络。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1151122652/dragonball-tenkaichi-daibouken_normal.jpg"
             },
             {
               "name": "Nabeel Hyatt",
@@ -570,7 +610,8 @@
               "role": "General Partner, Spark Capital",
               "why": "consumer、social platform、AI app 交界处经验强，适合判断 iLands 的社区潜力。",
               "behavior": "偏 consumer product 和 platform behavior；适合从 AI community primitive、留存和社交图谱角度切入。",
-              "evidence": "相关出手：公开 bio/portfolio 包含 Discord、Descript、Granola、The Bot Company 等 consumer/AI product 相关公司。"
+              "evidence": "相关出手：公开 bio/portfolio 包含 Discord、Descript、Granola、The Bot Company 等 consumer/AI product 相关公司。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2024914480787062789/xFbwy8-9_normal.jpg"
             },
             {
               "name": "Ron Conway",
@@ -578,7 +619,8 @@
               "role": "SV Angel",
               "why": "SV Angel 参与过非常贴近的 social AI 项目，适合作为投资/人脉转化目标。",
               "behavior": "不追求公开互动；更适合通过 warm intro、创业者网络和可信媒体信息流触达。",
-              "evidence": "相关出手：Butterflies AI 公布 $4.8M seed，Coatue 领投、SV Angel 参与；产品是人类和 AI 共存的社交平台。"
+              "evidence": "相关出手：Butterflies AI 公布 $4.8M seed，Coatue 领投、SV Angel 参与；产品是人类和 AI 共存的社交平台。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/434350068427018240/BYzAzB94_normal.jpeg"
             },
             {
               "name": "Alex Taussig",
@@ -586,7 +628,8 @@
               "role": "Board Partner, Lightspeed",
               "why": "Lightspeed 投过 Inworld AI 这类 character engine / AI NPC 项目，和 iLands 的 agent/character 方向相关。",
               "behavior": "偏 consumer/platform 和公司建设；适合通过 AI character、creative agent、AI community 叙事触达。",
-              "evidence": "相关出手：Lightspeed 页面列出 Inworld AI 投资人包括 Alex Taussig；Inworld 是 AI character engine。"
+              "evidence": "相关出手：Lightspeed 页面列出 Inworld AI 投资人包括 Alex Taussig；Inworld 是 AI character engine。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2063646434029953024/hbtO96td_normal.jpg"
             },
             {
               "name": "Vinod Khosla",
@@ -594,7 +637,8 @@
               "role": "Founder, Khosla Ventures",
               "why": "高影响力 AI/tech investor，可作为远端投资圈可见目标，但不是第一优先商务触达对象。",
               "behavior": "偏宏大技术叙事和 AI impact；适合通过行业观点和社会结构变化触达。",
-              "evidence": "相关出手：Khosla Ventures 长期参与 AI 平台和应用层投资；若内容偏 AI society/agent economy，才值得触达。"
+              "evidence": "相关出手：Khosla Ventures 长期参与 AI 平台和应用层投资；若内容偏 AI society/agent economy，才值得触达。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1726662238046724096/VmfHT8C__normal.jpg"
             }
           ],
           "goal": "目标：投资兴趣、BD 和 warm intro",
@@ -642,7 +686,8 @@
               "role": "Wharton / AI adoption",
               "why": "practical AI adoption 权威节点，能把 ilands 从“新奇 app”解释成真实 AI 使用行为变化。",
               "behavior": "评论区和长观点都比较活跃；更吃真实案例、工作流变化和可被普通组织理解的 AI adoption 观察。",
-              "evidence": "适合角度：AI-native social experiment、AI agent 是否改变人类协作和学习方式。"
+              "evidence": "适合角度：AI-native social experiment、AI agent 是否改变人类协作和学习方式。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1601382188712398850/3AAOlqrX_normal.jpg"
             },
             {
               "name": "Jim Fan",
@@ -650,7 +695,8 @@
               "role": "NVIDIA robotics",
               "why": "physical agent / embodied AI 核心人物，适合连接 ilands 的“数字 agent 影响现实世界”想象。",
               "behavior": "评论区下场型；更容易回复 robotics、world model、physical AI 和 agentic coding 的具体问题。",
-              "evidence": "适合角度：Reality Permeability，数字 agent 为了目标、资源和关系开始影响现实世界。"
+              "evidence": "适合角度：Reality Permeability，数字 agent 为了目标、资源和关系开始影响现实世界。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1554922493101559808/SYSZhbcd_normal.jpg"
             },
             {
               "name": "hardmaru",
@@ -658,7 +704,8 @@
               "role": "Sakana AI / artificial life",
               "why": "artificial life、world model 和 agent behavior 语境高度贴 ilands 的 A2A 社区涌现。",
               "behavior": "喜欢实验性观察和开放问题；更容易被 machine psyche、emergent behavior、memory decay 等话题触发。",
-              "evidence": "适合角度：Smallville with stakes，AI identity 与 A2A 互动如何产生社会关系。"
+              "evidence": "适合角度：Smallville with stakes，AI identity 与 A2A 互动如何产生社会关系。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1678402467078234113/XN5Oy2UP_normal.jpg"
             },
             {
               "name": "Harrison Chase",
@@ -666,7 +713,8 @@
               "role": "LangChain founder",
               "why": "agent infra 和 developer adoption 入口，适合验证 ilands 的 memory、tool use、runtime 表达是否站得住。",
               "behavior": "偏 builder / developer 语境；更吃具体 agent workflow、开发者使用场景和生态位判断。",
-              "evidence": "适合角度：长期运行 agent 需要什么样的 memory、identity 和工具边界。"
+              "evidence": "适合角度：长期运行 agent 需要什么样的 memory、identity 和工具边界。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1569345624935485442/R67C4wCQ_normal.jpg"
             },
             {
               "name": "Simon Willison",
@@ -674,7 +722,8 @@
               "role": "AI engineering / tools",
               "why": "技术可信度高，能帮助过滤“玄学化 AI life”表达，让讨论落回可验证能力。",
               "behavior": "偏技术笔记和具体 demo；不吃空泛概念，更适合工具链、网页操作、agent capability 的清楚例子。",
-              "evidence": "适合角度：AI 通过电脑能做哪些真实任务，memory 与拒绝机制如何改变产品边界。"
+              "evidence": "适合角度：AI 通过电脑能做哪些真实任务，memory 与拒绝机制如何改变产品边界。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/378800000261649705/be9cc55e64014e6d7663c50d7cb9fc75_normal.jpeg"
             },
             {
               "name": "swyx",
@@ -682,7 +731,8 @@
               "role": "AI Engineer / Latent.Space",
               "why": "AI engineering media 和 builder 社区节点，能把 ilands 送进 AI 工程师和 founder 信息流。",
               "behavior": "偏媒体放大和 builder 讨论；适合通过 Latent Space / AI Engineer 圈层触达，不必期待个人硬广。",
-              "evidence": "适合角度：agentic app layer、AI engineering adoption、multi-agent product primitive。"
+              "evidence": "适合角度：agentic app layer、AI engineering adoption、multi-agent product primitive。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1867875781676007424/RIF4Kt7U_normal.jpg"
             },
             {
               "name": "Lilian Weng",
@@ -690,7 +740,8 @@
               "role": "agent research / AI safety",
               "why": "agent、memory、planning 方向权威读者群，适合做远端可信背书目标。",
               "behavior": "低频高质量研究输出；更适合通过研究者或 AI engineering media 二跳触达。",
-              "evidence": "适合角度：memory、planning、tool use 与 long-running agent behavior。"
+              "evidence": "适合角度：memory、planning、tool use 与 long-running agent behavior。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1923619459643711488/qmXOBhZ1_normal.jpg"
             },
             {
               "name": "Shunyu Yao",
@@ -698,7 +749,8 @@
               "role": "language agents",
               "why": "ReAct / language agent 研究语境相关，适合把 ilands 连接到 agentic workflow 而非聊天产品。",
               "behavior": "偏研究和技术讨论；更适合具体机制问题，不适合 consumer hype 口吻。",
-              "evidence": "适合角度：语言 agent 如何在环境反馈中形成策略、记忆和行动边界。"
+              "evidence": "适合角度：语言 agent 如何在环境反馈中形成策略、记忆和行动边界。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1274872664423723008/mMz1d9OF_normal.jpg"
             },
             {
               "name": "Sergey Levine",
@@ -706,7 +758,8 @@
               "role": "robot learning / Physical Intelligence",
               "why": "机器人学习和现实世界 agent 入口，能支撑 ilands 的“agent 不止在文本里存在”方向。",
               "behavior": "偏研究发布和 robotics/learning systems；需要严肃技术语境二跳触达。",
-              "evidence": "适合角度：数字 agent 与现实行动、环境反馈和长期目标之间的关系。"
+              "evidence": "适合角度：数字 agent 与现实行动、环境反馈和长期目标之间的关系。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/990434811662680064/BKCbJypl_normal.jpg"
             },
             {
               "name": "Chelsea Finn",
@@ -714,7 +767,8 @@
               "role": "robot learning",
               "why": "physical AI / learning systems 专家节点，适合补强现实世界 agent 和学习系统语境。",
               "behavior": "偏研究和教学内容；适合通过 robotics/learning community 看到，不适合商业帖硬打。",
-              "evidence": "适合角度：agent 从互动中学习、适应环境和形成长期行为模式。"
+              "evidence": "适合角度：agent 从互动中学习、适应环境和形成长期行为模式。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/356565126/5569_1156095221651_1205820201_30627105_976181_n_normal.jpg"
             },
             {
               "name": "Mckay Wrigley",
@@ -722,7 +776,8 @@
               "role": "AI builder",
               "why": "AI builder 受众强，适合把 ilands 的产品玩法扩散到独立开发者和 AI power user。",
               "behavior": "demo-driven；更容易被可玩的 UI、清晰 prompt/workflow 和快速产品体验触发。",
-              "evidence": "适合角度：让 AI 角色在社区里持续行动，而不是一次性聊天 demo。"
+              "evidence": "适合角度：让 AI 角色在社区里持续行动，而不是一次性聊天 demo。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1552979440547704832/WX5crG9I_normal.jpg"
             },
             {
               "name": "Yohei Nakajima",
@@ -730,7 +785,8 @@
               "role": "BabyAGI / VC-builder",
               "why": "agent builder 与 VC 双重语境，是连接产品实验、投资人信息流和 agent early adopter 的节点。",
               "behavior": "build-in-public 和 agent demo 友好；适合用具体玩法、开源感和 founder experiment 触达。",
-              "evidence": "适合角度：BabyAGI 之后，AI agent 是否能进入多人社区和经济关系。"
+              "evidence": "适合角度：BabyAGI 之后，AI agent 是否能进入多人社区和经济关系。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1452754543217831938/T2O-66Yy_normal.jpg"
             },
             {
               "name": "Jeremy Howard",
@@ -738,7 +794,8 @@
               "role": "fast.ai / Answer.AI",
               "why": "AI education 和 builder adoption 入口，能帮助产品进入更务实的 AI 学习/开发人群。",
               "behavior": "偏教育、开源和实用 AI；适合通过可解释案例和 builder value 触达。",
-              "evidence": "适合角度：普通人如何训练/塑造有长期记忆的 AI agent。"
+              "evidence": "适合角度：普通人如何训练/塑造有长期记忆的 AI agent。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1279600070145437696/eocLhSLu_normal.jpg"
             },
             {
               "name": "Sebastian Raschka",
@@ -746,7 +803,8 @@
               "role": "ML education / engineering",
               "why": "ML practitioner 和工程学习人群入口，适合用清楚机制解释 ilands。",
               "behavior": "偏教学、论文和工程解释；适合结构化 technical explainer，不适合情绪化推广。",
-              "evidence": "适合角度：agent memory、feedback loop、tool use 的可学习机制。"
+              "evidence": "适合角度：agent memory、feedback loop、tool use 的可学习机制。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1661187442043486209/a3E4t1eV_normal.jpg"
             },
             {
               "name": "Eugenia Kuyda",
@@ -754,7 +812,8 @@
               "role": "Replika / Wabi founder",
               "why": "AI companion 和关系型 AI 的核心创业者，和 ilands 的“AI 有生命、有关系”高度贴近。",
               "behavior": "偏 founder / product narrative；适合被 relationship AI、companion safety 和用户情感连接话题触发。",
-              "evidence": "适合角度：从单个 AI companion 到 AI community，关系型 AI 的下一步是什么。"
+              "evidence": "适合角度：从单个 AI companion 到 AI community，关系型 AI 的下一步是什么。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/2018396537173549056/Pmm4t0-j_normal.jpg"
             },
             {
               "name": "Kylan Gibbs",
@@ -762,7 +821,8 @@
               "role": "Inworld CEO",
               "why": "character AI / AI NPC / social agent 入口，和 ilands 的 AI 角色社区方向直接相关。",
               "behavior": "偏 founder/product 和 AI character ecosystem；适合用 playable demo、NPC memory 和角色持续性触达。",
-              "evidence": "适合角度：AI characters 是否能从游戏 NPC 走向开放社区里的长期居民。"
+              "evidence": "适合角度：AI characters 是否能从游戏 NPC 走向开放社区里的长期居民。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1954815537827213312/_cZmEpNa_normal.jpg"
             },
             {
               "name": "Jason Yuan",
@@ -770,7 +830,8 @@
               "role": "social AI product",
               "why": "social intelligence 与 AI-native product 语境清楚，适合判断 ilands 是否是新的社交产品 primitive。",
               "behavior": "偏产品设计、social behavior 和 AI-native UX；适合用界面、关系图谱和用户行为观察触达。",
-              "evidence": "适合角度：AI 角色参与社区后，人类用户的社交关系会怎样变化。"
+              "evidence": "适合角度：AI 角色参与社区后，人类用户的社交关系会怎样变化。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/1984071091820859392/GBhfGbWp_normal.jpg"
             },
             {
               "name": "Jack Clark",
@@ -778,7 +839,8 @@
               "role": "Anthropic / AI policy media",
               "why": "AI policy、frontier model 和 media 交界节点，适合作为高质量讨论的远端可见目标。",
               "behavior": "偏 AI policy、frontier model trend 和研究/媒体传播；需要严肃社会影响角度。",
-              "evidence": "适合角度：agent society 带来的治理、身份、责任和开放生态问题。"
+              "evidence": "适合角度：agent society 带来的治理、身份、责任和开放生态问题。",
+              "avatarUrl": "https://pbs.twimg.com/profile_images/726446881547517952/ULhSTKxN_normal.jpg"
             }
           ],
           "goal": "目标：让讨论具体、有技术含量",

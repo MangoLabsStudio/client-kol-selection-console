@@ -67,7 +67,6 @@ export function FilterBar({ items, filters, resultCount, onChange }: FilterBarPr
           total={items.length}
           onChange={(value) => set("status", value as SelectionStatus | "all")}
         />
-        <PillGroup label="平台" value={filters.platform} allLabel="全部平台" options={platforms} total={items.length} countOption={(value) => countBy(items, (item) => item.kol.platform === value)} onChange={(value) => set("platform", value)} />
         <PillGroup
           label="内容方向"
           value={filters.category}
@@ -78,8 +77,26 @@ export function FilterBar({ items, filters, resultCount, onChange }: FilterBarPr
           countOption={(value) => countBy(items, (item) => item.kol.contentCategory === value)}
           onChange={(value) => set("category", value)}
         />
-        <PillGroup label="语言" value={filters.language} allLabel="全部语言" options={languages} total={items.length} countOption={(value) => countBy(items, (item) => item.kol.language === value)} onChange={(value) => set("language", value)} />
-        <PillGroup label="地区" value={filters.region} allLabel="全部地区" options={regions} total={items.length} countOption={(value) => countBy(items, (item) => item.kol.region === value)} onChange={(value) => set("region", value)} />
+        <PillGroup
+          label="语言"
+          value={filters.language}
+          allLabel="全部语言"
+          options={languages}
+          hideIfSingle
+          total={items.length}
+          countOption={(value) => countBy(items, (item) => item.kol.language === value)}
+          onChange={(value) => set("language", value)}
+        />
+        <PillGroup
+          label="地区"
+          value={filters.region}
+          allLabel="全部地区"
+          options={regions}
+          hideIfSingle
+          total={items.length}
+          countOption={(value) => countBy(items, (item) => item.kol.region === value)}
+          onChange={(value) => set("region", value)}
+        />
         <PillGroup
           label="粉丝规模"
           value={filters.followers}
@@ -100,16 +117,30 @@ export function FilterBar({ items, filters, resultCount, onChange }: FilterBarPr
           countOption={(value) => countBy(items, (item) => item.contactStatus === value)}
           onChange={(value) => set("contactStatus", value)}
         />
-        <PillGroup
-          label="风险项"
-          value={filters.riskTag}
-          allLabel="全部风险项"
-          options={risks}
-          formatOption={formatRiskTag}
-          total={items.length}
-          countOption={(value) => countBy(items, (item) => item.riskTags.includes(value))}
-          onChange={(value) => set("riskTag", value)}
-        />
+        <details className="filter-more" open={filters.platform !== "all" || filters.riskTag !== "all"}>
+          <summary>更多筛选</summary>
+          <div className="filter-more-panel">
+            <PillGroup
+              label="平台"
+              value={filters.platform}
+              allLabel="全部平台"
+              options={platforms}
+              total={items.length}
+              countOption={(value) => countBy(items, (item) => item.kol.platform === value)}
+              onChange={(value) => set("platform", value)}
+            />
+            <PillGroup
+              label="风险项"
+              value={filters.riskTag}
+              allLabel="全部风险项"
+              options={risks}
+              formatOption={formatRiskTag}
+              total={items.length}
+              countOption={(value) => countBy(items, (item) => item.riskTags.includes(value))}
+              onChange={(value) => set("riskTag", value)}
+            />
+          </div>
+        </details>
       </div>
     </section>
   );
@@ -123,7 +154,8 @@ function PillGroup({
   total,
   countOption,
   onChange,
-  formatOption = (option: string) => option
+  formatOption = (option: string) => option,
+  hideIfSingle = false
 }: {
   label: string;
   value: string;
@@ -133,7 +165,10 @@ function PillGroup({
   countOption: (value: string) => number;
   onChange: (value: string) => void;
   formatOption?: (option: string) => string;
+  hideIfSingle?: boolean;
 }) {
+  if (hideIfSingle && options.length <= 1 && value === "all") return null;
+
   return (
     <div className="filter-pill-group">
       <h3>{label}</h3>

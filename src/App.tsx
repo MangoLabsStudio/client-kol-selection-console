@@ -110,11 +110,11 @@ export default function App() {
     return (
       <main className="error-state">
         <Inbox size={34} />
-        <h1>Board unavailable</h1>
-        <p>Could not load the KOL selection board.</p>
+        <h1>评审页面暂不可用</h1>
+        <p>当前无法加载候选名单，请刷新后重试。</p>
         <button type="button" onClick={() => window.location.reload()}>
           <RefreshCw size={16} />
-          Retry
+          重新加载
         </button>
       </main>
     );
@@ -150,7 +150,7 @@ export default function App() {
       pushToast("success", toastMessage(toStatus));
     } catch (error) {
       setBoard(previous);
-      pushToast("danger", error instanceof Error ? error.message : "Could not save this decision.");
+      pushToast("danger", error instanceof Error ? error.message : "保存失败，请稍后重试。");
     } finally {
       setLoadingTarget(null);
     }
@@ -170,9 +170,9 @@ export default function App() {
     setExporting(true);
     try {
       await exportBoard(board.campaign.id, appConfig.projectId, format);
-      pushToast("success", `Exported ${format.toUpperCase()} package.`);
+      pushToast("success", `已导出 ${format.toUpperCase()} 文件。`);
     } catch (error) {
-      pushToast("danger", error instanceof Error ? error.message : "Could not export selection.");
+      pushToast("danger", error instanceof Error ? error.message : "导出失败，请稍后重试。");
     } finally {
       setExporting(false);
     }
@@ -183,9 +183,9 @@ export default function App() {
     try {
       const nextBoard = await lockBoard(board.campaign.id, actorRole);
       setBoard(nextBoard);
-      pushToast("success", "Selection version locked.");
+      pushToast("success", "评审版本已锁定。");
     } catch (error) {
-      pushToast("danger", error instanceof Error ? error.message : "Could not lock selection.");
+      pushToast("danger", error instanceof Error ? error.message : "锁定失败，请稍后重试。");
     } finally {
       setLocking(false);
     }
@@ -203,7 +203,7 @@ export default function App() {
         </div>
         {appConfig.availableProjects.length > 1 && (
           <label className="project-picker">
-            <span>Project</span>
+            <span>项目</span>
             <select value={appConfig.projectId} onChange={(event) => changeProject(event.target.value)}>
               {appConfig.availableProjects.map((project) => (
                 <option key={project.projectId} value={project.projectId}>
@@ -254,7 +254,7 @@ export default function App() {
             <span className="eyebrow">{ui.hero.eyebrow}</span>
             <h2>{ui.hero.title}</h2>
             <p className="hero-lede">{ui.hero.lede}</p>
-            <div className="hero-grid" aria-label="研究样本数据">
+            <div className="hero-grid" aria-label="评审数据">
               <div className="metric">
                 <strong>{board.summary.total}</strong>
                 <span>{ui.hero.metricLabels.total}</span>
@@ -275,10 +275,10 @@ export default function App() {
             <div className="hero-actions" id="export">
               <div className="role-switch dark">
                 <button className={actorRole === "client" ? "active" : ""} onClick={() => setActorRole("client")} type="button">
-                  Client
+                  客户视图
                 </button>
                 <button className={actorRole === "agency" ? "active" : ""} onClick={() => setActorRole("agency")} type="button">
-                  Agency
+                  团队视图
                 </button>
               </div>
               <button className="hero-action" type="button" onClick={() => handleExport("json")} disabled={exporting}>
@@ -292,7 +292,7 @@ export default function App() {
               {actorRole !== "client" && (
                 <button className="hero-action lock" type="button" onClick={handleLock} disabled={locking || Boolean(board.campaign.lockedAt)}>
                   <LockKeyhole size={17} />
-                  {board.campaign.lockedAt ? "Locked" : "Lock"}
+                  {board.campaign.lockedAt ? "已锁定" : "锁定版本"}
                 </button>
               )}
             </div>
@@ -303,7 +303,7 @@ export default function App() {
           summary={board.summary}
           config={ui.learning}
           onExportLearning={() => {
-            pushToast("info", "Preference profile rendered below the learning board.");
+            pushToast("info", "规则 JSON 已显示在面板下方。");
           }}
         />
 
@@ -321,7 +321,7 @@ export default function App() {
               <div className="pool-browser-head">
                 <div>
                   <strong>{filteredItems.length}</strong>
-                  <span>{filteredItems.length === board.items.length ? ui.pool.allCandidatesLabel : `${board.items.length} total`}</span>
+                  <span>{filteredItems.length === board.items.length ? ui.pool.allCandidatesLabel : `共 ${board.items.length} 项`}</span>
                 </div>
                 <div className="pool-status-note">
                   <ShieldCheck size={17} />
@@ -338,7 +338,7 @@ export default function App() {
                   </button>
                 </motion.section>
               ) : (
-                <motion.section className="expanded-pool-grid" layout aria-label="KOL candidate cards">
+                <motion.section className="expanded-pool-grid" layout aria-label="候选账号卡片">
                   <AnimatePresence mode="popLayout">
                     {filteredItems.map((item) => (
                       <ReviewPoolCard
@@ -348,8 +348,8 @@ export default function App() {
                         onApprove={(candidate) => decide(candidate, "approved")}
                         onReject={(candidate) => setModal({ kind: "reject", item: candidate })}
                         onQuestion={(candidate) => setModal({ kind: "question", item: candidate })}
-                        onHold={(candidate) => decide(candidate, "hold", [], "Held for later comparison.")}
-                        onUndo={(candidate) => decide(candidate, "pending", [], "Decision reset to pending.", "undo")}
+                        onHold={(candidate) => decide(candidate, "hold", [], "暂缓，留待后续比较。")}
+                        onUndo={(candidate) => decide(candidate, "pending", [], "已撤回至待评审状态。", "undo")}
                         onHistory={openHistory}
                       />
                     ))}
@@ -450,9 +450,9 @@ function matchesFollowerRange(followers: number, range: string) {
 }
 
 function toastMessage(status: SelectionStatus) {
-  if (status === "approved") return "Approved saved.";
-  if (status === "rejected") return "Rejection saved.";
-  if (status === "question") return "Question sent to agency.";
-  if (status === "hold") return "Hold saved.";
-  return "Decision reset.";
+  if (status === "approved") return "已记录为通过。";
+  if (status === "rejected") return "已记录排除原因。";
+  if (status === "question") return "补充请求已记录。";
+  if (status === "hold") return "已记录为暂缓。";
+  return "已撤回至待评审。";
 }

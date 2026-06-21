@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { BadgeCheck, CircleHelp, Clock3, ExternalLink, History, RotateCcw, XCircle } from "lucide-react";
 import type { CampaignKolItem, SelectionStatus } from "../lib/types";
-import { formatCompactNumber, statusLabels } from "../lib/status";
+import { formatCompactNumber, formatContactStatus, formatContentCategory, formatReasonTag, formatRiskTag, statusLabels } from "../lib/status";
 
 type ReviewPoolCardProps = {
   item: CampaignKolItem;
@@ -31,7 +31,7 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onHold, onUndo,
     >
       <div className="expanded-kol-top">
         <div className="expanded-kol-identity">
-          <a className="expanded-kol-avatar" href={item.kol.profileUrl} target="_blank" rel="noreferrer" aria-label={`Open ${item.kol.name}`}>
+          <a className="expanded-kol-avatar" href={item.kol.profileUrl} target="_blank" rel="noreferrer" aria-label={`打开 ${item.kol.name} 主页`}>
             <img src={item.kol.avatarUrl} alt="" loading="lazy" />
           </a>
           <div className="expanded-kol-name">
@@ -44,56 +44,56 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onHold, onUndo,
             </span>
           </div>
         </div>
-        <span className="expanded-score">{audienceFit || "NA"}</span>
+        <span className="expanded-score">{audienceFit || "待评"}</span>
       </div>
 
       <div className="expanded-tags">
         <span>{tier.label}</span>
         <span>{item.kol.platform}</span>
-        <span>{item.kol.contentCategory}</span>
-        <span>{item.contactStatus}</span>
+        <span>{formatContentCategory(item.kol.contentCategory)}</span>
+        <span>{formatContactStatus(item.contactStatus)}</span>
         {item.riskTags.slice(0, 2).map((risk) => (
           <span className={risk === "none" ? "" : "warn"} key={risk}>
-            {risk.replaceAll("_", " ")}
+            {formatRiskTag(risk)}
           </span>
         ))}
       </div>
 
       <p>{item.whyIncluded}</p>
       <div className="expanded-next">
-        <b>下一步：</b>
+        <b>建议动作：</b>
         {item.recommendedAngle}
       </div>
 
       {status !== "pending" && (
         <div className="review-current">
           <strong>{statusLabels[status]}</strong>
-          <span>{item.currentState.currentReasonTags.map((tag) => tag.replaceAll("_", " ")).join(", ") || "saved"}</span>
+          <span>{item.currentState.currentReasonTags.map(formatReasonTag).join("、") || "已记录"}</span>
           {item.currentState.currentNote && <p>{item.currentState.currentNote}</p>}
         </div>
       )}
 
       <details>
-        <summary>证据 / 标签来源</summary>
+        <summary>判断依据</summary>
         <dl>
           <div>
-            <dt>Root visibility</dt>
+            <dt>目标受众</dt>
             <dd>{item.kol.audienceSummary}</dd>
           </div>
           <div>
-            <dt>Traffic / contact</dt>
+            <dt>规模与合作状态</dt>
             <dd>
-              {formatCompactNumber(item.kol.followers)} followers；{item.estimatedPrice || "price pending"}；{item.contactStatus}
+              {formatCompactNumber(item.kol.followers)} 粉丝；{item.estimatedPrice || "报价待确认"}；{formatContactStatus(item.contactStatus)}
             </dd>
           </div>
           <div>
-            <dt>Source</dt>
+            <dt>参考内容</dt>
             <dd>{sourceList.length > 0 ? sourceList.join(" / ") : item.clientFacingNote}</dd>
           </div>
         </dl>
       </details>
 
-      <div className="review-mini-panel" aria-label={`Review ${item.kol.name}`}>
+      <div className="review-mini-panel" aria-label={`评审 ${item.kol.name}`}>
         <div className="review-decision-row">
           <DecisionButton
             className="approve"
@@ -101,7 +101,7 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onHold, onUndo,
             loading={loadingStatus === "approved"}
             onClick={() => onApprove(item)}
             icon={<BadgeCheck size={14} />}
-            label="Approve"
+            label="通过"
           />
           <DecisionButton
             className="reject"
@@ -109,7 +109,7 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onHold, onUndo,
             loading={loadingStatus === "rejected"}
             onClick={() => onReject(item)}
             icon={<XCircle size={14} />}
-            label="Reject"
+            label="排除"
           />
           <DecisionButton
             className="question"
@@ -117,22 +117,22 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onHold, onUndo,
             loading={loadingStatus === "question"}
             onClick={() => onQuestion(item)}
             icon={<CircleHelp size={14} />}
-            label="Question"
+            label="需补充"
           />
         </div>
         <div className="review-utility-row">
           <button className="review-utility" type="button" onClick={() => onHold(item)} disabled={status === "hold" || loadingStatus === "hold"}>
             {loadingStatus === "hold" ? <span className="spinner" /> : <Clock3 size={14} />}
-            Hold
+            暂缓
           </button>
           <button className="review-utility" type="button" onClick={() => onHistory(item)}>
             <History size={14} />
-            History
+            记录
           </button>
           {status !== "pending" && (
             <button className="review-utility" type="button" onClick={() => onUndo(item)} disabled={loadingStatus === "undo"}>
               {loadingStatus === "undo" ? <span className="spinner" /> : <RotateCcw size={14} />}
-              Undo
+              撤回
             </button>
           )}
         </div>
@@ -165,8 +165,8 @@ function DecisionButton({
 }
 
 function tierFromFit(fit: number) {
-  if (fit >= 88) return { className: "tier-a", label: "A / priority" };
-  if (fit >= 80) return { className: "tier-b", label: "B / validate" };
-  if (fit >= 70) return { className: "tier-c", label: "C / backup" };
-  return { className: "tier-d", label: "D / observe" };
+  if (fit >= 88) return { className: "tier-a", label: "A 级｜优先推进" };
+  if (fit >= 80) return { className: "tier-b", label: "B 级｜补充验证" };
+  if (fit >= 70) return { className: "tier-c", label: "C 级｜备选观察" };
+  return { className: "tier-d", label: "D 级｜暂不优先" };
 }

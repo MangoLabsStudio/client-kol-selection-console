@@ -38,7 +38,7 @@ function uniqueTags(tags?: string[]) {
 
 function assertStatus(status: string): asserts status is SelectionStatus {
   if (!statusSet.has(status)) {
-    throw new ApiError(400, `Unsupported selection status: ${status}`);
+    throw new ApiError(400, `不支持的评审状态：${status}`);
   }
 }
 
@@ -55,7 +55,7 @@ function getItemForUpdate(db: DatabaseSync, campaignId: string, itemId: string) 
     )
     .get(campaignId, itemId);
 
-  if (!item) throw new ApiError(404, "Campaign KOL item not found");
+  if (!item) throw new ApiError(404, "未找到该候选账号。");
   return item;
 }
 
@@ -84,7 +84,7 @@ export function getCampaignBoard(db: DatabaseSync, campaignId: string, actorRole
     )
     .get(campaignId);
 
-  if (!campaign) throw new ApiError(404, "Campaign not found");
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
 
   const itemRows = db
     .prepare(
@@ -192,15 +192,15 @@ export function createSelectionEvent(db: DatabaseSync, input: CreateSelectionEve
   assertStatus(fromStatus);
 
   if (input.toStatus === "rejected" && tags.length === 0) {
-    throw new ApiError(400, "Reject requires at least one reason tag");
+    throw new ApiError(400, "请至少选择一个排除原因。");
   }
 
   if (input.toStatus === "question" && tags.length === 0) {
-    throw new ApiError(400, "Question requires at least one question type");
+    throw new ApiError(400, "请至少选择一个补充信息类型。");
   }
 
   if (input.toStatus === "question" && note.length === 0) {
-    throw new ApiError(400, "Question requires a written question");
+    throw new ApiError(400, "请写明需要补充确认的问题。");
   }
 
   const timestamp = nowIso();
@@ -369,7 +369,7 @@ export function getCurrentState(db: DatabaseSync, itemId: string) {
   const state = db.prepare("SELECT * FROM kol_selection_current_state WHERE campaign_kol_item_id = ?").get(itemId);
   if (!state) {
     const item = db.prepare("SELECT * FROM campaign_kol_items WHERE id = ?").get(itemId);
-    if (!item) throw new ApiError(404, "Campaign KOL item not found");
+    if (!item) throw new ApiError(404, "未找到该候选账号。");
     return {
       id: null,
       currentStatus: item.status_current ?? "pending",
@@ -446,8 +446,8 @@ export function exportSelection(db: DatabaseSync, campaignId: string, format: "j
 
 export function lockSelection(db: DatabaseSync, campaignId: string, actorId: string, actorRole: ActorRole) {
   const campaign = db.prepare("SELECT * FROM campaigns WHERE id = ?").get(campaignId);
-  if (!campaign) throw new ApiError(404, "Campaign not found");
-  if (actorRole === "client") throw new ApiError(403, "Only agency or admin users can lock selection");
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
+  if (actorRole === "client") throw new ApiError(403, "仅团队视图可以锁定版本。");
 
   const timestamp = nowIso();
   const eventId = randomUUID();
@@ -565,7 +565,7 @@ function normalizeCurrentState(row: Row) {
 }
 
 function normalizeEvent(row: Row | undefined) {
-  if (!row) throw new ApiError(404, "Selection event not found");
+  if (!row) throw new ApiError(404, "未找到评审记录。");
   return {
     id: String(row.id),
     clientId: String(row.client_id),

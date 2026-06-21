@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { History, Loader2, X } from "lucide-react";
 import { useEffect } from "react";
-import { formatTime } from "../lib/status";
+import { formatReasonTag, formatTime, statusLabels } from "../lib/status";
 import type { CampaignKolItem, SelectionEvent } from "../lib/types";
 
 type HistoryDrawerProps = {
@@ -25,10 +25,10 @@ export function HistoryDrawer({ item, events, loading, onClose }: HistoryDrawerP
     <AnimatePresence>
       {item && (
         <motion.div className="drawer-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <button className="drawer-scrim" type="button" onClick={onClose} aria-label="Close history drawer" />
+          <button className="drawer-scrim" type="button" onClick={onClose} aria-label="关闭评审记录" />
           <motion.aside
             className="history-drawer"
-            aria-label={`Selection history for ${item.kol.name}`}
+            aria-label={`查看 ${item.kol.name} 的评审记录`}
             initial={{ x: 420 }}
             animate={{ x: 0 }}
             exit={{ x: 420 }}
@@ -39,12 +39,12 @@ export function HistoryDrawer({ item, events, loading, onClose }: HistoryDrawerP
                 <History size={19} />
               </div>
               <div>
-                <h2>Decision history</h2>
+                <h2>评审记录</h2>
                 <p>
                   {item.kol.name} · {item.kol.handle}
                 </p>
               </div>
-              <button type="button" className="icon-action" onClick={onClose} aria-label="Close history drawer">
+              <button type="button" className="icon-action" onClick={onClose} aria-label="关闭评审记录">
                 <X size={18} />
               </button>
             </div>
@@ -52,10 +52,10 @@ export function HistoryDrawer({ item, events, loading, onClose }: HistoryDrawerP
             {loading ? (
               <div className="drawer-loading">
                 <Loader2 size={20} className="spin" />
-                Loading history
+                正在加载评审记录
               </div>
             ) : events.length === 0 ? (
-              <div className="drawer-empty">No decision events have been recorded yet.</div>
+              <div className="drawer-empty">暂无评审记录。</div>
             ) : (
               <ol className="history-list">
                 {events.map((event) => (
@@ -63,19 +63,17 @@ export function HistoryDrawer({ item, events, loading, onClose }: HistoryDrawerP
                     <div className="history-dot" aria-hidden />
                     <div className="history-event">
                       <div className="history-event-head">
-                        <strong>{event.eventType.replaceAll("_", " ")}</strong>
+                        <strong>{formatEventType(event.eventType)}</strong>
                         <span>{formatTime(event.createdAt)}</span>
                       </div>
-                      <p>
-                        {event.fromStatus ?? "start"} → {event.toStatus ?? event.decision}
-                      </p>
+                      <p>{formatStatusChange(event)}</p>
                       <small>
-                        {event.actorRole} · {event.actorId}
+                        {formatActorRole(event.actorRole)} · {event.actorId}
                       </small>
                       {event.reasonTags.length > 0 && (
                         <div className="history-tags">
                           {event.reasonTags.map((tag) => (
-                            <span key={tag}>{tag.replaceAll("_", " ")}</span>
+                            <span key={tag}>{formatReasonTag(tag)}</span>
                           ))}
                         </div>
                       )}
@@ -90,4 +88,29 @@ export function HistoryDrawer({ item, events, loading, onClose }: HistoryDrawerP
       )}
     </AnimatePresence>
   );
+}
+
+function formatEventType(value: string) {
+  const labels: Record<string, string> = {
+    decision_created: "新增评审",
+    decision_changed: "更新评审",
+    reason_updated: "更新原因",
+    undo: "撤回评审"
+  };
+
+  return labels[value] ?? value;
+}
+
+function formatStatusChange(event: SelectionEvent) {
+  const fromStatus = event.fromStatus && event.fromStatus in statusLabels ? statusLabels[event.fromStatus as keyof typeof statusLabels] : "初始状态";
+  const toValue = event.toStatus ?? event.decision;
+  const toStatus = toValue && toValue in statusLabels ? statusLabels[toValue as keyof typeof statusLabels] : "已记录";
+
+  return `${fromStatus} → ${toStatus}`;
+}
+
+function formatActorRole(value: string) {
+  if (value === "client") return "客户";
+  if (value === "agency") return "团队";
+  return value;
 }

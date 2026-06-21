@@ -1554,10 +1554,11 @@ body {
 
 .hero h2 {
   margin: 20px 0 18px;
-  max-width: 920px;
-  font-size: clamp(42px, 5.2vw, 78px);
-  line-height: 1.02;
-  overflow-wrap: anywhere;
+  max-width: 1000px;
+  font-size: clamp(40px, 4.5vw, 66px);
+  line-height: 1.06;
+  overflow-wrap: normal;
+  text-wrap: balance;
 }
 
 .hero-lede {
@@ -2297,6 +2298,31 @@ body {
   .side {
     position: static;
     height: auto;
+    padding: 18px 14px;
+  }
+
+  .brand {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    margin-bottom: 18px;
+  }
+
+  .brand h1 {
+    max-width: none;
+  }
+
+  .nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .nav a {
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  .side-note {
+    margin-top: 14px;
   }
 
   .section-inner {
@@ -2306,6 +2332,13 @@ body {
 
   .hero {
     min-height: 560px;
+  }
+
+  .hero-lede {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: 16px;
+    line-height: 1.7;
   }
 
   .learning-board-head,

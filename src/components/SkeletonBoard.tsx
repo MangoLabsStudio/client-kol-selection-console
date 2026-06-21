@@ -1,6 +1,6 @@
 export function SkeletonBoard() {
   return (
-    <div className="skeleton-layout" aria-label="Loading KOL board">
+    <div className="skeleton-layout" aria-label="正在加载候选名单">
       <div className="summary-skeleton shimmer" />
       <div className="filter-skeleton shimmer" />
       <div className="kol-grid">

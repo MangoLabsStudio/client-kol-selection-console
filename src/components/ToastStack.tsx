@@ -35,7 +35,7 @@ export function ToastStack({ toasts, onDismiss }: ToastStackProps) {
             >
               <Icon size={18} />
               <span>{toast.message}</span>
-              <button type="button" onClick={() => onDismiss(toast.id)} aria-label="Dismiss message">
+              <button type="button" onClick={() => onDismiss(toast.id)} aria-label="关闭提示">
                 <X size={15} />
               </button>
             </motion.div>

@@ -7,7 +7,6 @@ import {
   ExternalLink,
   HelpCircle,
   History,
-  MessageSquareText,
   ShieldAlert,
   Sparkles,
   Undo2,
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { CampaignKolItem, SelectionStatus } from "../lib/types";
-import { formatCompactNumber, formatTime, statusLabels, statusTone } from "../lib/status";
+import { formatCompactNumber, formatContactStatus, formatContentCategory, formatReasonTag, formatRiskTag, formatTime, statusLabels, statusTone } from "../lib/status";
 
 type KolCardProps = {
   item: CampaignKolItem;
@@ -47,21 +46,21 @@ export function KolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReje
         <div className="kol-identity">
           <div className="identity-line">
             <h2>{item.kol.name}</h2>
-            <a href={item.kol.profileUrl} target="_blank" rel="noreferrer" aria-label={`Open ${item.kol.name} profile`}>
+            <a href={item.kol.profileUrl} target="_blank" rel="noreferrer" aria-label={`打开 ${item.kol.name} 主页`}>
               <ExternalLink size={16} />
             </a>
           </div>
           <div className="identity-meta">
             <span>{item.kol.handle}</span>
             <span>{item.kol.platform}</span>
-            <span>{formatCompactNumber(item.kol.followers)} followers</span>
+            <span>{formatCompactNumber(item.kol.followers)} 粉丝</span>
           </div>
         </div>
         <StatusBadge status={status} />
       </div>
 
-      <div className="kol-card-tags" aria-label="KOL profile tags">
-        <span>{item.kol.contentCategory}</span>
+      <div className="kol-card-tags" aria-label="候选账号标签">
+        <span>{formatContentCategory(item.kol.contentCategory)}</span>
         <span>{item.kol.region}</span>
         <span>{item.kol.language}</span>
         {item.estimatedPrice && <span>{item.estimatedPrice}</span>}
@@ -70,41 +69,41 @@ export function KolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReje
       <section className="angle-block">
         <div className="block-label">
           <Sparkles size={15} />
-          Recommended angle
+          建议角度
         </div>
         <p>{item.recommendedAngle}</p>
       </section>
 
       <section className="note-block">
-        <div className="block-label">Client note</div>
+        <div className="block-label">客户备注</div>
         <p>{item.clientFacingNote}</p>
       </section>
 
       <div className="signal-row">
         <div>
-          <small>Audience fit</small>
-          <strong>{audienceFit ? `${audienceFit}%` : "Review"}</strong>
+          <small>受众匹配度</small>
+          <strong>{audienceFit ? `${audienceFit}%` : "待评估"}</strong>
         </div>
         <div>
-          <small>Contact</small>
-          <strong>{item.contactStatus}</strong>
+          <small>联系状态</small>
+          <strong>{formatContactStatus(item.contactStatus)}</strong>
         </div>
       </div>
 
       {item.riskTags.length > 0 && (
-        <div className="risk-row" aria-label="Risk notes">
+        <div className="risk-row" aria-label="风险提示">
           <ShieldAlert size={15} />
           {item.riskTags.slice(0, 3).map((tag) => (
-            <span key={tag}>{tag.replaceAll("_", " ")}</span>
+            <span key={tag}>{formatRiskTag(tag)}</span>
           ))}
         </div>
       )}
 
       {status !== "pending" && (
         <motion.div className="decision-note" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
-          <strong>{status === "question" ? "Open question" : statusLabels[status]}</strong>
+          <strong>{statusLabels[status]}</strong>
           <span>
-            {item.currentState.currentReasonTags.length > 0 ? item.currentState.currentReasonTags.map((tag) => tag.replaceAll("_", " ")).join(", ") : "No reason tag"}
+            {item.currentState.currentReasonTags.length > 0 ? item.currentState.currentReasonTags.map(formatReasonTag).join("，") : "已记录"}
           </span>
           {item.currentState.currentNote && <p>{item.currentState.currentNote}</p>}
         </motion.div>
@@ -120,16 +119,16 @@ export function KolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReje
             transition={{ duration: 0.2 }}
           >
             <div>
-              <div className="block-label">Why included</div>
+              <div className="block-label">入选理由</div>
               <p>{item.whyIncluded}</p>
             </div>
             <div>
-              <div className="block-label">Audience summary</div>
+              <div className="block-label">目标受众</div>
               <p>{item.kol.audienceSummary}</p>
             </div>
             {previousExamples.length > 0 && (
               <div>
-                <div className="block-label">Relevant examples</div>
+                <div className="block-label">参考内容</div>
                 <div className="example-list">
                   {previousExamples.map((example) => (
                     <span key={String(example)}>{String(example)}</span>
@@ -139,7 +138,7 @@ export function KolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReje
             )}
             {item.agencyInternalNote && (
               <div className="internal-note">
-                <div className="block-label">Agency internal</div>
+                <div className="block-label">团队备注</div>
                 <p>{item.agencyInternalNote}</p>
               </div>
             )}
@@ -150,23 +149,23 @@ export function KolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReje
       <div className="card-toolbar">
         <button type="button" className="quiet-button" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
           {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          Details
+          详情
         </button>
         <button type="button" className="quiet-button" onClick={() => onHistory(item)}>
           <History size={16} />
-          History
+          记录
         </button>
-        <span>Updated {formatTime(item.currentState.lastUpdatedAt)}</span>
+        <span>更新于 {formatTime(item.currentState.lastUpdatedAt)}</span>
       </div>
 
-      <div className="decision-actions" aria-label={`Decision actions for ${item.kol.name}`}>
+      <div className="decision-actions" aria-label={`评审 ${item.kol.name}`}>
         <ActionButton
           tone="success"
           active={status === "approved"}
           loading={loadingStatus === "approved"}
           onClick={() => onApprove(item)}
           icon={<BadgeCheck size={17} />}
-          label={status === "approved" ? "Approved" : "Approve"}
+          label={status === "approved" ? "已通过" : "通过"}
         />
         <ActionButton
           tone="danger"
@@ -174,7 +173,7 @@ export function KolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReje
           loading={loadingStatus === "rejected"}
           onClick={() => onReject(item)}
           icon={<XCircle size={17} />}
-          label={status === "rejected" ? "Rejected" : "Reject"}
+          label={status === "rejected" ? "已排除" : "排除"}
         />
         <ActionButton
           tone="info"
@@ -182,7 +181,7 @@ export function KolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReje
           loading={loadingStatus === "question"}
           onClick={() => onQuestion(item)}
           icon={<HelpCircle size={17} />}
-          label={status === "question" ? "Need info" : "Question"}
+          label={status === "question" ? "待补充" : "需补充"}
         />
         <ActionButton
           tone="warning"
@@ -190,10 +189,10 @@ export function KolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReje
           loading={loadingStatus === "hold"}
           onClick={() => onHold(item)}
           icon={<Clock3 size={17} />}
-          label={status === "hold" ? "On hold" : "Hold"}
+          label={status === "hold" ? "已暂缓" : "暂缓"}
         />
         {status !== "pending" && (
-          <button className="undo-button" type="button" onClick={() => onUndo(item)} disabled={loadingStatus === "undo"} aria-label={`Undo decision for ${item.kol.name}`}>
+          <button className="undo-button" type="button" onClick={() => onUndo(item)} disabled={loadingStatus === "undo"} aria-label={`撤回 ${item.kol.name} 的评审`}>
             {loadingStatus === "undo" ? <span className="spinner" /> : <Undo2 size={16} />}
           </button>
         )}

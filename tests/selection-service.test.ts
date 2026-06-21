@@ -22,7 +22,7 @@ test("loads the seeded campaign board with current-state summary", () => {
     const board = getCampaignBoard(db, campaignId, "client");
 
     assert.equal(board.campaign.clientName, "iLands");
-    assert.equal(board.campaign.name, "AAA AI Circle Activation Map");
+    assert.equal(board.campaign.name, "iLands AI KOL 候选评审");
     assert.equal(board.items.length, 10);
     assert.deepEqual(board.summary, {
       total: 10,
@@ -41,7 +41,7 @@ test("loads project config for project-specific UI and seed data", () => {
 
   assert.equal(config.client.name, "iLands");
   assert.equal(config.campaign.id, campaignId);
-  assert.equal(config.ui.brand.name, "ilands AAA Signal Map");
+  assert.equal(config.ui.brand.name, "iLands KOL 候选评审");
   assert.equal(config.seed.candidates.length, 10);
   assert.equal(appConfig.campaignId, campaignId);
   assert.equal(appConfig.availableProjects.some((project) => project.projectId === "ilands-aaa-signal-map"), true);
@@ -62,7 +62,7 @@ test("reject requires at least one reason tag", () => {
           note: "No reason selected",
           clientRequestId: "reject-without-reason"
         }),
-      (error) => error instanceof ApiError && error.status === 400 && /reason/.test(error.message)
+      (error) => error instanceof ApiError && error.status === 400 && /排除原因/.test(error.message)
     );
   });
 });

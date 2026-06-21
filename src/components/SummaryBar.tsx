@@ -27,7 +27,7 @@ export function SummaryBar({ campaign, summary, actorRole, exporting, locking, o
   const progress = summary.total > 0 ? Math.round((reviewed / summary.total) * 100) : 0;
 
   return (
-    <header className="summary-bar" aria-label="Campaign summary">
+    <header className="summary-bar" aria-label="项目评审摘要">
       <div className="summary-main">
         <div className="client-mark">
           <ShieldCheck size={18} aria-hidden />
@@ -41,10 +41,10 @@ export function SummaryBar({ campaign, summary, actorRole, exporting, locking, o
         </div>
       </div>
 
-      <div className="summary-progress" aria-label={`${progress}% reviewed`}>
+      <div className="summary-progress" aria-label={`已评审 ${progress}%`}>
         <div>
           <span>{progress}%</span>
-          <small>reviewed</small>
+          <small>已评审</small>
         </div>
         <div className="progress-track">
           <motion.div className="progress-fill" animate={{ width: `${progress}%` }} transition={{ type: "spring", stiffness: 100, damping: 22 }} />
@@ -52,36 +52,36 @@ export function SummaryBar({ campaign, summary, actorRole, exporting, locking, o
       </div>
 
       <div className="summary-counts">
-        <CountPill label="Total" value={summary.total} tone="total" />
+        <CountPill label="全部" value={summary.total} tone="total" />
         {statusMeta.map(({ status, icon: Icon }) => (
           <CountPill key={status} label={statusLabels[status]} value={summary[status]} tone={status} icon={Icon} />
         ))}
       </div>
 
       <div className="summary-actions">
-        <div className="role-switch" aria-label="Review role">
+        <div className="role-switch" aria-label="评审视图">
           <button className={actorRole === "client" ? "active" : ""} onClick={() => onRoleChange("client")} type="button">
-            Client
+            客户视图
           </button>
           <button className={actorRole === "agency" ? "active" : ""} onClick={() => onRoleChange("agency")} type="button">
-            Agency
+            团队视图
           </button>
         </div>
         <div className="summary-updated">
-          <span>Last updated</span>
+          <span>最近更新</span>
           <strong>{formatTime(campaign.lastUpdatedAt)}</strong>
         </div>
-        <button className="icon-action" type="button" onClick={() => onExport("json")} disabled={exporting} aria-label="Export JSON">
+        <button className="icon-action" type="button" onClick={() => onExport("json")} disabled={exporting} aria-label="导出 JSON">
           <FileJson size={18} />
         </button>
         <button className="text-action" type="button" onClick={() => onExport("csv")} disabled={exporting}>
           <Download size={17} />
-          {exporting ? "Exporting" : "CSV"}
+          {exporting ? "导出中" : "CSV"}
         </button>
         {actorRole !== "client" && (
           <button className="text-action lock-action" type="button" onClick={onLock} disabled={locking || Boolean(campaign.lockedAt)}>
             <LockKeyhole size={17} />
-            {campaign.lockedAt ? "Locked" : locking ? "Locking" : "Lock"}
+            {campaign.lockedAt ? "已锁定" : locking ? "锁定中" : "锁定版本"}
           </button>
         )}
       </div>

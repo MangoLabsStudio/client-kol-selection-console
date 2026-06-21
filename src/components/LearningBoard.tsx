@@ -60,7 +60,7 @@ export function LearningBoard({ summary, config, onExportLearning }: LearningBoa
   const addRule = (key: string) => {
     setProfile((current) => ({
       ...current,
-      [key]: [...(current[key] ?? []), "新的判别条件"]
+      [key]: [...(current[key] ?? []), "新增判别条件"]
     }));
   };
 
@@ -91,13 +91,13 @@ export function LearningBoard({ summary, config, onExportLearning }: LearningBoa
                 已反馈 <strong>{reviewed}</strong>
               </span>
               <span className="learning-stat">
-                Approve <strong>{summary.approved}</strong>
+                通过 <strong>{summary.approved}</strong>
               </span>
               <span className="learning-stat">
-                Reject <strong>{summary.rejected}</strong>
+                排除 <strong>{summary.rejected}</strong>
               </span>
               <span className="learning-stat">
-                Question <strong>{summary.question}</strong>
+                待补充 <strong>{summary.question}</strong>
               </span>
             </div>
           </div>
@@ -119,9 +119,9 @@ export function LearningBoard({ summary, config, onExportLearning }: LearningBoa
                         <input
                           value={rule}
                           onChange={(event) => updateRule(section.id, index, event.target.value)}
-                          aria-label={`${section.title} rule ${index + 1}`}
+                          aria-label={`${section.title} 条件 ${index + 1}`}
                         />
-                        <button type="button" className="rule-remove" onClick={() => removeRule(section.id, index)} aria-label="Remove rule">
+                        <button type="button" className="rule-remove" onClick={() => removeRule(section.id, index)} aria-label="删除条件">
                           <Trash2 size={13} />
                         </button>
                       </li>
@@ -142,7 +142,7 @@ export function LearningBoard({ summary, config, onExportLearning }: LearningBoa
                         }}
                       >
                         <Download size={14} />
-                        导出偏好 JSON
+                        导出规则 JSON
                       </button>
                     )}
                   </div>

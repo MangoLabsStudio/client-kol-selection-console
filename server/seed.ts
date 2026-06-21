@@ -20,6 +20,7 @@ function seedProjectData(db: DatabaseSync, config: ProjectConfig) {
     upsertCampaign(db, config, timestamp);
 
     if (hasCampaignItems) {
+      syncExistingProjectCopy(db, config, timestamp);
       db.exec("COMMIT");
       return;
     }
@@ -204,6 +205,83 @@ function upsertCampaign(db: DatabaseSync, config: ProjectConfig, timestamp: stri
       review_round = excluded.review_round,
       objective = excluded.objective`
   ).run(config.campaign.id, config.client.id, config.campaign.name, config.campaign.reviewRound, config.campaign.objective, null, timestamp, timestamp);
+}
+
+function syncExistingProjectCopy(db: DatabaseSync, config: ProjectConfig, timestamp: string) {
+  const upsertProfile = db.prepare(
+    `INSERT INTO kol_profiles (
+      id, name, handle, platform, profile_url, avatar_url, bio, followers, region, language,
+      content_category, email, contact_url, audience_summary, metadata, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name,
+      handle = excluded.handle,
+      platform = excluded.platform,
+      profile_url = excluded.profile_url,
+      avatar_url = excluded.avatar_url,
+      bio = excluded.bio,
+      followers = excluded.followers,
+      region = excluded.region,
+      language = excluded.language,
+      content_category = excluded.content_category,
+      contact_url = excluded.contact_url,
+      audience_summary = excluded.audience_summary,
+      metadata = excluded.metadata,
+      updated_at = excluded.updated_at`
+  );
+  const updateItemCopy = db.prepare(
+    `UPDATE campaign_kol_items SET
+      display_order = ?,
+      client_facing_note = ?,
+      agency_internal_note = ?,
+      why_included = ?,
+      recommended_angle = ?,
+      estimated_price = ?,
+      contact_status = ?,
+      risk_tags = ?,
+      metadata = ?,
+      updated_at = ?
+    WHERE id = ? AND campaign_id = ?`
+  );
+
+  config.seed.candidates.forEach((kol, index) => {
+    const itemId = getItemId(config, kol);
+
+    upsertProfile.run(
+      kol.id,
+      kol.name,
+      kol.handle,
+      kol.platform,
+      kol.profileUrl,
+      kol.avatarUrl,
+      kol.bio,
+      kol.followers,
+      kol.region,
+      kol.language,
+      kol.contentCategory,
+      null,
+      kol.profileUrl,
+      kol.audienceSummary,
+      JSON.stringify(kol.metadata ?? {}),
+      timestamp,
+      timestamp
+    );
+
+    updateItemCopy.run(
+      index + 1,
+      kol.clientFacingNote,
+      kol.agencyInternalNote,
+      kol.whyIncluded,
+      kol.recommendedAngle,
+      kol.estimatedPrice,
+      kol.contactStatus,
+      JSON.stringify(kol.riskTags ?? []),
+      JSON.stringify({ importedFrom: `${config.projectId}_config`, rankHint: index + 1 }),
+      timestamp,
+      itemId,
+      config.campaign.id
+    );
+  });
 }
 
 function getItemId(config: ProjectConfig, kol: SeedKolConfig) {

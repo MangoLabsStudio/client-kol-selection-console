@@ -55,11 +55,11 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
 
   if (!item) return null;
 
-  const title = kind === "reject" ? "Reject candidate" : "Ask for more information";
+  const title = kind === "reject" ? "排除候选账号" : "请求补充信息";
   const helper =
     kind === "reject"
-      ? "Select at least one reason so the agency can avoid repeating the same mismatch."
-      : "Choose what is missing and write the exact follow-up the agency should answer.";
+      ? "请选择主要原因，用于校准下一轮推荐名单。"
+      : "请选择需要补充的信息类型，并写明需要确认的问题。";
   const invalid = selected.length === 0 || (kind === "question" && note.trim().length === 0);
 
   const toggle = (tag: string) => {
@@ -100,14 +100,14 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
                 {item.kol.name} · {item.kol.handle}
               </p>
             </div>
-            <button type="button" className="icon-action" onClick={onClose} aria-label="Close modal">
+            <button type="button" className="icon-action" onClick={onClose} aria-label="关闭弹窗">
               <X size={18} />
             </button>
           </div>
 
           <p className="modal-helper">{helper}</p>
 
-          <div className="reason-grid" aria-label={kind === "reject" ? "Reject reasons" : "Question types"}>
+          <div className="reason-grid" aria-label={kind === "reject" ? "排除原因" : "补充信息类型"}>
             {reasonOptions.map(([value, label]) => (
               <button key={value} type="button" className={selected.includes(value) ? "selected" : ""} onClick={() => toggle(value)}>
                 {selected.includes(value) && <Check size={14} />}
@@ -117,25 +117,25 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
           </div>
 
           <label className="note-field">
-            <span>{kind === "reject" ? "Optional note" : "Question for agency"}</span>
+            <span>{kind === "reject" ? "补充说明" : "需确认的问题"}</span>
             <textarea
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder={kind === "reject" ? "Add context for the agency team" : "What should the agency confirm before you decide?"}
+              placeholder={kind === "reject" ? "说明不建议推进的具体原因" : "请写明团队需要补充确认的信息"}
               rows={4}
             />
           </label>
 
-          {attempted && selected.length === 0 && <div className="form-error">Select at least one reason.</div>}
-          {attempted && kind === "question" && note.trim().length === 0 && <div className="form-error">Write the question the agency should answer.</div>}
+          {attempted && selected.length === 0 && <div className="form-error">请至少选择一个原因。</div>}
+          {attempted && kind === "question" && note.trim().length === 0 && <div className="form-error">请写明需要补充确认的问题。</div>}
 
           <div className="modal-actions">
             <button type="button" className="quiet-button" onClick={onClose}>
-              Cancel
+              取消
             </button>
             <button type="button" className={`submit-button ${kind}`} onClick={submit} disabled={submitting}>
               {submitting ? <span className="spinner" /> : null}
-              Save {kind === "reject" ? "rejection" : "question"}
+              {kind === "reject" ? "保存排除原因" : "发送补充请求"}
             </button>
           </div>
         </motion.div>

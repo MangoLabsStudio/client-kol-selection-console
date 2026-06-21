@@ -1,14 +1,14 @@
 # Client KOL Selection Console
 
-Client KOL Selection Console is a client-facing review board for campaign-level KOL candidate approval. It lets a client approve, reject, question, hold, export, and audit KOL decisions while the agency keeps a backend event log of every action.
+Client KOL Selection Console is a client-facing review board for campaign-level KOL candidate approval. It lets a client approve, reject, question, export, and audit KOL decisions while the agency keeps a backend event log of every action.
 
-This is not a KOL discovery system. Candidate KOLs are assumed to already exist in a project selection pool. The product focuses on turning client review feedback into a structured execution decision record.
+This is not a KOL discovery system. Candidate KOLs are assumed to already exist in a project selection pool. For iLands, the console also shows the strategy layer before the shortlist: target root audience confirmation, target-backed reverse discovery logic, and the signal rules that explain why a KOL is executable.
 
 ## Current Surface
 
 - Dark left-nav review console aligned with the iLands client review mock.
-- AAA signal-map hero, client preference learning board, KOL execution pool, and KOL rule board.
-- Inline KOL decisions: approve, reject with reasons, ask a question, hold, and undo.
+- AAA signal-map hero, client preference learning board, root audience confirmation, reverse-discovery method board, KOL execution pool, and signal logic board.
+- Inline KOL decisions: approve, reject with reasons, and ask a question.
 - Append-only decision event log plus current-state table for fast board reads.
 - JSON and CSV export for agency handoff.
 - Project-specific configuration files for different client projects.
@@ -21,7 +21,7 @@ https://client-kol-selection-console-production.up.railway.app
 
 ## Project Configs
 
-Project-specific names, client/campaign metadata, page copy, learning rules, KOL list rules, and seeded candidate pools live in JSON config files:
+Project-specific names, client/campaign metadata, page copy, root audience groups, method sections, signal logic, KOL list rules, and seeded candidate pools live in JSON config files:
 
 ```text
 server/project-configs/ilands-aaa-signal-map.json
@@ -33,7 +33,7 @@ To add another project:
 2. Change `projectId`, `client`, `campaign`, `ui`, and `seed.candidates`.
 3. Restart the app.
 
-All config files in `server/project-configs/` are seeded into SQLite on startup if their campaign has no candidates yet. Existing campaign decisions are not overwritten.
+All config files in `server/project-configs/` are seeded into SQLite on startup if their campaign has no candidates yet. Existing client decisions are not overwritten when project copy changes.
 
 Select a default project:
 
@@ -121,13 +121,13 @@ Core tables:
 Get the board:
 
 ```http
-GET /api/campaigns/campaign-frontier-ai-launch/kol-selection
+GET /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection
 ```
 
 Approve a KOL:
 
 ```http
-POST /api/campaigns/campaign-frontier-ai-launch/kol-selection/item-kol-mira-chen/events
+POST /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/item-kol-mlstreettalk/events
 Content-Type: application/json
 
 {
@@ -142,7 +142,7 @@ Content-Type: application/json
 Reject a KOL:
 
 ```http
-POST /api/campaigns/campaign-frontier-ai-launch/kol-selection/item-kol-mira-chen/events
+POST /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/item-kol-trungtphan/events
 Content-Type: application/json
 
 {
@@ -157,7 +157,7 @@ Content-Type: application/json
 Create a question follow-up:
 
 ```http
-POST /api/campaigns/campaign-frontier-ai-launch/kol-selection/item-kol-theo-park/events
+POST /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/item-kol-binarybits/events
 Content-Type: application/json
 
 {
@@ -172,20 +172,20 @@ Content-Type: application/json
 Get history:
 
 ```http
-GET /api/campaigns/campaign-frontier-ai-launch/kol-selection/item-kol-mira-chen/events
+GET /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/item-kol-trungtphan/events
 ```
 
 Export:
 
 ```http
-GET /api/campaigns/campaign-frontier-ai-launch/kol-selection/export?format=json
-GET /api/campaigns/campaign-frontier-ai-launch/kol-selection/export?format=csv
+GET /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/export?format=json
+GET /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/export?format=csv
 ```
 
 Lock selection, agency/admin only:
 
 ```http
-POST /api/campaigns/campaign-frontier-ai-launch/kol-selection/lock
+POST /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/lock
 ```
 
 ## Validation
@@ -202,6 +202,7 @@ Covered behavior:
 
 - Board load and summary counts
 - Project config loading for UI and seed data
+- Root audience config loading
 - Reject reason validation
 - Reject event persistence and current-state update
 - Question follow-up creation
@@ -218,7 +219,7 @@ The GitHub repository is intended to be private under `MangoLabsStudio` with acc
 
 ## Next Work
 
-- Replace seeded demo KOLs with an agency import/source table.
+- Add an agency import/source table for future projects beyond the current JSON-backed config.
 - Add authentication and client/campaign authorization middleware.
 - Add agency answer flow for resolving question follow-ups.
 - Add table view and virtualization if boards exceed several hundred candidates.

@@ -6,8 +6,10 @@ import { FilterBar } from "./components/FilterBar";
 import { HistoryDrawer } from "./components/HistoryDrawer";
 import { LearningBoard } from "./components/LearningBoard";
 import { ReviewPoolCard } from "./components/ReviewPoolCard";
+import { RootAudienceBoard } from "./components/RootAudienceBoard";
 import { RuleBoard } from "./components/RuleBoard";
 import { SkeletonBoard } from "./components/SkeletonBoard";
+import { StrategyMethodBoard } from "./components/StrategyMethodBoard";
 import { ToastStack, type Toast } from "./components/ToastStack";
 import { exportBoard, getAppConfig, getBoardForCampaign, getHistory, lockBoard, submitDecision } from "./lib/api";
 import type { ActorRole, AppConfig, BoardResponse, CampaignKolItem, Filters, SelectionEvent, SelectionStatus, Summary } from "./lib/types";
@@ -121,6 +123,13 @@ export default function App() {
   }
 
   const ui = appConfig.ui;
+  const heroMetrics =
+    ui.hero.metrics ?? [
+      { value: String(board.summary.total), label: ui.hero.metricLabels.total },
+      { value: String(board.summary.approved), label: ui.hero.metricLabels.approved },
+      { value: String(board.summary.rejected), label: ui.hero.metricLabels.rejected },
+      { value: String(board.summary.question), label: ui.hero.metricLabels.question }
+    ];
 
   const decide = async (item: CampaignKolItem, toStatus: SelectionStatus, reasonTags: string[] = [], note = "", loadingStatus: SelectionStatus | "undo" = toStatus) => {
     const previous = board;
@@ -255,22 +264,12 @@ export default function App() {
             <h2>{ui.hero.title}</h2>
             <p className="hero-lede">{ui.hero.lede}</p>
             <div className="hero-grid" aria-label="评审数据">
-              <div className="metric">
-                <strong>{board.summary.total}</strong>
-                <span>{ui.hero.metricLabels.total}</span>
-              </div>
-              <div className="metric">
-                <strong>{board.summary.approved}</strong>
-                <span>{ui.hero.metricLabels.approved}</span>
-              </div>
-              <div className="metric">
-                <strong>{board.summary.rejected}</strong>
-                <span>{ui.hero.metricLabels.rejected}</span>
-              </div>
-              <div className="metric">
-                <strong>{board.summary.question}</strong>
-                <span>{ui.hero.metricLabels.question}</span>
-              </div>
+              {heroMetrics.map((metric) => (
+                <div className="metric" key={metric.label}>
+                  <strong>{metric.value}</strong>
+                  <span>{metric.label}</span>
+                </div>
+              ))}
             </div>
             <div className="hero-actions" id="export">
               <div className="role-switch dark">
@@ -306,6 +305,10 @@ export default function App() {
             pushToast("info", "规则 JSON 已显示在面板下方。");
           }}
         />
+
+        {ui.roots && <RootAudienceBoard config={ui.roots} />}
+
+        <StrategyMethodBoard method={ui.method} />
 
         <section className="section" id="pool">
           <div className="section-inner">
@@ -361,6 +364,8 @@ export default function App() {
             <RuleBoard config={ui.rules} />
           </div>
         </section>
+
+        <StrategyMethodBoard signalLogic={ui.signalLogic} dataNote={ui.dataNote} />
 
       <DecisionModal
         kind={modal?.kind ?? "reject"}

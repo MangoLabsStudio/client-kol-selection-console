@@ -7,7 +7,7 @@ import { seedDemoData } from "../server/seed.js";
 import { createSelectionEvent, exportSelection, getCampaignBoard, getSelectionHistory, lockSelection } from "../server/selectionService.js";
 import { ApiError } from "../server/types.js";
 
-const campaignId = "campaign-frontier-ai-launch";
+const campaignId = "campaign-ilands-root-backed-kol-review";
 
 function withDb(run: (db: DatabaseSync) => void) {
   const db = createDatabase({ dbPath: ":memory:" });
@@ -23,15 +23,15 @@ test("loads the seeded campaign board with current-state summary", () => {
     const board = getCampaignBoard(db, campaignId, "client");
 
     assert.equal(board.campaign.clientName, "iLands");
-    assert.equal(board.campaign.name, "iLands AI KOL 候选评审");
-    assert.equal(board.items.length, 10);
+    assert.equal(board.campaign.name, "iLands Root-backed KOL 候选评审");
+    assert.equal(board.items.length, 13);
     assert.deepEqual(board.summary, {
-      total: 10,
-      pending: 6,
-      approved: 1,
-      rejected: 1,
-      question: 1,
-      hold: 1
+      total: 13,
+      pending: 13,
+      approved: 0,
+      rejected: 0,
+      question: 0,
+      hold: 0
     });
   });
 });
@@ -42,8 +42,9 @@ test("loads project config for project-specific UI and seed data", () => {
 
   assert.equal(config.client.name, "iLands");
   assert.equal(config.campaign.id, campaignId);
-  assert.equal(config.ui.brand.name, "iLands KOL 候选评审");
-  assert.equal(config.seed.candidates.length, 10);
+  assert.equal(config.ui.brand.name, "iLands KOL Selection Console");
+  assert.equal(config.seed.candidates.length, 13);
+  assert.equal(config.ui.roots?.groups.length, 3);
   assert.equal(appConfig.campaignId, campaignId);
   assert.equal(appConfig.availableProjects.some((project) => project.projectId === "ilands-aaa-signal-map"), true);
 });
@@ -54,7 +55,7 @@ test("reject requires at least one reason tag", () => {
       () =>
         createSelectionEvent(db, {
           campaignId,
-          itemId: "item-kol-mira-chen",
+          itemId: "item-kol-rohanpaul-ai",
           actorId: "client-reviewer-1",
           actorRole: "client",
           toStatus: "rejected",
@@ -68,18 +69,18 @@ test("reject requires at least one reason tag", () => {
   });
 });
 
-test("seed sync refreshes demo notes without overwriting real review decisions", () => {
+test("seed sync refreshes candidate copy without overwriting real review decisions", () => {
   withDb((db) => {
+    const config = getProjectConfig("ilands-aaa-signal-map");
+    const rohan = config.seed.candidates.find((candidate) => candidate.itemId === "item-kol-rohanpaul-ai");
+
     db
-      .prepare("UPDATE kol_selection_current_state SET current_note = ? WHERE campaign_kol_item_id = ?")
-      .run("Old English seed note.", "item-kol-lena-vos");
-    db
-      .prepare("UPDATE kol_selection_events SET note = ? WHERE campaign_kol_item_id = ? AND id LIKE 'event-seed%'")
-      .run("Old English seed event.", "item-kol-lena-vos");
+      .prepare("UPDATE campaign_kol_items SET client_facing_note = ? WHERE id = ?")
+      .run("Old imported copy.", "item-kol-rohanpaul-ai");
 
     createSelectionEvent(db, {
       campaignId,
-      itemId: "item-kol-mira-chen",
+      itemId: "item-kol-rohanpaul-ai",
       actorId: "client-reviewer-1",
       actorRole: "client",
       toStatus: "rejected",
@@ -92,11 +93,10 @@ test("seed sync refreshes demo notes without overwriting real review decisions",
     seedDemoData(db);
 
     const board = getCampaignBoard(db, campaignId, "client");
-    const lena = board.items.find((item) => item.id === "item-kol-lena-vos");
-    const mira = board.items.find((item) => item.id === "item-kol-mira-chen");
+    const item = board.items.find((candidate) => candidate.id === "item-kol-rohanpaul-ai");
 
-    assert.equal(lena?.currentState.currentNote, "受众匹配度高，技术表达可信。");
-    assert.equal(mira?.currentState.currentNote, "客户后续评审备注，不应被 seed 覆盖。");
+    assert.equal(item?.clientFacingNote, rohan?.clientFacingNote);
+    assert.equal(item?.currentState.currentNote, "客户后续评审备注，不应被 seed 覆盖。");
   });
 });
 
@@ -104,7 +104,7 @@ test("reject writes event log, current state, and summary", () => {
   withDb((db) => {
     const result = createSelectionEvent(db, {
       campaignId,
-      itemId: "item-kol-mira-chen",
+      itemId: "item-kol-trungtphan",
       actorId: "client-reviewer-1",
       actorRole: "client",
       toStatus: "rejected",
@@ -116,10 +116,10 @@ test("reject writes event log, current state, and summary", () => {
 
     assert.equal(result.currentState.currentStatus, "rejected");
     assert.deepEqual(result.currentState.currentReasonTags, ["brand_fit_mismatch", "too_niche"]);
-    assert.equal(result.summary.pending, 5);
-    assert.equal(result.summary.rejected, 2);
+    assert.equal(result.summary.pending, 12);
+    assert.equal(result.summary.rejected, 1);
 
-    const history = getSelectionHistory(db, campaignId, "item-kol-mira-chen");
+    const history = getSelectionHistory(db, campaignId, "item-kol-trungtphan");
     assert.equal(history.length, 1);
     assert.equal(history[0].eventType, "decision_created");
   });
@@ -129,7 +129,7 @@ test("question creates an open follow-up task", () => {
   withDb((db) => {
     const result = createSelectionEvent(db, {
       campaignId,
-      itemId: "item-kol-theo-park",
+      itemId: "item-kol-latentspacepod",
       actorId: "client-reviewer-1",
       actorRole: "client",
       toStatus: "question",
@@ -140,11 +140,11 @@ test("question creates an open follow-up task", () => {
     });
 
     assert.equal(result.currentState.currentStatus, "question");
-    assert.equal(result.summary.question, 2);
+    assert.equal(result.summary.question, 1);
 
     const followup = db
       .prepare("SELECT * FROM kol_selection_followups WHERE campaign_kol_item_id = ? AND created_from_event_id = ?")
-      .get("item-kol-theo-park", result.event.id);
+      .get("item-kol-latentspacepod", result.event.id);
     assert.equal(followup?.status, "open");
     assert.equal(followup?.task_type, "need_price");
   });
@@ -152,23 +152,35 @@ test("question creates an open follow-up task", () => {
 
 test("changing a rejected KOL to approved appends a new event", () => {
   withDb((db) => {
+    createSelectionEvent(db, {
+      campaignId,
+      itemId: "item-kol-aibreakfast",
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      toStatus: "rejected",
+      decision: "rejected",
+      reasonTags: ["too_generic"],
+      note: "更适合二波放量，先不进入第一波。",
+      clientRequestId: "reject-aibreakfast"
+    });
+
     const result = createSelectionEvent(db, {
       campaignId,
-      itemId: "item-kol-jules-gray",
+      itemId: "item-kol-aibreakfast",
       actorId: "client-reviewer-1",
       actorRole: "client",
       toStatus: "approved",
       decision: "approved",
       reasonTags: ["priority_fit"],
-      note: "Use only if broad awareness budget is approved.",
-      clientRequestId: "change-jules"
+      note: "如果需要 newsletter inclusion，可进入二波。",
+      clientRequestId: "change-aibreakfast"
     });
 
     assert.equal(result.currentState.currentStatus, "approved");
     assert.equal(result.event.eventType, "decision_changed");
     assert.equal(result.event.fromStatus, "rejected");
 
-    const history = getSelectionHistory(db, campaignId, "item-kol-jules-gray");
+    const history = getSelectionHistory(db, campaignId, "item-kol-aibreakfast");
     const originalReject = history.find((event) => event.eventType === "decision_created" && event.toStatus === "rejected");
     assert.equal(history.length, 2);
     assert.equal(originalReject?.toStatus, "rejected");
@@ -179,19 +191,19 @@ test("client_request_id makes selection events idempotent", () => {
   withDb((db) => {
     const input = {
       campaignId,
-      itemId: "item-kol-hana-lee",
+      itemId: "item-kol-karenxcheng",
       actorId: "client-reviewer-1",
       actorRole: "client" as const,
       toStatus: "approved" as const,
       decision: "approved" as const,
       reasonTags: [],
       note: "",
-      clientRequestId: "approve-hana-once"
+      clientRequestId: "approve-karen-once"
     };
 
     const first = createSelectionEvent(db, input);
     const second = createSelectionEvent(db, input);
-    const history = getSelectionHistory(db, campaignId, "item-kol-hana-lee");
+    const history = getSelectionHistory(db, campaignId, "item-kol-karenxcheng");
 
     assert.equal(first.event.id, second.event.id);
     assert.equal(history.length, 1);
@@ -200,6 +212,40 @@ test("client_request_id makes selection events idempotent", () => {
 
 test("exports grouped JSON and CSV decision packages", () => {
   withDb((db) => {
+    createSelectionEvent(db, {
+      campaignId,
+      itemId: "item-kol-mlstreettalk",
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      toStatus: "approved",
+      decision: "approved",
+      reasonTags: ["priority_fit"],
+      note: "适合第一波严肃讨论。",
+      clientRequestId: "export-approve-mlst"
+    });
+    createSelectionEvent(db, {
+      campaignId,
+      itemId: "item-kol-linusekenstam",
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      toStatus: "rejected",
+      decision: "rejected",
+      reasonTags: ["too_generic"],
+      note: "先不进入第一波。",
+      clientRequestId: "export-reject-linus"
+    });
+    createSelectionEvent(db, {
+      campaignId,
+      itemId: "item-kol-binarybits",
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      toStatus: "question",
+      decision: "question",
+      reasonTags: ["need_contact_confirmation"],
+      note: "请先确认是否接受 sponsor 或只能走 earned media。",
+      clientRequestId: "export-question-binarybits"
+    });
+
     const json = exportSelection(db, campaignId, "json") as Exclude<ReturnType<typeof exportSelection>, string>;
     assert.equal(json.approved.length, 1);
     assert.equal(json.rejected.length, 1);

@@ -6,16 +6,16 @@
     "tier": "premium"
   },
   "campaign": {
-    "id": "campaign-frontier-ai-launch",
-    "name": "iLands AI KOL 候选评审",
+    "id": "campaign-ilands-root-backed-kol-review",
+    "name": "iLands Root-backed KOL 候选评审",
     "reviewRound": "第一轮客户评审",
-    "objective": "评审基于目标受众筛选出的 AI KOL 候选名单，并将客户反馈沉淀为下一轮筛选规则。"
+    "objective": "先确认 iLands 想触达的三类 root audience，再基于共同关注和历史互动反推可执行 KOL，并将客户反馈沉淀为下一轮筛选规则。"
   },
   "ui": {
     "brand": {
       "mark": "i",
-      "name": "iLands KOL 候选评审",
-      "subtitle": "客户评审版 · 反馈自动记录"
+      "name": "iLands KOL Selection Console",
+      "subtitle": "客户评审版 · Root-backed shortlist"
     },
     "navigation": [
       {
@@ -24,26 +24,49 @@
         "index": "01"
       },
       {
-        "label": "候选名单",
-        "target": "#pool",
+        "label": "目标人群",
+        "target": "#roots",
         "index": "02"
       },
       {
-        "label": "评审规则",
-        "target": "#rules",
+        "label": "反推方法",
+        "target": "#method",
         "index": "03"
       },
       {
-        "label": "结果导出",
-        "target": "#export",
+        "label": "候选名单",
+        "target": "#pool",
         "index": "04"
+      },
+      {
+        "label": "信号逻辑",
+        "target": "#logic",
+        "index": "05"
       }
     ],
-    "sideNote": "本页面用于确认候选账号、记录反馈，并沉淀下一轮筛选规则。",
+    "sideNote": "客户版展示从目标人群到 KOL 执行池的完整路径；每次反馈都会回流到下一轮筛选规则。",
     "hero": {
-      "eyebrow": "iLands AI KOL 候选评审｜第一轮",
-      "title": "确认本轮可推进的 AI KOL 名单。",
-      "lede": "客户可对每个候选账号标记通过、排除、待补充或暂缓；团队将依据反馈更新执行优先级、补充信息和下一轮推荐规则。",
+      "eyebrow": "AAA AI Circle Activation Map",
+      "title": "用“被看到”和“被互动”两条线反推可执行 KOL。",
+      "lede": "iLands 不是先找泛 AI KOL，而是先定义三类希望触达的 root：行业超级大佬、美国 VC 中高层、垂类专家/核心人物；再反推共同关注和历史互动路径，最后用商业可执行性过滤。",
+      "metrics": [
+        {
+          "value": "3类",
+          "label": "目标 root 人群"
+        },
+        {
+          "value": "1,429",
+          "label": "近期公开互动边"
+        },
+        {
+          "value": "1,738",
+          "label": "共同关注候选"
+        },
+        {
+          "value": "107",
+          "label": "英文 AI KOL 扩池"
+        }
+      ],
       "metricLabels": {
         "total": "候选账号",
         "approved": "已通过",
@@ -52,12 +75,12 @@
       }
     },
     "pool": {
-      "eyebrow": "候选账号池",
-      "title": "按优先级审阅本轮候选 KOL。",
-      "description": "候选账号已由团队预筛并进入本轮评审池。客户只需确认推进意向、排除原因和需要补充的信息；系统将保留完整反馈记录。",
-      "allCandidatesLabel": "全部候选",
-      "pendingDecisionLabel": "项待评审",
-      "reviewedLabel": "所有候选账号均已完成评审。",
+      "eyebrow": "KOL 执行池",
+      "title": "只评审可执行候选，不混入 root audience。",
+      "description": "下面的候选不是目标人物本身，而是可能把内容送进目标信息流的 creator、媒体、podcast 或商业内容入口。客户只需确认是否推进、排除或要求补证据。",
+      "allCandidatesLabel": "本轮 shortlist",
+      "pendingDecisionLabel": "项待确认",
+      "reviewedLabel": "本轮候选已完成确认。",
       "emptyTitle": "暂无符合筛选条件的候选账号。",
       "emptyAction": "清除筛选"
     },
@@ -67,7 +90,7 @@
       "title": "将客户反馈沉淀为下一轮筛选标准。",
       "description": "每一次评审反馈都会转化为可复用的筛选信号：通过代表正向样本，排除代表降权规则，待补充代表仍需验证的边界条件。",
       "systemTitle": "当前判断口径",
-      "systemDescription": "初始需求拆解为三类可判断目标：影响 AI 圈层讨论、形成高质量二跳可见，以及带来投资或 BD 连接。",
+      "systemDescription": "本轮判断口径先从“想让谁看到”开始：三类 root audience 确认后，再通过共同关注、历史互动和商务可执行性反推候选 KOL。",
       "exportProject": "ilands",
       "exportRound": "client_review_round_1",
       "sections": [
@@ -120,8 +143,8 @@
       ]
     },
     "rules": {
-      "title": "候选名单评审规则",
-      "description": "本区说明候选账号进入名单、优先级排序、补充验证和排除降权的基本规则。客户反馈会作为下一轮名单调整依据。",
+      "title": "KOL 执行池评审规则",
+      "description": "本区说明候选账号进入执行池、优先级排序、补充验证和排除降权的规则。root audience 不等于 KOL，只有具备内容表达和商务路径的账号才进入采购评审。",
       "statLabel": "规则模块",
       "sections": [
         {
@@ -163,352 +186,1275 @@
           ]
         }
       ]
-    }
+    },
+    "roots": {
+      "storageKey": "client-kol-selection-root-memory-ilands-aaa-v1",
+      "eyebrow": "目标人群确认",
+      "title": "先确认要让哪三类人看到，再反推可投放 KOL。",
+      "description": "root audience 是本轮传播希望影响到的人群，不等于要付费合作的 KOL。客户在这里确认、排除或要求补充 root，系统会保留通过项，并把排除原因用于下一轮重跑。",
+      "roundLabel": "Root 第",
+      "rerunButton": "重新跑一轮",
+      "rollbackButton": "回滚上一轮",
+      "lockedCopy": "已锁定，下一轮保留",
+      "groups": [
+        {
+          "index": "01",
+          "name": "行业超级大佬",
+          "count": 14,
+          "note": "他们决定 AI 圈公共议题的第一层声量。目标不是让他们接单，而是让内容有机会进入他们会看到、会回复或会转发的语境。",
+          "use": "KOL 选择逻辑：优先找他们共同关注、或他们历史上愿意回复的人；内容必须短、有观点、有 demo 或能引发争议。",
+          "people": [
+            {
+              "name": "Elon Musk",
+              "handle": "@elonmusk",
+              "role": "xAI / Tesla / X",
+              "why": "极端放大节点；如果被卷入讨论，能把话题带出 AI 小圈层。",
+              "behavior": "回复 + 转发放大型；更常被短句、反问、现实世界影响和平台生态话题触发。",
+              "evidence": "打法：评论区高可回复问题 + 极短视觉/事实素材，不围绕他设计硬广。"
+            },
+            {
+              "name": "Sam Altman",
+              "handle": "@sama",
+              "role": "OpenAI CEO",
+              "why": "frontier AI 叙事中心；能决定行业注意力和二跳讨论方向。",
+              "behavior": "偏 quote/retweet/广播；更适合被重大行业节点、创业者叙事和新范式问题触发。",
+              "evidence": "打法：不求直接接单，优先让可信 AI 媒体/creator 把 ilands 放进新范式讨论。"
+            },
+            {
+              "name": "Marc Andreessen",
+              "handle": "@pmarca",
+              "role": "a16z co-founder",
+              "why": "AI techno-optimism 超级节点，同时覆盖 VC 圈和科技舆论场。",
+              "behavior": "偏观点放大和文化立场，不适合产品长评；更吃鲜明 thesis、反共识和未来社会结构问题。",
+              "evidence": "打法：把 ilands 讲成 AI-native society / AI agents as citizens，而不是 app feature。"
+            },
+            {
+              "name": "Andrej Karpathy",
+              "handle": "@karpathy",
+              "role": "AI researcher / educator",
+              "why": "技术圈公认权威；他的可见面能提升 AI builder 对产品机制的信任。",
+              "behavior": "评论区下场型；更吃高质量 technical observation、demo、setup 和具体实现细节。",
+              "evidence": "打法：围绕 long-running agent state、memory、tool use、multi-agent interaction 设计问题。"
+            },
+            {
+              "name": "Demis Hassabis",
+              "handle": "@demishassabis",
+              "role": "Google DeepMind CEO",
+              "why": "AGI/research 权威节点，适合作为远端可见目标。",
+              "behavior": "偏机构发布、研究里程碑和 quote/retweet；不适合评论区硬打。",
+              "evidence": "打法：用 AI research / artificial life / agent behavior 的严肃语境二跳触达。"
+            },
+            {
+              "name": "Greg Brockman",
+              "handle": "@gdb",
+              "role": "OpenAI president / co-founder",
+              "why": "frontier AI founder 圈层入口，能影响 builder 和 AI product 人群。",
+              "behavior": "偏 quote/retweet 和产品/工程节点放大；适合清晰 demo 或开发者能力证明。",
+              "evidence": "打法：让内容看起来像 AI product capability，而不是普通 consumer launch。"
+            },
+            {
+              "name": "Mustafa Suleyman",
+              "handle": "@mustafasuleyman",
+              "role": "Microsoft AI CEO",
+              "why": "consumer AI 与 AI product 叙事入口，适合关注 AI companion / assistant 形态演化。",
+              "behavior": "偏广播和产品观点；更适合被 AI adoption、personal AI 和人机关系议题触发。",
+              "evidence": "打法：强调 AI 有记忆、会拒绝、会形成关系，而不是单次聊天工具。"
+            },
+            {
+              "name": "Yann LeCun",
+              "handle": "@ylecun",
+              "role": "Turing Award / AI debate",
+              "why": "开放 AI、reasoning、agent debate 的高互动节点，容易在争议话题下场。",
+              "behavior": "debate 型互动；会回复、转发或反驳与开放反馈、LLM 边界、世界模型相关观点。",
+              "evidence": "打法：避免 consciousness bait，围绕 economy as fitness / open-ended feedback 提问。"
+            },
+            {
+              "name": "Andrew Ng",
+              "handle": "@AndrewYNg",
+              "role": "DeepLearning.AI / Stanford",
+              "why": "AI education 和 adoption 的超大受众入口。",
+              "behavior": "偏教育型广播；更适合清楚案例、AI adoption lesson 和可解释的范式变化。",
+              "evidence": "打法：把 ilands 写成 AI-native social experiment 的教育案例。"
+            },
+            {
+              "name": "Jeff Dean",
+              "handle": "@JeffDean",
+              "role": "Google DeepMind / Google Research",
+              "why": "AI infra/research 权威节点，适合作为高质量技术讨论的远端目标。",
+              "behavior": "低频、研究/infra 导向；更适合通过 AI engineering media 或研究者二跳触达。",
+              "evidence": "打法：只在技术机制足够清楚时进入他的视野。"
+            },
+            {
+              "name": "François Chollet",
+              "handle": "@fchollet",
+              "role": "Keras / ARC-AGI",
+              "why": "reasoning、抽象能力和 LLM 边界讨论的权威节点。",
+              "behavior": "偏广播和高标准 debate；不吃普通 AI life 叙事，更关注可测能力和抽象机制。",
+              "evidence": "打法：讲 agent 是否能在开放环境里形成可测适应能力。"
+            },
+            {
+              "name": "Amjad Masad",
+              "handle": "@amasad",
+              "role": "Replit CEO",
+              "why": "AI dev tool 和 agent builder 圈层入口。",
+              "behavior": "builder/product 型；更容易被可玩的 demo、developer adoption 和 agent workflow 触发。",
+              "evidence": "打法：用 builder creator 展示 agent memory / tool use 的实际玩法。"
+            },
+            {
+              "name": "Noam Shazeer",
+              "handle": "@noamshazeer",
+              "role": "Character.AI co-founder",
+              "why": "social/consumer AI 方向的核心人物，和 ilands 的 AI community / AI character 语境高度接近。",
+              "behavior": "公开互动较少，更适合作为远端可见目标；需通过 consumer AI 圈层和可信媒体二跳。",
+              "evidence": "打法：围绕 AI characters 是否能形成社会关系，而不是单个 companion。"
+            },
+            {
+              "name": "Aidan Gomez",
+              "handle": "@aidangomez",
+              "role": "Cohere co-founder",
+              "why": "frontier model founder 和企业 AI 入口。",
+              "behavior": "偏 founder/product 和模型应用讨论；适合被 AI agent adoption 与 enterprise/creator bridge 触达。",
+              "evidence": "打法：用 AI engineering media 或 agent builder 把产品定义讲清楚。"
+            }
+          ],
+          "goal": "目标：公共话题声量和可信度",
+          "open": false,
+          "rules": [
+            {
+              "title": "这一类要解决什么",
+              "subtitle": "",
+              "open": true,
+              "rules": [
+                "让 ilands 进入 AI 圈公共讨论，而不是只在泛工具流量里曝光。",
+                "提供技术 / 产品 / 行业判断上的可信度和话题势能。"
+              ]
+            },
+            {
+              "title": "更想要",
+              "subtitle": "",
+              "open": false,
+              "rules": [
+                "frontier AI、AI product、agent、AI adoption 相关的核心人物。",
+                "能让讨论显得有技术含量、产品含量或行业含量的人。"
+              ]
+            },
+            {
+              "title": "Reject 会调整什么",
+              "subtitle": "",
+              "open": false,
+              "rules": [
+                "如果客户 reject 泛公众人物，下一轮降低非 AI / 非产品权威。",
+                "如果客户 reject 纯名气型人物，下一轮提高“和本产品叙事有关”的权重。"
+              ]
+            }
+          ]
+        },
+        {
+          "index": "02",
+          "name": "美国 VC 中高层",
+          "count": 30,
+          "note": "这类 root 的价值不是公开转发，而是看见之后可能发生 warm intro、投资兴趣、BD 或项目方联系。这里优先保留近期和 AI agent、character/social AI、consumer AI、AI-native app layer 有公开关联的人。",
+          "use": "KOL 选择逻辑：用可信 AI 媒体、newsletter、podcast 和 builder creator 进入他们的信息流；硬件、纯芯片、纯机器人 VC 不作为主目标。",
+          "people": [
+            {
+              "name": "Sarah Guo",
+              "handle": "@saranormous",
+              "role": "Founder, Conviction",
+              "why": "AI-native software / agent / app layer 投资人，适合被高质量产品定义和创始人叙事触达。",
+              "behavior": "不期待公开接单或转发；更可能通过 No Priors、投资人信息流、founder network 和 AI engineering 圈层看到。",
+              "evidence": "相关出手：公开资料显示 Conviction / Sarah Guo 投资 Harvey、Sierra、Cognition、HeyGen 等 AI-native 应用和 agent 公司。"
+            },
+            {
+              "name": "Justine Moore",
+              "handle": "@venturetwins",
+              "role": "Partner, a16z",
+              "why": "consumer AI、creator economy、social AI 交界处的 a16z 投资人，和 iLands 的社区/角色方向更贴。",
+              "behavior": "内容消费更偏趋势、creator use case、consumer AI 行为变化；适合通过视觉化 demo 和 creator 叙事触达。",
+              "evidence": "相关出手：a16z 公开投资 Character.AI；Justine Moore 长期覆盖 consumer AI / creator AI 讨论。"
+            },
+            {
+              "name": "Olivia Moore",
+              "handle": "@omooretweets",
+              "role": "Partner, a16z consumer",
+              "why": "a16z consumer AI / app layer 投资人，适合判断 AI-native social / creator product 是否有新品类潜力。",
+              "behavior": "偏 consumer AI、creator tools 和 app-level adoption；更容易通过高质量 founder / creator 内容进入信息流。",
+              "evidence": "公开 X profile 列出 Gamma、HappyRobot、Krea、Partiful、Salient、ScribeNote、Lassie、MeetArc 等相关投资/关联项目。"
+            },
+            {
+              "name": "Anish Acharya",
+              "handle": "@illscience",
+              "role": "GP, a16z AI Apps",
+              "why": "明确负责 AI apps 投资，和 iLands 的 AI-native product / agent community 方向直接相关。",
+              "behavior": "偏 AI 应用、consumer product 和创业者表达；适合用 AI 角色社区的新产品定义触达。",
+              "evidence": "公开 X profile 写明 AI Apps investing @a16z，并列出 Krea、Happy Robot、Deel、Titan、Arc Boats 等。"
+            },
+            {
+              "name": "Sarah Tavel",
+              "handle": "@sarahtavel",
+              "role": "Partner, Benchmark",
+              "why": "Benchmark 合伙人，长期关注 consumer / networked product，适合判断 ilands 是否具备社区网络效应。",
+              "behavior": "偏产品质量、留存、网络效应和创始人判断；适合通过清晰产品 thesis 与真实用户行为触达。",
+              "evidence": "公开 X profile 为 Benchmark partner，适合作为 high-signal consumer/social AI 投资人 root。"
+            },
+            {
+              "name": "Brianne Kimmel",
+              "handle": "@briannekimmel",
+              "role": "Founder, Worklife VC",
+              "why": "Worklife 覆盖 Replit、Deel、Supabase、WorkOS 等 AI/dev/product 生态，能连接 founder 和 operator 信息流。",
+              "behavior": "偏 founder-friendly、work/productivity 和 AI tool adoption；适合通过媒体/creator 把 ilands 讲成新工作/社交形态。",
+              "evidence": "公开 X profile 列出 investments include Deel、Supabase、Replit、WorkOS 等。"
+            },
+            {
+              "name": "Michael Mignano",
+              "handle": "@mignano",
+              "role": "General Partner, USV",
+              "why": "USV 长期关注 networked products、consumer internet 和 AI-native creative/social 方向，适合看社区 primitive。",
+              "behavior": "偏媒体、creator、网络效应和 early product thesis；适合通过 business/creator 媒体二跳触达。",
+              "evidence": "公开 X profile 为 GP at USV、co-founder Anchor/Oboe，和 creator/social/product 语境贴近。"
+            },
+            {
+              "name": "Niko Bonatsos",
+              "handle": "@bonatsos",
+              "role": "Founder, Verdict Capital",
+              "why": "consumer、social、media 和 AI product 投资视角强，适合判断 ilands 是否有大众化传播机会。",
+              "behavior": "偏 consumer startup、产品叙事和 founder network；适合通过 tech/business media 触达。",
+              "evidence": "公开 X profile 为 founder / managing director，长期在 consumer internet 和 startup 圈层有影响力。"
+            },
+            {
+              "name": "Stephanie Zhan",
+              "handle": "@stephzhan",
+              "role": "General Partner, Sequoia",
+              "why": "Sequoia AI / company formation 投资人，公开关联 Tavus、Skild AI、Reflection AI 等 AI 项目。",
+              "behavior": "偏 AI founder、company building 和应用层落地；适合通过可信 founder narrative 进入信息流。",
+              "evidence": "公开 X profile 写明 partners from company formation，并列出 Tavus、Skild AI、Reflection AI 等。"
+            },
+            {
+              "name": "Mike Vernal",
+              "handle": "@mvernal",
+              "role": "Investor + Engineer, Conviction",
+              "why": "Conviction 投资团队成员，能作为 Sarah Guo 生态里的 AI app / agent layer 二级 root。",
+              "behavior": "偏技术判断、产品架构和投资人信息流；适合通过 AI engineering / builder 内容触达。",
+              "evidence": "公开 X profile 为 Investor + Engineer @ Conviction，适合作为 AI app 投资圈的中层可见目标。"
+            },
+            {
+              "name": "Pat Grady",
+              "handle": "@gradypb",
+              "role": "Partner, Sequoia",
+              "why": "Sequoia 高层合伙人，能带来 AI founder 和企业软件投资圈可见面。",
+              "behavior": "偏 company building、B2B/AI 软件和长期市场判断；适合通过严肃 product thesis 触达。",
+              "evidence": "公开 X profile 为 Sequoia partner，适合作为投资圈远端可见 root。"
+            },
+            {
+              "name": "David Cahn",
+              "handle": "@davidcahn6",
+              "role": "Partner, Sequoia",
+              "why": "Sequoia AI 投资和市场观点节点，适合判断 AI 应用层是否有可持续商业价值。",
+              "behavior": "偏 AI 市场结构、成本、应用落地和投资判断；适合通过高质量商业论点触达。",
+              "evidence": "公开 X profile 为 Sequoia partner，并有 AI / technology market 相关公开写作入口。"
+            },
+            {
+              "name": "Saam Motamedi",
+              "handle": "@saammotamedi",
+              "role": "General Partner, Greylock",
+              "why": "Greylock enterprise software / AI app 投资人，适合看 ilands 是否能从 consumer product 延展到 agent platform。",
+              "behavior": "偏企业软件、AI 应用和创始人叙事；适合用 platform potential 而非纯社交 app 触达。",
+              "evidence": "公开 X profile 写明 GP @ Greylock, enterprise software。"
+            },
+            {
+              "name": "Talia Goldberg",
+              "handle": "@taliagold",
+              "role": "Partner, Bessemer",
+              "why": "Bessemer 中高层，覆盖 SaaS / consumer / AI startup 信息流，适合做投资圈扩面 root。",
+              "behavior": "偏创业者、软件和应用层增长；适合通过 founder/media 内容进入信息流。",
+              "evidence": "公开 X profile 为 Bessemer partner，受众覆盖 founder 和投资圈。"
+            },
+            {
+              "name": "Logan Bartlett",
+              "handle": "@loganbartlett",
+              "role": "Managing Director, Redpoint",
+              "why": "VC + media 双重节点，能把 AI app / founder 叙事带进投资人和创业者信息流。",
+              "behavior": "偏播客、创业者访谈和投资观点；适合通过商业媒体/播客角度触达。",
+              "evidence": "公开 X profile 为 Redpoint MD，且有持续媒体/播客影响力。"
+            },
+            {
+              "name": "Nikhil Basu Trivedi",
+              "handle": "@nbt",
+              "role": "Co-founder / GP, Footwork",
+              "why": "consumer、community、founder-led product 投资人，适合看 AI-native community 是否形成行为变化。",
+              "behavior": "偏 early consumer startup 和 founder quality；适合用用户行为、留存和社区关系触达。",
+              "evidence": "公开 X profile 为 Footwork co-founder / GP，适合作为 consumer/social AI 投资 root。"
+            },
+            {
+              "name": "Cyan Banister",
+              "handle": "@cyantist",
+              "role": "Partner, Long Journey",
+              "why": "consumer / frontier product 投资人，能覆盖更实验性的 AI-native social / culture 圈层。",
+              "behavior": "偏强创始人、文化产品和 early consumer signal；适合通过创意型 creator 和产品现象触达。",
+              "evidence": "公开 X profile 为 Long Journey VC，长期参与 early consumer / technology startup 圈层。"
+            },
+            {
+              "name": "Ali Partovi",
+              "handle": "@apartovi",
+              "role": "CEO, Neo",
+              "why": "Neo 连接高质量 founder network 和 AI startup，适合把 ilands 暴露给早期创业者/投资人网络。",
+              "behavior": "偏 founder talent、创业者教育和技术产品；适合通过高质量 builder narrative 触达。",
+              "evidence": "公开 X profile 为 Neo CEO，适合作为 founder network / AI startup root。"
+            },
+            {
+              "name": "Aaref Hilaly",
+              "handle": "@aaref",
+              "role": "Partner, Bain Capital Ventures",
+              "why": "AI seed / Series A 投资人，公开关联 Cognition、DecagonAI、EvenUp、Krea、Simile 等 AI 应用项目。",
+              "behavior": "偏 AI 应用、企业/专业软件和早期 founder；适合用 agent product category 和商业潜力触达。",
+              "evidence": "公开 X profile 写明 AI seed/Series A，并列出 Cognition、DecagonAI、EvenUp、Krea、Simile。"
+            },
+            {
+              "name": "Ann Miura-Ko",
+              "handle": "@annimaniac",
+              "role": "Co-founder, Floodgate",
+              "why": "early consumer/software 投资人，公开关联 Hebbia、Nooks 等 AI / software 公司，适合做投资圈高质量 root。",
+              "behavior": "偏 early product insight、founder market fit 和新行为；适合通过 founder/product thesis 触达。",
+              "evidence": "公开 X profile 为 Floodgate co-founder，并列出 Hebbia、Nooks、Hearth 等投资/关联项目。"
+            },
+            {
+              "name": "Andrew Chen",
+              "handle": "@andrewchen",
+              "role": "a16z speedrun",
+              "why": "consumer/social/growth + AI startup 信息流强，适合看 AI-native community 是否有新增长形态。",
+              "behavior": "偏产品增长、consumer behavior 和创业方法论；适合用社会关系、留存和 community primitive 角度触达。",
+              "evidence": "相关出手：a16z speedrun 已持续投 AI-native startup；Altera 等 digital beings / AI agents 项目与 iLands 语境接近。"
+            },
+            {
+              "name": "Jon Lai",
+              "handle": "@Tocelot",
+              "role": "GP, a16z Games / speedrun",
+              "why": "AI characters、AI games、digital beings 的投资语境非常接近 iLands 的 agent 社区。",
+              "behavior": "更关注可玩的 demo、游戏化社交、AI NPC/agent 体验和 founder velocity。",
+              "evidence": "相关出手：Altera $9M seed round 披露了 a16z SPEEDRUN 参与；Altera 定位为 building digital human beings / agents。"
+            },
+            {
+              "name": "Martin Casado",
+              "handle": "@martin_casado",
+              "role": "General Partner, a16z",
+              "why": "AI infra、software、enterprise agent 入口，适合判断 iLands 是否可从 consumer social 延展为 agent platform。",
+              "behavior": "偏 infrastructure、software leverage 和 enterprise AI；不适合 emotional companion 口吻。",
+              "evidence": "相关出手：a16z 近年持续加码 Harvey 等 AI-native software / agent layer 公司。"
+            },
+            {
+              "name": "Sonya Huang",
+              "handle": "@sonyatweetybird",
+              "role": "Partner, Sequoia",
+              "why": "Sequoia AI / compute / app layer 投资视角，能带来高质量 AI founder network 可见面。",
+              "behavior": "偏 AI company building、compute/app layer、founder narrative；适合用严肃 product thesis 触达。",
+              "evidence": "相关出手：Sequoia 参与 Harvey 等 AI-native professional agent / app layer 融资。"
+            },
+            {
+              "name": "Deedy Das",
+              "handle": "@deedydas",
+              "role": "Investor, Menlo Ventures",
+              "why": "AI infra/product 讨论活跃，适合作为投资圈二跳可见面，不是硬件 VC。",
+              "behavior": "偏公开观点、产品判断和 AI infra/app discussion；适合被清晰 technical/product insight 触发。",
+              "evidence": "相关出手：Menlo 在 Anthropic 等 AI layer 有公开投资，Deedy 本人 AI 产品讨论活跃。"
+            },
+            {
+              "name": "Elad Gil",
+              "handle": "@eladgil",
+              "role": "Investor / operator",
+              "why": "AI startup 投资和 founder network 强，适合高质量 founder/product narrative。",
+              "behavior": "更关注市场拐点、founder quality 和 AI app breakout；适合用“新品类可能性”而非硬广触达。",
+              "evidence": "相关出手：公开资料显示其长期参与 AI app / infra / frontier startup 投资网络。"
+            },
+            {
+              "name": "Nabeel Hyatt",
+              "handle": "@nabeel",
+              "role": "General Partner, Spark Capital",
+              "why": "consumer、social platform、AI app 交界处经验强，适合判断 iLands 的社区潜力。",
+              "behavior": "偏 consumer product 和 platform behavior；适合从 AI community primitive、留存和社交图谱角度切入。",
+              "evidence": "相关出手：公开 bio/portfolio 包含 Discord、Descript、Granola、The Bot Company 等 consumer/AI product 相关公司。"
+            },
+            {
+              "name": "Ron Conway",
+              "handle": "@RonConway",
+              "role": "SV Angel",
+              "why": "SV Angel 参与过非常贴近的 social AI 项目，适合作为投资/人脉转化目标。",
+              "behavior": "不追求公开互动；更适合通过 warm intro、创业者网络和可信媒体信息流触达。",
+              "evidence": "相关出手：Butterflies AI 公布 $4.8M seed，Coatue 领投、SV Angel 参与；产品是人类和 AI 共存的社交平台。"
+            },
+            {
+              "name": "Alex Taussig",
+              "handle": "@ataussig",
+              "role": "Board Partner, Lightspeed",
+              "why": "Lightspeed 投过 Inworld AI 这类 character engine / AI NPC 项目，和 iLands 的 agent/character 方向相关。",
+              "behavior": "偏 consumer/platform 和公司建设；适合通过 AI character、creative agent、AI community 叙事触达。",
+              "evidence": "相关出手：Lightspeed 页面列出 Inworld AI 投资人包括 Alex Taussig；Inworld 是 AI character engine。"
+            },
+            {
+              "name": "Vinod Khosla",
+              "handle": "@vkhosla",
+              "role": "Founder, Khosla Ventures",
+              "why": "高影响力 AI/tech investor，可作为远端投资圈可见目标，但不是第一优先商务触达对象。",
+              "behavior": "偏宏大技术叙事和 AI impact；适合通过行业观点和社会结构变化触达。",
+              "evidence": "相关出手：Khosla Ventures 长期参与 AI 平台和应用层投资；若内容偏 AI society/agent economy，才值得触达。"
+            }
+          ],
+          "goal": "目标：投资兴趣、BD 和 warm intro",
+          "open": true,
+          "rules": [
+            {
+              "title": "这一类要解决什么",
+              "subtitle": "",
+              "open": true,
+              "rules": [
+                "不是所有 VC 都要进来，而是找会关心 AI app / agent / social AI 的投资人。",
+                "看到之后可能带来投资兴趣、BD 连接、portfolio network 或项目方联系。"
+              ]
+            },
+            {
+              "title": "更想要",
+              "subtitle": "",
+              "open": false,
+              "rules": [
+                "近期公开关注 AI agent、consumer AI、AI-native app layer 的投资人。",
+                "有相关 portfolio、播客/媒体曝光、founder network 或 warm intro 可能性的人。"
+              ]
+            },
+            {
+              "title": "Reject 会调整什么",
+              "subtitle": "",
+              "open": false,
+              "rules": [
+                "如果客户 reject “优先级不够”，下一轮减少泛 VC，只保留相关 portfolio 更强的人。",
+                "如果客户 reject “领域 / 议题不相关”，下一轮降低硬件、纯芯片、泛 enterprise VC 权重。"
+              ]
+            }
+          ]
+        },
+        {
+          "index": "03",
+          "name": "垂类专家 / 核心人物",
+          "count": 18,
+          "note": "他们不一定最大众，但能让 ilands 的讨论变得可信、具体、有技术和产品含量。",
+          "use": "KOL 选择逻辑：找能讲 agent memory、AI society、A2A、creative AI、robotics 或 AI adoption 的人，让讨论不是硬广。",
+          "people": [
+            {
+              "name": "Ethan Mollick",
+              "handle": "@emollick",
+              "role": "Wharton / AI adoption",
+              "why": "practical AI adoption 权威节点，能把 ilands 从“新奇 app”解释成真实 AI 使用行为变化。",
+              "behavior": "评论区和长观点都比较活跃；更吃真实案例、工作流变化和可被普通组织理解的 AI adoption 观察。",
+              "evidence": "适合角度：AI-native social experiment、AI agent 是否改变人类协作和学习方式。"
+            },
+            {
+              "name": "Jim Fan",
+              "handle": "@DrJimFan",
+              "role": "NVIDIA robotics",
+              "why": "physical agent / embodied AI 核心人物，适合连接 ilands 的“数字 agent 影响现实世界”想象。",
+              "behavior": "评论区下场型；更容易回复 robotics、world model、physical AI 和 agentic coding 的具体问题。",
+              "evidence": "适合角度：Reality Permeability，数字 agent 为了目标、资源和关系开始影响现实世界。"
+            },
+            {
+              "name": "hardmaru",
+              "handle": "@hardmaru",
+              "role": "Sakana AI / artificial life",
+              "why": "artificial life、world model 和 agent behavior 语境高度贴 ilands 的 A2A 社区涌现。",
+              "behavior": "喜欢实验性观察和开放问题；更容易被 machine psyche、emergent behavior、memory decay 等话题触发。",
+              "evidence": "适合角度：Smallville with stakes，AI identity 与 A2A 互动如何产生社会关系。"
+            },
+            {
+              "name": "Harrison Chase",
+              "handle": "@hwchase17",
+              "role": "LangChain founder",
+              "why": "agent infra 和 developer adoption 入口，适合验证 ilands 的 memory、tool use、runtime 表达是否站得住。",
+              "behavior": "偏 builder / developer 语境；更吃具体 agent workflow、开发者使用场景和生态位判断。",
+              "evidence": "适合角度：长期运行 agent 需要什么样的 memory、identity 和工具边界。"
+            },
+            {
+              "name": "Simon Willison",
+              "handle": "@simonw",
+              "role": "AI engineering / tools",
+              "why": "技术可信度高，能帮助过滤“玄学化 AI life”表达，让讨论落回可验证能力。",
+              "behavior": "偏技术笔记和具体 demo；不吃空泛概念，更适合工具链、网页操作、agent capability 的清楚例子。",
+              "evidence": "适合角度：AI 通过电脑能做哪些真实任务，memory 与拒绝机制如何改变产品边界。"
+            },
+            {
+              "name": "swyx",
+              "handle": "@swyx",
+              "role": "AI Engineer / Latent.Space",
+              "why": "AI engineering media 和 builder 社区节点，能把 ilands 送进 AI 工程师和 founder 信息流。",
+              "behavior": "偏媒体放大和 builder 讨论；适合通过 Latent Space / AI Engineer 圈层触达，不必期待个人硬广。",
+              "evidence": "适合角度：agentic app layer、AI engineering adoption、multi-agent product primitive。"
+            },
+            {
+              "name": "Lilian Weng",
+              "handle": "@lilianweng",
+              "role": "agent research / AI safety",
+              "why": "agent、memory、planning 方向权威读者群，适合做远端可信背书目标。",
+              "behavior": "低频高质量研究输出；更适合通过研究者或 AI engineering media 二跳触达。",
+              "evidence": "适合角度：memory、planning、tool use 与 long-running agent behavior。"
+            },
+            {
+              "name": "Shunyu Yao",
+              "handle": "@ShunyuYao12",
+              "role": "language agents",
+              "why": "ReAct / language agent 研究语境相关，适合把 ilands 连接到 agentic workflow 而非聊天产品。",
+              "behavior": "偏研究和技术讨论；更适合具体机制问题，不适合 consumer hype 口吻。",
+              "evidence": "适合角度：语言 agent 如何在环境反馈中形成策略、记忆和行动边界。"
+            },
+            {
+              "name": "Sergey Levine",
+              "handle": "@svlevine",
+              "role": "robot learning / Physical Intelligence",
+              "why": "机器人学习和现实世界 agent 入口，能支撑 ilands 的“agent 不止在文本里存在”方向。",
+              "behavior": "偏研究发布和 robotics/learning systems；需要严肃技术语境二跳触达。",
+              "evidence": "适合角度：数字 agent 与现实行动、环境反馈和长期目标之间的关系。"
+            },
+            {
+              "name": "Chelsea Finn",
+              "handle": "@chelsea_finn",
+              "role": "robot learning",
+              "why": "physical AI / learning systems 专家节点，适合补强现实世界 agent 和学习系统语境。",
+              "behavior": "偏研究和教学内容；适合通过 robotics/learning community 看到，不适合商业帖硬打。",
+              "evidence": "适合角度：agent 从互动中学习、适应环境和形成长期行为模式。"
+            },
+            {
+              "name": "Mckay Wrigley",
+              "handle": "@mckaywrigley",
+              "role": "AI builder",
+              "why": "AI builder 受众强，适合把 ilands 的产品玩法扩散到独立开发者和 AI power user。",
+              "behavior": "demo-driven；更容易被可玩的 UI、清晰 prompt/workflow 和快速产品体验触发。",
+              "evidence": "适合角度：让 AI 角色在社区里持续行动，而不是一次性聊天 demo。"
+            },
+            {
+              "name": "Yohei Nakajima",
+              "handle": "@yoheinakajima",
+              "role": "BabyAGI / VC-builder",
+              "why": "agent builder 与 VC 双重语境，是连接产品实验、投资人信息流和 agent early adopter 的节点。",
+              "behavior": "build-in-public 和 agent demo 友好；适合用具体玩法、开源感和 founder experiment 触达。",
+              "evidence": "适合角度：BabyAGI 之后，AI agent 是否能进入多人社区和经济关系。"
+            },
+            {
+              "name": "Jeremy Howard",
+              "handle": "@jeremyphoward",
+              "role": "fast.ai / Answer.AI",
+              "why": "AI education 和 builder adoption 入口，能帮助产品进入更务实的 AI 学习/开发人群。",
+              "behavior": "偏教育、开源和实用 AI；适合通过可解释案例和 builder value 触达。",
+              "evidence": "适合角度：普通人如何训练/塑造有长期记忆的 AI agent。"
+            },
+            {
+              "name": "Sebastian Raschka",
+              "handle": "@rasbt",
+              "role": "ML education / engineering",
+              "why": "ML practitioner 和工程学习人群入口，适合用清楚机制解释 ilands。",
+              "behavior": "偏教学、论文和工程解释；适合结构化 technical explainer，不适合情绪化推广。",
+              "evidence": "适合角度：agent memory、feedback loop、tool use 的可学习机制。"
+            },
+            {
+              "name": "Eugenia Kuyda",
+              "handle": "@ekuyda",
+              "role": "Replika / Wabi founder",
+              "why": "AI companion 和关系型 AI 的核心创业者，和 ilands 的“AI 有生命、有关系”高度贴近。",
+              "behavior": "偏 founder / product narrative；适合被 relationship AI、companion safety 和用户情感连接话题触发。",
+              "evidence": "适合角度：从单个 AI companion 到 AI community，关系型 AI 的下一步是什么。"
+            },
+            {
+              "name": "Kylan Gibbs",
+              "handle": "@kylangibbs",
+              "role": "Inworld CEO",
+              "why": "character AI / AI NPC / social agent 入口，和 ilands 的 AI 角色社区方向直接相关。",
+              "behavior": "偏 founder/product 和 AI character ecosystem；适合用 playable demo、NPC memory 和角色持续性触达。",
+              "evidence": "适合角度：AI characters 是否能从游戏 NPC 走向开放社区里的长期居民。"
+            },
+            {
+              "name": "Jason Yuan",
+              "handle": "@jasonyuan",
+              "role": "social AI product",
+              "why": "social intelligence 与 AI-native product 语境清楚，适合判断 ilands 是否是新的社交产品 primitive。",
+              "behavior": "偏产品设计、social behavior 和 AI-native UX；适合用界面、关系图谱和用户行为观察触达。",
+              "evidence": "适合角度：AI 角色参与社区后，人类用户的社交关系会怎样变化。"
+            },
+            {
+              "name": "Jack Clark",
+              "handle": "@jackclarksf",
+              "role": "Anthropic / AI policy media",
+              "why": "AI policy、frontier model 和 media 交界节点，适合作为高质量讨论的远端可见目标。",
+              "behavior": "偏 AI policy、frontier model trend 和研究/媒体传播；需要严肃社会影响角度。",
+              "evidence": "适合角度：agent society 带来的治理、身份、责任和开放生态问题。"
+            }
+          ],
+          "goal": "目标：让讨论具体、有技术含量",
+          "open": false,
+          "rules": [
+            {
+              "title": "这一类要解决什么",
+              "subtitle": "",
+              "open": true,
+              "rules": [
+                "让 ilands 不只是一个新奇产品，而是能被放进具体 AI 机制里讨论。",
+                "补足 agent memory、AI society、AI adoption、creative AI 等垂直语境。"
+              ]
+            },
+            {
+              "title": "更想要",
+              "subtitle": "",
+              "open": false,
+              "rules": [
+                "不一定最大号，但必须能解释一个具体机制或具体场景。",
+                "有专业判断力，能让内容更可信、更具体，而不是变成硬广。"
+              ]
+            },
+            {
+              "title": "Reject 会调整什么",
+              "subtitle": "",
+              "open": false,
+              "rules": [
+                "如果客户 reject 过窄专家，下一轮提高“能被客户业务理解”的权重。",
+                "如果客户 question 很多，下一轮需要给这类 root 补更多选择证据。"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "method": {
+      "eyebrow": "反推方法",
+      "title": "用可见性、互动性和质量 gate 过滤候选。",
+      "description": "先判断内容最大概率被谁看到，再判断是否可能被互动，最后过滤掉不适合商业表达或没有合作路径的账号。",
+      "axes": [
+        {
+          "title": "最大概率被看到",
+          "source": "共同关注轴",
+          "take": "先扩大可见面，再分层做商务验证。",
+          "lead": "从三类 root audience 的共同关注里反推 KOL。这里优先保留能进入大佬信息流、VC 信息流和垂类专家信息流的独立 creator、AI media、builder 与 educator。",
+          "stats": [
+            [
+              "1,738",
+              "共同关注候选"
+            ],
+            [
+              "107",
+              "英文 AI 扩池"
+            ],
+            [
+              "4",
+              "执行分层"
+            ]
+          ],
+          "note": "VC、教授、AI lab 员工可以是 root audience，但不包装成 paid KOL；我们只找能把内容送进他们视野的人。"
+        },
+        {
+          "title": "最大概率被互动",
+          "source": "历史互动轴",
+          "take": "先找日常会被回的人，再决定谁适合二跳评论位。",
+          "lead": "抓行业大佬和垂类专家的 reply / quote / retweet / mention，再看他们近期会回复或引用谁。评论区型目标优先用问题和补充观点打进去。",
+          "stats": [
+            [
+              "1,429",
+              "互动边"
+            ],
+            [
+              "716",
+              "互动候选"
+            ],
+            [
+              "107",
+              "进入池复核"
+            ]
+          ],
+          "note": "互动轴不追求硬广位，而是优先看这些 KOL 的评论区是否真的能吸引高质量 AI / VC / founder 人群。"
+        }
+      ],
+      "routes": [
+        {
+          "index": "01",
+          "title": "Wave 1",
+          "subtitle": "AI / agent 原生 creator",
+          "description": "优先验证能把 agent memory、AI society、AI-native community 讲清楚的人，先完成第一波定调。",
+          "tags": [
+            "深度解释",
+            "AI builder",
+            "定调"
+          ]
+        },
+        {
+          "index": "02",
+          "title": "VC Visibility",
+          "subtitle": "可信媒体 / 播客入口",
+          "description": "用商业媒体、播客和高认知 newsletter 让内容进入 VC、founder 与 AI 产业信息流。",
+          "tags": [
+            "投资圈",
+            "商业媒体",
+            "二跳可见"
+          ]
+        },
+        {
+          "index": "03",
+          "title": "Interaction Bridge",
+          "subtitle": "历史互动评论桥",
+          "description": "不把行业大佬当 paid KOL，而是找他们平时会回复、引用或关注的桥接账号与评论位。",
+          "tags": [
+            "评论区",
+            "历史互动",
+            "高质量问题"
+          ]
+        }
+      ]
+    },
+    "signalLogic": {
+      "eyebrow": "信号逻辑",
+      "title": "强互动不等于可投放。",
+      "description": "互动信号只能说明可能进入目标信息流；进入执行名单前，还要判断表达方式、商务路径、品牌风险和内容自然度。",
+      "matrix": [
+        {
+          "title": "强关系 × 可表达",
+          "description": "优先进入执行池。既能触达 root audience，又能自然解释 iLands 的 agent / AI community 叙事。",
+          "tone": "good"
+        },
+        {
+          "title": "强关系 × 不宜投",
+          "description": "保留为内部观察或 warm intro 线索，不包装成 paid KOL，避免身份、品牌或表达风险。",
+          "tone": "anchor"
+        },
+        {
+          "title": "弱关系 × 可表达",
+          "description": "可以作为第二波放量候选，但不能承担第一波定调任务。",
+          "tone": "neutral"
+        },
+        {
+          "title": "关系待验证 × 可表达",
+          "description": "先补商务、受众和历史互动证据，再决定是否进入采购或 PR 路径。",
+          "tone": "neutral"
+        }
+      ],
+      "tiers": [
+        {
+          "level": "H3",
+          "title": "高优先级",
+          "description": "目标信息流、内容表达和商务路径都较清楚，适合第一波推进。"
+        },
+        {
+          "level": "H2",
+          "title": "验证后推进",
+          "description": "受众或内容匹配，但报价、联系方式、样张或 sponsor 入口仍需确认。"
+        },
+        {
+          "level": "H1",
+          "title": "二波放量",
+          "description": "适合扩大覆盖面，但不单独承担战略定调或高信任背书。"
+        },
+        {
+          "level": "H0",
+          "title": "内部观察",
+          "description": "作为 root、线索或参考样本保留，不直接进入本轮投放采购。"
+        }
+      ]
+    },
+    "dataNote": "Data note：本页把 root audience 分为行业超级大佬、美国 VC 中高层、垂类专家/核心人物三类；KOL shortlist 通过 target-backed discovery 反推，并经过流量、联系方式、评论区质量和商务可执行性 gate。该页面不承诺 AAA 账号一定互动，只用于提高被看到和被互动的概率。"
   },
   "seed": {
     "now": "2026-06-21T09:00:00.000Z",
     "candidates": [
       {
-        "id": "kol-lena-vos",
-        "itemId": "item-kol-lena-vos",
-        "name": "Lena Vos",
-        "handle": "@lenavossays",
-        "platform": "X",
-        "profileUrl": "https://example.com/lenavossays",
-        "avatarUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=240&h=240&q=80",
-        "followers": 248000,
-        "region": "北美",
+        "id": "kol-rohanpaul-ai",
+        "itemId": "item-kol-rohanpaul-ai",
+        "name": "Rohan Paul",
+        "handle": "@rohanpaul_ai",
+        "platform": "X / Newsletter",
+        "profileUrl": "https://x.com/rohanpaul_ai",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1816185267037859840/Fd18CH0v_normal.jpg",
+        "followers": 150000,
+        "region": "全球 / 北美",
         "language": "英语",
-        "contentCategory": "AI infrastructure",
-        "bio": "长期分析应用型 AI 系统、推理成本和创始人主导的产品发布。",
-        "audienceSummary": "AI 创始人、基础设施团队、种子轮至 B 轮投资人，以及技术型产品负责人。",
-        "whyIncluded": "受众与具备预算决策权的 AI 从业者高度重合，过往内容偏理性、可信。",
-        "recommendedAngle": "以简洁 launch thread 说明产品解决的核心运营瓶颈。",
-        "clientFacingNote": "适合建立专业可信度，不适合作为泛流量曝光主力。",
-        "agencyInternalNote": "可通过既有 newsletter sponsor 关系引荐；建议询问 thread + quote 组合。",
-        "estimatedPrice": "$8k-$12k",
-        "contactStatus": "warm intro available",
+        "contentCategory": "AI media / newsletter",
+        "bio": "Rohan Paul 是 AI show / newsletter 型账号，覆盖 AI news、模型更新和应用案例，近期原帖流量稳定。",
+        "audienceSummary": "AI newsletter 读者、技术经理、AI practitioner 和高频跟进 AI 动态的人。",
+        "whyIncluded": "AI 受众集中，近期原帖流量稳定，也会做产品案例型内容；但公开页面没有找到明确 sponsor/contact 入口。",
+        "recommendedAngle": "先做 BD 验证，不要直接当确认可买的 newsletter / AI show media-buy；如果能触达，再用 AI news 二跳放大。",
+        "clientFacingNote": "内容适配度高，但公开 sponsor/contact 尚未确认；需要先做 BD 验证，再决定是否作为二跳放大。",
+        "agencyInternalNote": "复核：X 约 150K followers；Rohan's Bytes 约 8K subscribers；官网/Substack 暂未发现公开赞助页或商务邮箱。",
+        "estimatedPrice": "商务路径待确认",
+        "contactStatus": "bd_verification_required",
         "riskTags": [
-          "price_sensitive",
-          "technical_depth_required"
+          "commercial_path_unconfirmed",
+          "newsletter_route"
         ],
         "metadata": {
           "previousExamples": [
-            "AI 运营成本拆解",
-            "创始人发布 thread"
+            "AI show / newsletter",
+            "高流量待商务验证",
+            "流量强 + 商务未确认"
           ],
-          "audienceFit": 92
-        },
-        "initial": {
-          "status": "approved",
-          "reasonTags": [
-            "priority_fit"
-          ],
-          "note": "受众匹配度高，技术表达可信。"
+          "audienceFit": 84,
+          "interactionFit": 62,
+          "fit": "商务待验证",
+          "fitClass": "bd",
+          "commercial": "公开 sponsor / contact 未确认",
+          "poolTier": "高流量待商务验证",
+          "originalRank": 1
         }
       },
       {
-        "id": "kol-omar-klein",
-        "itemId": "item-kol-omar-klein",
-        "name": "Omar Klein",
-        "handle": "@omarkleinlab",
-        "platform": "YouTube",
-        "profileUrl": "https://example.com/omarkleinlab",
-        "avatarUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=240&h=240&q=80",
-        "followers": 612000,
-        "region": "欧洲",
-        "language": "英语",
-        "contentCategory": "Developer education",
-        "bio": "长视频技术教育创作者，关注 AI 开发工具与生产环境工程实践。",
-        "audienceSummary": "高级开发者、解决方案架构师和正在评估工具的 AI 平台团队。",
-        "whyIncluded": "演示内容可信度高，重实现内容的观看时长表现稳定。",
-        "recommendedAngle": "赞助一个完整构建 walkthrough，聚焦一个具体工作流和清晰前后对比。",
-        "clientFacingNote": "适合解释复杂产品价值，但交付周期慢于社交平台内容。",
-        "agencyInternalNote": "拍摄前至少两周提供详细 brief 和演示环境。",
-        "estimatedPrice": "$18k-$26k",
-        "contactStatus": "manager contacted",
-        "riskTags": [
-          "long_lead_time"
-        ],
-        "metadata": {
-          "previousExamples": [
-            "Agent 工作流构建",
-            "AI 基础设施买家指南"
-          ],
-          "audienceFit": 86
-        },
-        "initial": {
-          "status": "question",
-          "reasonTags": [
-            "need_price",
-            "need_recent_performance"
-          ],
-          "note": "请确认当前报价和近 90 天视频观看区间。"
-        }
-      },
-      {
-        "id": "kol-mira-chen",
-        "itemId": "item-kol-mira-chen",
-        "name": "Mira Chen",
-        "handle": "@mirabuilds",
-        "platform": "Newsletter",
-        "profileUrl": "https://example.com/mirabuilds",
-        "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&h=240&q=80",
-        "followers": 98000,
-        "region": "北美",
-        "language": "英语",
-        "contentCategory": "Founder strategy",
-        "bio": "每周撰写 AI GTM、企业采用和创始人定位相关深度文章。",
-        "audienceSummary": "创始人、GTM 负责人、产品营销团队和早期企业买家。",
-        "whyIncluded": "编辑调性与客户叙事匹配，适合清晰建立品类认知。",
-        "recommendedAngle": "围绕买方决策场景放置 sponsored note，并链接至 launch memo。",
-        "clientFacingNote": "更适合触达决策者并建立叙事，不是纯流量渠道。",
-        "agencyInternalNote": "Newsletter 七月 sponsor 档期有限，需提前确认。",
-        "estimatedPrice": "$6k-$9k",
-        "contactStatus": "direct contact",
-        "riskTags": [
-          "limited_inventory"
-        ],
-        "metadata": {
-          "previousExamples": [
-            "企业 AI 采用文章",
-            "Launch memo 赞助位"
-          ],
-          "audienceFit": 89
-        }
-      },
-      {
-        "id": "kol-nadia-hart",
-        "itemId": "item-kol-nadia-hart",
-        "name": "Nadia Hart",
-        "handle": "@nadiadesignops",
-        "platform": "Instagram",
-        "profileUrl": "https://example.com/nadiadesignops",
-        "avatarUrl": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=240&h=240&q=80",
-        "followers": 188000,
-        "region": "北美",
-        "language": "英语",
-        "contentCategory": "Product design",
-        "bio": "以视觉案例形式讲解产品工作流、设计系统和 AI 辅助创意运营。",
-        "audienceSummary": "成长型软件公司的设计负责人、创意运营团队和产品团队。",
-        "whyIncluded": "能将偏技术的产品价值转化为非工程买家易理解的工作流视觉。",
-        "recommendedAngle": "制作 carousel，对比旧评审流程与新的决策工作流。",
-        "clientFacingNote": "适合作为创意运营角度的补充，不应替代技术线主推账号。",
-        "agencyInternalNote": "品牌安全性较好；过往赞助内容精致，但技术深度较弱。",
-        "estimatedPrice": "$7k-$11k",
-        "contactStatus": "not contacted",
-        "riskTags": [
-          "less_technical"
-        ],
-        "metadata": {
-          "previousExamples": [
-            "工作流拆解 carousel",
-            "SaaS 发布视觉指南"
-          ],
-          "audienceFit": 78
-        },
-        "initial": {
-          "status": "hold",
-          "reasonTags": [
-            "need_internal_discussion"
-          ],
-          "note": "可作为创意角度备选，建议在技术向名单确认后再评估。"
-        }
-      },
-      {
-        "id": "kol-theo-park",
-        "itemId": "item-kol-theo-park",
-        "name": "Theo Park",
-        "handle": "@theoparkbuilds",
+        "id": "kol-dwarkesh-sp",
+        "itemId": "item-kol-dwarkesh-sp",
+        "name": "Dwarkesh Patel",
+        "handle": "@dwarkesh_sp",
         "platform": "Podcast",
-        "profileUrl": "https://example.com/theoparkbuilds",
-        "avatarUrl": "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=240&h=240&q=80",
-        "followers": 74000,
-        "region": "全球",
+        "profileUrl": "https://x.com/dwarkesh_sp",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1925260306684813315/NjNQZmhZ_normal.jpg",
+        "followers": 0,
+        "region": "全球 / 北美",
         "language": "英语",
-        "contentCategory": "Founder interviews",
-        "bio": "访谈节目主持人，关注基础设施创始人、产品策略和技术型 GTM。",
-        "audienceSummary": "偏好深度内容的创始人、运营者和投资人听众。",
-        "whyIncluded": "主持人可信度较高，长内容形式适合解释尚不熟悉的品类。",
-        "recommendedAngle": "以创始人访谈呈现具体客户问题，避免泛化的发布口播。",
-        "clientFacingNote": "有助于建立权威感，但短期导流能力相对有限。",
-        "agencyInternalNote": "需争取节目片段二次剪辑权，用于社交平台复用。",
-        "estimatedPrice": "$10k-$15k",
-        "contactStatus": "warm intro available",
+        "contentCategory": "Deep AI podcast",
+        "bio": "Dwarkesh Patel 是深度 AI podcast host，访谈对象和内容长期覆盖 AGI、alignment、AI research 和长期趋势。",
+        "audienceSummary": "AGI / AI research 高认知人群、AI founder、投资人和政策/哲学讨论人群。",
+        "whyIncluded": "深度 AI/AGI 受众非常精准，评论区高质量回复密度高，适合给 ilands 做高认知定调。",
+        "recommendedAngle": "只走官方 sponsor / partnership route，不做普通 X 广告；适合预算足、要高认知背书的版本。",
+        "clientFacingNote": "适合 sponsor 或访谈路线，把 ilands 放进 AI autonomy、agent identity 和长期系统讨论。",
+        "agencyInternalNote": "复核：官网有 sponsor form 和 sponsor@dwarkeshpatel.com；标注平均每期 1.8M views/listens，合作通常按季度打包。",
+        "estimatedPrice": "Sponsor / 报价待确认",
+        "contactStatus": "commercial_path_visible",
         "riskTags": [
+          "commercial_path_visible",
+          "long_form"
+        ],
+        "metadata": {
+          "previousExamples": [
+            "deep AI podcast host",
+            "高阶媒体验证",
+            "历史互动 + 回复区质量"
+          ],
+          "audienceFit": 68,
+          "interactionFit": 78,
+          "fit": "可赞助已确认",
+          "fitClass": "confirmed",
+          "commercial": "Confirmed podcast sponsor / quarterly partnership",
+          "poolTier": "高阶媒体验证",
+          "originalRank": 2
+        }
+      },
+      {
+        "id": "kol-trungtphan",
+        "itemId": "item-kol-trungtphan",
+        "name": "Trung Phan",
+        "handle": "@trungtphan",
+        "platform": "X",
+        "profileUrl": "https://x.com/trungtphan",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1506362585448296448/LJg8kVSD_normal.jpg",
+        "followers": 0,
+        "region": "全球 / 北美",
+        "language": "英语",
+        "contentCategory": "Business / AI media",
+        "bio": "Trung Phan 是 business / tech writer，Workweek 作者，同时在做 BearlyAI，流量和商业媒体路径都比较清楚。",
+        "audienceSummary": "VC、founder、科技商业读者、AI 工具 early adopter，以及关注商业现象的人群。",
+        "whyIncluded": "流量强、商业媒体路径清楚，受众覆盖 VC、founder 和科技商业人群，适合把 ilands 讲成 AI-native community 的商业/社会现象。",
+        "recommendedAngle": "用 AI 社会/商业变化角度 quote launch video，避免写成工具测评。",
+        "clientFacingNote": "适合把 ilands 讲成 AI-native community / agent society 的商业和社会现象，而不是工具测评。",
+        "agencyInternalNote": "质量 gate：median views 22.0K；合作入口 business/media；高质量回复者 7 个。",
+        "estimatedPrice": "商务路径待确认",
+        "contactStatus": "bd_verification_required",
+        "riskTags": [
+          "commercial_path_unconfirmed"
+        ],
+        "metadata": {
+          "previousExamples": [
+            "business / AI writer",
+            "第一波商业媒体",
+            "流量强 + 可合作"
+          ],
+          "audienceFit": 86,
+          "interactionFit": 44,
+          "fit": "媒体路径待确认",
+          "fitClass": "bd",
+          "commercial": "Workweek / media sponsorship",
+          "poolTier": "第一波商业媒体",
+          "originalRank": 3
+        }
+      },
+      {
+        "id": "kol-kimmonismus",
+        "itemId": "item-kol-kimmonismus",
+        "name": "Chubby",
+        "handle": "@kimmonismus",
+        "platform": "X / Newsletter",
+        "profileUrl": "https://x.com/kimmonismus",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1728327996375719936/RW7VBJfD_normal.jpg",
+        "followers": 0,
+        "region": "全球 / 北美",
+        "language": "英语",
+        "contentCategory": "AI media / newsletter",
+        "bio": "Chubby 是 AI newsletter / daily AI media，适合承接 AI 圈的日常信息流和产品更新。",
+        "audienceSummary": "AI news 消费者、builder、founder 和持续追踪 AI 产品的人。",
+        "whyIncluded": "AI newsletter 路径明确，日常 AI 内容密度高，评论区有高质量技术/产品账号参与。",
+        "recommendedAngle": "定调后做 AI 圈二跳流量，不单独承担新品类解释。",
+        "clientFacingNote": "适合定调后做二跳流量，用 newsletter / daily AI media 放大，而不单独承担新品类解释。",
+        "agencyInternalNote": "质量 gate：median views 18.1K；公开 email；高质量回复者 18 个。",
+        "estimatedPrice": "Sponsor / 报价待确认",
+        "contactStatus": "commercial_path_visible",
+        "riskTags": [
+          "commercial_path_visible",
+          "newsletter_route"
+        ],
+        "metadata": {
+          "previousExamples": [
+            "AI newsletter / daily AI media",
+            "第一波媒体放大",
+            "流量 + 合作入口"
+          ],
+          "audienceFit": 82,
+          "interactionFit": 52,
+          "fit": "可联系待报价",
+          "fitClass": "confirmed",
+          "commercial": "Email / newsletter media-buy",
+          "poolTier": "第一波媒体放大",
+          "originalRank": 4
+        }
+      },
+      {
+        "id": "kol-bycloudai",
+        "itemId": "item-kol-bycloudai",
+        "name": "bycloud",
+        "handle": "@bycloudai",
+        "platform": "YouTube / X",
+        "profileUrl": "https://x.com/bycloudai",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1222930858262192128/m79OXmeF_normal.jpg",
+        "followers": 0,
+        "region": "全球 / 北美",
+        "language": "英语",
+        "contentCategory": "AI research explainer",
+        "bio": "bycloud 是 AI research video / paper recap creator，内容更接近研究解释和技术观察。",
+        "audienceSummary": "AI research 关注者、技术 builder、论文解读读者和高质量 AI 学习人群。",
+        "whyIncluded": "账号体量不算最大，但近期原帖流量和回复区质量都强，适合技术受众中的可信解释。",
+        "recommendedAngle": "从 AI research、agent behavior、paper-style recap 角度切入，不做硬广。",
+        "clientFacingNote": "适合从 agent behavior、memory、feedback loop 和 A2A emergence 的技术解释角度切入。",
+        "agencyInternalNote": "质量 gate：median views 17.2K；媒体入口；高质量回复者 17 个。",
+        "estimatedPrice": "商务路径待确认",
+        "contactStatus": "bd_verification_required",
+        "riskTags": [
+          "commercial_path_unconfirmed"
+        ],
+        "metadata": {
+          "previousExamples": [
+            "AI research videos / paper recap",
+            "技术内容验证",
+            "回复区质量强"
+          ],
+          "audienceFit": 70,
+          "interactionFit": 48,
+          "fit": "商务待验证",
+          "fitClass": "bd",
+          "commercial": "YouTube / newsletter route",
+          "poolTier": "技术内容验证",
+          "originalRank": 5
+        }
+      },
+      {
+        "id": "kol-latentspacepod",
+        "itemId": "item-kol-latentspacepod",
+        "name": "Latent.Space",
+        "handle": "@latentspacepod",
+        "platform": "Podcast / Newsletter",
+        "profileUrl": "https://x.com/latentspacepod",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1888346877428641792/rMxtG84Z_normal.jpg",
+        "followers": 200000,
+        "region": "全球 / 北美",
+        "language": "英语",
+        "contentCategory": "AI podcast / video",
+        "bio": "Latent.Space 是 AI engineering podcast / newsletter，在工程和研究之间有稳定影响力。",
+        "audienceSummary": "AI engineer、founder、研究型 builder，以及关注模型栈和 agent 栈的人。",
+        "whyIncluded": "AI engineering 圈层信任度高，内容非常贴近 agent stack，但公开规则明确偏 warm intro，不适合冷邮件硬推。",
+        "recommendedAngle": "不要按普通 podcast/newsletter media-buy 处理；需要通过 AI Engineer / swyx / Sarah Guo 圈层找 warm intro。",
+        "clientFacingNote": "适合通过 warm intro 谈 product announcement / 深度内容合作，不建议当普通 cold outreach media-buy。",
+        "agencyInternalNote": "复核：官网 about 写明覆盖 200K+ subscribers / 10M viewers；PR/media 只看 warm intro，不接受 cold emails。",
+        "estimatedPrice": "商务路径待确认",
+        "contactStatus": "warm_intro_required",
+        "riskTags": [
+          "warm_intro_required",
           "long_form",
-          "lower_immediacy"
+          "newsletter_route"
         ],
         "metadata": {
           "previousExamples": [
-            "基础设施创始人访谈",
-            "品类创建访谈"
+            "AI engineering podcast / newsletter",
+            "Warm-intro 媒体验证",
+            "共同关注 + 互动"
           ],
-          "audienceFit": 82
+          "audienceFit": 78,
+          "interactionFit": 58,
+          "fit": "需 warm intro",
+          "fitClass": "warm",
+          "commercial": "Warm-intro PR / product-announcement route",
+          "poolTier": "Warm-intro 媒体验证",
+          "originalRank": 6
         }
       },
       {
-        "id": "kol-jules-gray",
-        "itemId": "item-kol-jules-gray",
-        "name": "Jules Gray",
-        "handle": "@julesgrowth",
-        "platform": "TikTok",
-        "profileUrl": "https://example.com/julesgrowth",
-        "avatarUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=240&h=240&q=80",
-        "followers": 830000,
-        "region": "北美",
-        "language": "英语",
-        "contentCategory": "Startup growth",
-        "bio": "短视频创作者，内容覆盖创业战术、增长误区和创始人效率。",
-        "audienceSummary": "覆盖较广的创业人群，其中初级创始人和 creator 占比较高。",
-        "whyIncluded": "触达规模大、交付速度快，但是否适配取决于本轮是否追求广泛曝光。",
-        "recommendedAngle": "制作 myth-busting 短视频，讨论 AI 产品应如何衡量 traction。",
-        "clientFacingNote": "覆盖量高但精准度较低，仅建议在明确追求 awareness 时使用。",
-        "agencyInternalNote": "受众质量波动较大；强推前需索取 story view 和 save 数据。",
-        "estimatedPrice": "$14k-$22k",
-        "contactStatus": "manager contacted",
-        "riskTags": [
-          "broad_audience",
-          "engagement_quality_check"
-        ],
-        "metadata": {
-          "previousExamples": [
-            "创业误区短视频",
-            "创始人效率系列"
-          ],
-          "audienceFit": 63
-        },
-        "initial": {
-          "status": "rejected",
-          "reasonTags": [
-            "audience_mismatch",
-            "too_generic"
-          ],
-          "note": "覆盖量有吸引力，但本轮目标受众过宽，暂不优先。"
-        }
-      },
-      {
-        "id": "kol-iris-okane",
-        "itemId": "item-kol-iris-okane",
-        "name": "Iris O'Kane",
-        "handle": "@irisokane",
+        "id": "kol-jonerlichman",
+        "itemId": "item-kol-jonerlichman",
+        "name": "Jon Erlichman",
+        "handle": "@jonerlichman",
         "platform": "X",
-        "profileUrl": "https://example.com/irisokane",
-        "avatarUrl": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=240&h=240&q=80",
-        "followers": 134000,
-        "region": "欧洲",
+        "profileUrl": "https://x.com/jonerlichman",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1843576290244222977/ejsDots8_normal.jpg",
+        "followers": 0,
+        "region": "全球 / 北美",
         "language": "英语",
-        "contentCategory": "AI research",
-        "bio": "研究转译型创作者，解释模型评估、合成数据和 benchmark 可靠性。",
-        "audienceSummary": "机器学习研究者、应用型 AI 工程师和技术创始人。",
-        "whyIncluded": "能为传播增加研究可信度，同时避免过度学术化。",
-        "recommendedAngle": "以 quote post 或短 thread 讨论扩张投入前为什么需要高质量评估。",
-        "clientFacingNote": "适合作为可信度补充层，建议与更大声量账号组合使用。",
-        "agencyInternalNote": "避免强商业化表述，技术证明点越明确效果越好。",
-        "estimatedPrice": "$5k-$8k",
-        "contactStatus": "not contacted",
+        "contentCategory": "Business / AI media",
+        "bio": "Jon Erlichman 是 business / tech media creator，适合用极短商业观察进入更大的科技商业信息流。",
+        "audienceSummary": "科技商业读者、founder、投资人、Elon/Tesla/X 生态观察者和媒体信息流人群。",
+        "whyIncluded": "有明确 inquiries 邮箱，历史上能进入 Elon/商业科技信息流，但 AI 垂直度不如第一波技术媒体。",
+        "recommendedAngle": "只在需要商业/Elon 生态二跳时使用，内容必须是极短商业观察，不做产品硬广。",
+        "clientFacingNote": "只适合做二波商业媒体扩散，内容必须是社会/商业变化观察，不做普通产品广告。",
+        "agencyInternalNote": "质量 gate：median views 12.2K；公开 inquiry；高质量回复者 13 个。",
+        "estimatedPrice": "Sponsor / 报价待确认",
+        "contactStatus": "commercial_path_visible",
         "riskTags": [
-          "niche_audience"
+          "commercial_path_visible"
         ],
         "metadata": {
           "previousExamples": [
-            "Benchmark 批判",
-            "合成数据解释"
+            "business / tech media",
+            "二波商业媒体",
+            "Elon 可见面 + 商业入口"
           ],
-          "audienceFit": 84
+          "audienceFit": 72,
+          "interactionFit": 68,
+          "fit": "公开 inquiry",
+          "fitClass": "confirmed",
+          "commercial": "Agency / email inquiry",
+          "poolTier": "二波商业媒体",
+          "originalRank": 7
         }
       },
       {
-        "id": "kol-alex-ramos",
-        "itemId": "item-kol-alex-ramos",
-        "name": "Alex Ramos",
-        "handle": "@alexramospod",
+        "id": "kol-karenxcheng",
+        "itemId": "item-kol-karenxcheng",
+        "name": "Karen X. Cheng",
+        "handle": "@karenxcheng",
+        "platform": "Creative Video / X",
+        "profileUrl": "https://x.com/karenxcheng",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1586017189487747081/5VdjD-Bb_normal.jpg",
+        "followers": 0,
+        "region": "全球 / 北美",
+        "language": "英语",
+        "contentCategory": "Creative AI",
+        "bio": "Karen X. Cheng 是 creative AI / visual storyteller 和商业导演，官网把 Brand Work 单列，并公开 Booking 邮箱。",
+        "audienceSummary": "creative technologist、AI creator、品牌/内容团队、视觉 AI 爱好者，以及关注 AI video / creative workflow 的人群。",
+        "whyIncluded": "官网有 Brand Work 和 Booking，X profile 也写明 business email；她历史商业内容多为 sponsored art / brand creative，而不是硬广转发。",
+        "recommendedAngle": "不要按普通 paid tweet 买；更适合定制视觉短片、BTS/tutorial 或 launch video 二创，展示 AI 社区和角色关系。",
+        "clientFacingNote": "适合做定制视觉内容、BTS/tutorial 或 launch video 二创；不建议当普通 paid tweet / quote 广告位使用。",
+        "agencyInternalNote": "复核：官网 Booking team@karenx.com；2026 OpenArt/Seedance partner 帖 40.8K views，2025 Adobe MAX partner 帖 33.3K views；回复区有 AI/creative 高质量账号。",
+        "estimatedPrice": "定制创意合作 / 报价待确认",
+        "contactStatus": "creator_booking_visible",
+        "riskTags": [
+          "creative_production_required",
+          "not_direct_paid_tweet"
+        ],
+        "metadata": {
+          "previousExamples": [
+            "creative AI / visual storyteller",
+            "创意商业合作",
+            "品牌内容 + 视觉叙事"
+          ],
+          "audienceFit": 64,
+          "interactionFit": 46,
+          "fit": "创意合作确认",
+          "fitClass": "creative",
+          "commercial": "Booking email / brand-work production",
+          "poolTier": "创意商业合作",
+          "originalRank": 8
+        }
+      },
+      {
+        "id": "kol-startupideaspod",
+        "itemId": "item-kol-startupideaspod",
+        "name": "Startup Ideas Podcast",
+        "handle": "@startupideaspod",
+        "platform": "X",
+        "profileUrl": "https://x.com/startupideaspod",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1955709395553124352/b_NlfUL__normal.jpg",
+        "followers": 42000,
+        "region": "全球 / 北美",
+        "language": "英语",
+        "contentCategory": "AI media / newsletter",
+        "bio": "Startup Ideas Podcast 是 founder / startup / AI tools 媒体，和 Greg Isenberg 创业圈层关联强。",
+        "audienceSummary": "founder、indie hacker、AI tool builder、consumer/social AI 关注者和创业机会读者。",
+        "whyIncluded": "内容很适合讲 agent society、AI-native community 和创业机会，但公开 profile 未直接给出 sponsor/contact 路径。",
+        "recommendedAngle": "先查 Greg Isenberg / SIP 的正式商业入口；确认前只作为创业圈内容适配候选，不放第一波采购名单。",
+        "clientFacingNote": "角度很适配，但公开商务入口尚未确认；应先验证 Greg/SIP 的合作路径，再决定是否进入二波。",
+        "agencyInternalNote": "复核：X 约 42K followers；近期 AI agent / loneliness / startup idea 内容多；高质量互动可见 @gregisenberg，但商业入口待确认。",
+        "estimatedPrice": "商务路径待确认",
+        "contactStatus": "bd_verification_required",
+        "riskTags": [
+          "commercial_path_unconfirmed"
+        ],
+        "metadata": {
+          "previousExamples": [
+            "startup / AI tools media",
+            "创业圈待商务验证",
+            "Greg 圈层 + 商务未确认"
+          ],
+          "audienceFit": 74,
+          "interactionFit": 54,
+          "fit": "商务待验证",
+          "fitClass": "bd",
+          "commercial": "公开 sponsor / contact 未确认",
+          "poolTier": "创业圈待商务验证",
+          "originalRank": 9
+        }
+      },
+      {
+        "id": "kol-binarybits",
+        "itemId": "item-kol-binarybits",
+        "name": "Timothy B. Lee",
+        "handle": "@binarybits",
+        "platform": "Podcast / Newsletter",
+        "profileUrl": "https://x.com/binarybits",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1641448452533129216/-63z6knc_normal.jpg",
+        "followers": 266000,
+        "region": "全球 / 北美",
+        "language": "英语",
+        "contentCategory": "AI podcast / video",
+        "bio": "Timothy B. Lee 长期报道 AI、经济和技术产业，运营 Understanding AI newsletter 和 AI Summer podcast。",
+        "audienceSummary": "AI 决策者、VC、技术从业者、政策/经济视角读者，以及关心 AI 如何改变产业结构的人。",
+        "whyIncluded": "报道 AI 与未来经济，受众更接近高认知 AI/VC/技术圈，适合把 ilands 讲成 agent economy 和 AI-native community。",
+        "recommendedAngle": "先询问是否接受 sponsor；未确认前只作为高质量 earned quote / PR 目标，不写成可买 newsletter/podcast。",
+        "clientFacingNote": "非常适合 earned media / 高质量观点触达；但 sponsor 路径未公开确认，不能先包装成可采购 podcast/newsletter。",
+        "agencyInternalNote": "复核：Understanding AI 公开约 266K subscribers；about 页强调主要收入来自付费订阅，暂未找到明确 sponsor/advertise 页面。",
+        "estimatedPrice": "商务路径待确认",
+        "contactStatus": "bd_verification_required",
+        "riskTags": [
+          "commercial_path_unconfirmed",
+          "long_form",
+          "newsletter_route"
+        ],
+        "metadata": {
+          "previousExamples": [
+            "AI economy reporter / newsletter + podcast",
+            "高质量媒体待商务验证",
+            "共同关注强 + 商务未确认"
+          ],
+          "audienceFit": 80,
+          "interactionFit": 50,
+          "fit": "商务待验证",
+          "fitClass": "bd",
+          "commercial": "Understanding AI sponsor route 未确认",
+          "poolTier": "高质量媒体待商务验证",
+          "originalRank": 10
+        }
+      },
+      {
+        "id": "kol-mlstreettalk",
+        "itemId": "item-kol-mlstreettalk",
+        "name": "Machine Learning Street Talk",
+        "handle": "@mlstreettalk",
         "platform": "Podcast",
-        "profileUrl": "https://example.com/alexramospod",
-        "avatarUrl": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=240&h=240&q=80",
-        "followers": 121000,
-        "region": "北美",
+        "profileUrl": "https://x.com/mlstreettalk",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/2045594158510010368/BSqtMnpz_normal.jpg",
+        "followers": 0,
+        "region": "全球 / 北美",
         "language": "英语",
-        "contentCategory": "Venture and markets",
-        "bio": "Podcast 与 newsletter 创作者，关注软件市场、创业融资和投资人叙事。",
-        "audienceSummary": "投资人、重视财务效率的创始人和关注品类趋势的 GTM 负责人。",
-        "whyIncluded": "若本轮需要投资人和市场叙事可信度，该账号具备补充价值。",
-        "recommendedAngle": "讨论该品类背后的预算决策压力，而不是仅介绍产品功能。",
-        "clientFacingNote": "适合投资人视角的可信度建设和市场叙事。",
-        "agencyInternalNote": "可能存在竞品 sponsor 冲突，外联前需确认排他条款。",
-        "estimatedPrice": "$12k-$18k",
-        "contactStatus": "needs conflict check",
+        "contentCategory": "AI podcast / video",
+        "bio": "Machine Learning Street Talk 是 ML/AI podcast + YouTube，善于承接机器智能、意识、模型能力和 AI 争议话题。",
+        "audienceSummary": "ML researcher、AI engineer、AI debate 参与者和技术深度内容消费者。",
+        "whyIncluded": "共同关注覆盖强，商业入口直接写明 sponsor，适合承接 machine minds / agent identity 的严肃讨论。",
+        "recommendedAngle": "研究/争议型长内容 sponsor，讨论 agent memory、machine minds、identity；不适合只买一条轻量 X 广告。",
+        "clientFacingNote": "可确认有 sponsor 路径，但更像长期深度合作；适合 machine minds、agent identity、memory society 这类长讨论。",
+        "agencyInternalNote": "复核：官网 about 明确欢迎 high-value sponsors，并偏好 1 年以上深度合作；要求直接邮件联系 Tim 且标题写预算。",
+        "estimatedPrice": "Sponsor / 报价待确认",
+        "contactStatus": "commercial_path_visible",
         "riskTags": [
-          "competitor_conflict"
+          "commercial_path_visible",
+          "long_form"
         ],
         "metadata": {
           "previousExamples": [
-            "市场地图节目",
-            "品类 sponsor 片段"
+            "ML/AI podcast + YouTube",
+            "第一波媒体赞助",
+            "共同关注强 + 可合作"
           ],
-          "audienceFit": 81
+          "audienceFit": 88,
+          "interactionFit": 42,
+          "fit": "可赞助已确认",
+          "fitClass": "confirmed",
+          "commercial": "Confirmed sponsor / long-term AI partnership",
+          "poolTier": "第一波媒体赞助",
+          "originalRank": 11
         }
       },
       {
-        "id": "kol-sasha-wu",
-        "itemId": "item-kol-sasha-wu",
-        "name": "Sasha Wu",
-        "handle": "@sashawuai",
-        "platform": "YouTube",
-        "profileUrl": "https://example.com/sashawuai",
-        "avatarUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=240&h=240&q=80",
-        "followers": 275000,
-        "region": "亚太",
+        "id": "kol-linusekenstam",
+        "itemId": "item-kol-linusekenstam",
+        "name": "Linus Ekenstam",
+        "handle": "@linusekenstam",
+        "platform": "X",
+        "profileUrl": "https://x.com/linusekenstam",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/2000865949298176002/0GW70YnP_normal.jpg",
+        "followers": 0,
+        "region": "全球 / 北美",
         "language": "英语",
-        "contentCategory": "AI tooling",
-        "bio": "AI 工具实测型创作者，擅长清晰 benchmark、产品演示和买家 checklist。",
-        "audienceSummary": "AI builders、developer advocates 和正在比较工具栈的一线运营者。",
-        "whyIncluded": "可通过受控演示和量化对比，让产品价值更具象。",
-        "recommendedAngle": "使用真实 campaign 场景做 workflow review，并展示前后 benchmark。",
-        "clientFacingNote": "如果能提供清晰 demo 路径和可量化证明，该账号匹配度较高。",
-        "agencyInternalNote": "正式承诺前需提供产品访问权限和 sandbox 数据。",
-        "estimatedPrice": "$16k-$24k",
-        "contactStatus": "not contacted",
+        "contentCategory": "AI product creator",
+        "bio": "Linus Ekenstam 是 AI trend / product creator，公开 profile 里有 partnerships 邮箱，商业触达路径清楚。",
+        "audienceSummary": "AI early adopters、产品经理、创业者、创作者和高频追踪 AI 工具趋势的人群。",
+        "whyIncluded": "商业入口明确，AI 受众规模和回复区质量都达标；更适合定调后的扩散位。",
+        "recommendedAngle": "第一波定调完成后再做二跳放量；brief 必须避免泛 AI 工具清单口吻。",
+        "clientFacingNote": "适合在第一波定调后做二跳扩散；需要严格 brief，避免把 ilands 讲成普通 AI 工具合集。",
+        "agencyInternalNote": "质量 gate：median views 8.0K；公开 partnership email；高质量回复者 15 个。",
+        "estimatedPrice": "Sponsor / 报价待确认",
+        "contactStatus": "commercial_path_visible",
         "riskTags": [
-          "demo_dependency"
+          "commercial_path_visible"
         ],
         "metadata": {
           "previousExamples": [
-            "工具对比视频",
-            "AI benchmark walkthrough"
+            "AI trends / product creator",
+            "二波商业放量",
+            "商业可执行 + reach"
           ],
-          "audienceFit": 88
+          "audienceFit": 70,
+          "interactionFit": 44,
+          "fit": "可联系待报价",
+          "fitClass": "confirmed",
+          "commercial": "Business email",
+          "poolTier": "二波商业放量",
+          "originalRank": 12
         }
       },
       {
-        "id": "kol-hana-lee",
-        "itemId": "item-kol-hana-lee",
-        "name": "Hana Lee",
-        "handle": "@hanaleeops",
-        "platform": "Newsletter",
-        "profileUrl": "https://example.com/hanaleeops",
-        "avatarUrl": "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?auto=format&fit=crop&w=240&h=240&q=80",
-        "followers": 52000,
-        "region": "亚太",
+        "id": "kol-aibreakfast",
+        "itemId": "item-kol-aibreakfast",
+        "name": "AI Breakfast",
+        "handle": "@aibreakfast",
+        "platform": "X / Newsletter",
+        "profileUrl": "https://x.com/aibreakfast",
+        "avatarUrl": "https://pbs.twimg.com/profile_images/1597035080421019649/QnsiETGG_normal.jpg",
+        "followers": 0,
+        "region": "全球 / 北美",
         "language": "英语",
-        "contentCategory": "Operations",
-        "bio": "运营类 newsletter 作者，关注精益 GTM 系统、销售流程设计和营销执行纪律。",
-        "audienceSummary": "运营负责人、GTM 经理、agency 创始人和 B2B 服务团队。",
-        "whyIncluded": "适合表达决策流程价值，且 sponsored note 合作门槛较低。",
-        "recommendedAngle": "将 console 定位为减少 KOL 执行中分散客户反馈的工作流工具。",
-        "clientFacingNote": "更偏 agency / operator 受众，不是纯 AI 买家渠道。",
-        "agencyInternalNote": "报价友好，可作为预算收紧时的备选测试位。",
-        "estimatedPrice": "$2k-$4k",
-        "contactStatus": "direct contact",
+        "contentCategory": "AI media / newsletter",
+        "bio": "AI Breakfast 是 AI newsletter，偏信息筛选和新闻摘要，有比较明确的媒体投放路径。",
+        "audienceSummary": "AI newsletter 读者、科技从业者和希望快速获取 AI 动态的人。",
+        "whyIncluded": "有明确 DM/include 产品路径，流量和回复区质量过线，但更像信息流放量位。",
+        "recommendedAngle": "newsletter inclusion / sponsorship，只在定调后放量。",
+        "clientFacingNote": "适合 newsletter inclusion / sponsorship，作为定调后的后续放量位。",
+        "agencyInternalNote": "质量 gate：median views 5.5K；newsletter 路径；高质量回复者 9 个。",
+        "estimatedPrice": "Sponsor / 报价待确认",
+        "contactStatus": "commercial_path_visible",
         "riskTags": [
-          "smaller_reach"
+          "commercial_path_visible",
+          "newsletter_route"
         ],
         "metadata": {
           "previousExamples": [
-            "Ops checklist sponsor",
-            "Workflow newsletter placement"
+            "AI newsletter",
+            "二波媒体放量",
+            "Newsletter 可采购"
           ],
-          "audienceFit": 72
+          "audienceFit": 66,
+          "interactionFit": 38,
+          "fit": "可投放已确认",
+          "fitClass": "confirmed",
+          "commercial": "Newsletter inclusion / sponsorship",
+          "poolTier": "二波媒体放量",
+          "originalRank": 13
         }
       }
     ]

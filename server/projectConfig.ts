@@ -51,6 +51,10 @@ export type ProjectUiConfig = {
     eyebrow: string;
     title: string;
     lede: string;
+    metrics?: Array<{
+      value: string;
+      label: string;
+    }>;
     metricLabels: {
       total: string;
       approved: string;
@@ -85,6 +89,10 @@ export type ProjectUiConfig = {
     statLabel: string;
     sections: RuleSectionConfig[];
   };
+  roots?: RootAudienceConfig;
+  method?: MethodConfig;
+  signalLogic?: SignalLogicConfig;
+  dataNote?: string;
 };
 
 export type LearningRuleSectionConfig = {
@@ -100,6 +108,80 @@ export type RuleSectionConfig = {
   subtitle: string;
   open?: boolean;
   rules: string[];
+};
+
+export type RootAudienceConfig = {
+  storageKey: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  roundLabel: string;
+  rerunButton: string;
+  rollbackButton: string;
+  lockedCopy: string;
+  groups: RootAudienceGroupConfig[];
+};
+
+export type RootAudienceGroupConfig = {
+  index: string;
+  name: string;
+  count: number;
+  note: string;
+  use: string;
+  goal: string;
+  open?: boolean;
+  rules: RuleSectionConfig[];
+  people: RootPersonConfig[];
+};
+
+export type RootPersonConfig = {
+  name: string;
+  handle: string;
+  role: string;
+  why: string;
+  behavior: string;
+  evidence: string;
+};
+
+export type MethodConfig = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  axes: MethodAxisConfig[];
+  routes: MethodRouteConfig[];
+};
+
+export type MethodAxisConfig = {
+  title: string;
+  source: string;
+  take: string;
+  lead: string;
+  stats: Array<[string, string]>;
+  note: string;
+};
+
+export type MethodRouteConfig = {
+  index: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  tags: string[];
+};
+
+export type SignalLogicConfig = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  matrix: Array<{
+    title: string;
+    description: string;
+    tone?: "good" | "anchor" | "neutral";
+  }>;
+  tiers: Array<{
+    level: string;
+    title: string;
+    description: string;
+  }>;
 };
 
 export type SeedKolConfig = {

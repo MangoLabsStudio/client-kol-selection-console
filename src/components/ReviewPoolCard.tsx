@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BadgeCheck, CircleHelp, Clock3, ExternalLink, History, RotateCcw, XCircle } from "lucide-react";
+import { BadgeCheck, CircleHelp, ExternalLink, XCircle } from "lucide-react";
 import type { CampaignKolItem, SelectionStatus } from "../lib/types";
 import { formatCompactNumber, formatContactStatus, formatContentCategory, formatReasonTag, formatRiskTag, statusLabels } from "../lib/status";
 
@@ -14,12 +14,13 @@ type ReviewPoolCardProps = {
   onHistory: (item: CampaignKolItem) => void;
 };
 
-export function ReviewPoolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReject, onQuestion, onHistory }: ReviewPoolCardProps) {
+export function ReviewPoolCard({ item, loadingStatus, onApprove, onReject, onQuestion }: ReviewPoolCardProps) {
   const status = item.currentState.currentStatus;
   const reviewStatus = status === "approved" ? "approve" : status === "rejected" ? "reject" : status === "question" ? "question" : status === "hold" ? "hold" : "";
   const audienceFit = Number(item.kol.metadata.audienceFit ?? 0);
   const tier = tierFromFit(audienceFit);
   const sourceList = Array.isArray(item.kol.metadata.previousExamples) ? item.kol.metadata.previousExamples.map(String) : [];
+  const followers = formatCompactNumber(item.kol.followers);
 
   return (
     <motion.article
@@ -40,7 +41,7 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onHold, onUndo,
               <ExternalLink size={12} />
             </a>
             <span>
-              {item.kol.handle} · {formatCompactNumber(item.kol.followers)}
+              {item.kol.handle} · {followers}
             </span>
           </div>
         </div>
@@ -83,7 +84,7 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onHold, onUndo,
           <div>
             <dt>规模与合作状态</dt>
             <dd>
-              {formatCompactNumber(item.kol.followers)} 粉丝；{item.estimatedPrice || "报价待确认"}；{formatContactStatus(item.contactStatus)}
+              {followers}；{item.estimatedPrice || "报价待确认"}；{formatContactStatus(item.contactStatus)}
             </dd>
           </div>
           <div>
@@ -119,22 +120,6 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onHold, onUndo,
             icon={<CircleHelp size={14} />}
             label="需补充"
           />
-        </div>
-        <div className="review-utility-row">
-          <button className="review-utility" type="button" onClick={() => onHold(item)} disabled={status === "hold" || loadingStatus === "hold"}>
-            {loadingStatus === "hold" ? <span className="spinner" /> : <Clock3 size={14} />}
-            暂缓
-          </button>
-          <button className="review-utility" type="button" onClick={() => onHistory(item)}>
-            <History size={14} />
-            记录
-          </button>
-          {status !== "pending" && (
-            <button className="review-utility" type="button" onClick={() => onUndo(item)} disabled={loadingStatus === "undo"}>
-              {loadingStatus === "undo" ? <span className="spinner" /> : <RotateCcw size={14} />}
-              撤回
-            </button>
-          )}
         </div>
       </div>
     </motion.article>

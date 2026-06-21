@@ -51,7 +51,10 @@ export const questionReasons = [
 
 const riskTagLabels: Record<string, string> = {
   broad_audience: "受众过宽",
+  commercial_path_unconfirmed: "商务路径待验证",
+  commercial_path_visible: "商务路径清楚",
   competitor_conflict: "需确认竞品冲突",
+  creative_production_required: "需定制创意交付",
   demo_dependency: "依赖产品演示",
   engagement_quality_check: "需核查互动质量",
   less_technical: "技术深度偏弱",
@@ -59,30 +62,46 @@ const riskTagLabels: Record<string, string> = {
   long_form: "长内容形式",
   long_lead_time: "交付周期较长",
   lower_immediacy: "短期转化较弱",
+  needs_bd_verification: "需 BD 验证",
+  newsletter_route: "Newsletter 路径",
   niche_audience: "受众较窄",
+  not_direct_paid_tweet: "不适合普通付费转发",
   price_sensitive: "报价敏感",
   smaller_reach: "覆盖规模较小",
-  technical_depth_required: "需技术材料支撑"
+  technical_depth_required: "需技术材料支撑",
+  warm_intro_required: "需要 warm intro"
 };
 
 const contactStatusLabels: Record<string, string> = {
+  bd_verification_required: "需 BD 验证",
+  commercial_path_visible: "商务路径清楚",
+  creator_booking_visible: "创意合作入口清楚",
   "direct contact": "可直接联系",
   "manager contacted": "已联系团队",
   "needs conflict check": "需确认排他",
   "not contacted": "尚未联系",
-  "warm intro available": "有可用引荐"
+  "warm intro available": "有可用引荐",
+  warm_intro_required: "需 warm intro"
 };
 
 const categoryLabels: Record<string, string> = {
   "AI infrastructure": "AI 基础设施",
+  "AI media / newsletter": "AI 媒体 / Newsletter",
+  "AI podcast / video": "AI Podcast / 视频",
+  "AI product creator": "AI 产品创作者",
   "AI research": "AI 研究传播",
+  "AI research explainer": "AI 研究解释",
   "AI tooling": "AI 工具评测",
+  "Business / AI media": "商业 / AI 媒体",
+  "Creative AI": "Creative AI",
+  "Deep AI podcast": "深度 AI Podcast",
   "Developer education": "开发者教育",
   "Founder interviews": "创始人访谈",
   "Founder strategy": "创始人/商业叙事",
   Operations: "运营与流程",
   "Product design": "产品设计",
   "Startup growth": "创业增长",
+  "Startup / AI tools": "创业 / AI 工具",
   "Venture and markets": "投资与市场叙事"
 };
 
@@ -103,6 +122,7 @@ export function formatContentCategory(value: string) {
 }
 
 export function formatCompactNumber(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return "规模待确认";
   if (value >= 100000000) return `${trimDecimal(value / 100000000)} 亿`;
   if (value >= 10000) return `${trimDecimal(value / 10000)} 万`;
   return new Intl.NumberFormat("zh-CN").format(value);

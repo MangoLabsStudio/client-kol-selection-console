@@ -275,6 +275,8 @@ export default function App() {
               <p>{ui.pool.description}</p>
             </div>
 
+            <RuleBoard config={ui.rules} />
+
             <FilterBar items={board.items} filters={filters} resultCount={filteredItems.length} onChange={setFilters} />
 
             <div className="pool-browser" aria-label="KOL 执行池">
@@ -316,7 +318,6 @@ export default function App() {
               )}
             </div>
 
-            <RuleBoard config={ui.rules} />
           </div>
         </section>
 

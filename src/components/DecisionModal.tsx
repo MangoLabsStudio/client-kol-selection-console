@@ -58,9 +58,10 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
   const title = kind === "reject" ? "排除候选账号" : "请求补充信息";
   const helper =
     kind === "reject"
-      ? "选择一个主要原因即可；细节可写在补充说明里。"
+      ? "选择一个主要原因即可；如需补充细节，可写在下方说明里。"
       : "选择一个最需要补充的信息类型，并写明要确认的问题。";
-  const invalid = selected.length === 0 || (kind === "question" && note.trim().length === 0);
+  const requiresNote = kind === "question" || (kind === "reject" && selected.includes("other"));
+  const invalid = selected.length === 0 || (requiresNote && note.trim().length === 0);
 
   const toggle = (tag: string) => {
     setSelected((current) => (current.includes(tag) ? [] : [tag]));
@@ -117,17 +118,19 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
           </div>
 
           <label className="note-field">
-            <span>{kind === "reject" ? "补充说明" : "需确认的问题"}</span>
+            <span>{kind === "reject" ? "客户补充说明" : "需确认的问题"}</span>
             <textarea
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder={kind === "reject" ? "说明不建议推进的具体原因" : "请写明团队需要补充确认的信息"}
+              placeholder={kind === "reject" ? "可写具体顾虑、内部判断或替代建议" : "请写明需要补充确认的信息"}
               rows={4}
             />
           </label>
 
           {attempted && selected.length === 0 && <div className="form-error">请至少选择一个原因。</div>}
-          {attempted && kind === "question" && note.trim().length === 0 && <div className="form-error">请写明需要补充确认的问题。</div>}
+          {attempted && requiresNote && note.trim().length === 0 && (
+            <div className="form-error">{kind === "reject" ? "选择其他原因时，请写明具体说明。" : "请写明需要补充确认的问题。"}</div>
+          )}
 
           <div className="modal-actions">
             <button type="button" className="quiet-button" onClick={onClose}>
@@ -135,7 +138,7 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
             </button>
             <button type="button" className={`submit-button ${kind}`} onClick={submit} disabled={submitting}>
               {submitting ? <span className="spinner" /> : null}
-              {kind === "reject" ? "保存排除原因" : "发送补充请求"}
+              {kind === "reject" ? "保存排除意见" : "发送补充请求"}
             </button>
           </div>
         </motion.div>

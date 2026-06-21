@@ -54,10 +54,6 @@ export function submitDecision(input: {
   });
 }
 
-export function getHistory(campaignId: string, itemId: string) {
-  return request<{ events: SelectionEvent[] }>(`/api/campaigns/${campaignId}/kol-selection/${itemId}/events`);
-}
-
 export async function exportBoard(campaignId: string, projectId: string, format: "json" | "csv") {
   const response = await fetch(`/api/campaigns/${campaignId}/kol-selection/export?format=${format}`);
   if (!response.ok) throw new Error("Could not export selection");

@@ -3,7 +3,6 @@ import { Download, FileJson, Inbox, RefreshCw, ShieldCheck } from "lucide-react"
 import { useEffect, useMemo, useState } from "react";
 import { DecisionModal } from "./components/DecisionModal";
 import { FilterBar } from "./components/FilterBar";
-import { HistoryDrawer } from "./components/HistoryDrawer";
 import { LearningBoard } from "./components/LearningBoard";
 import { ReviewPoolCard } from "./components/ReviewPoolCard";
 import { RootAudienceBoard } from "./components/RootAudienceBoard";
@@ -11,8 +10,8 @@ import { RuleBoard } from "./components/RuleBoard";
 import { SkeletonBoard } from "./components/SkeletonBoard";
 import { StrategyMethodBoard } from "./components/StrategyMethodBoard";
 import { ToastStack, type Toast } from "./components/ToastStack";
-import { exportBoard, getAppConfig, getBoardForCampaign, getHistory, submitDecision } from "./lib/api";
-import type { AppConfig, BoardResponse, CampaignKolItem, Filters, SelectionEvent, SelectionStatus, Summary } from "./lib/types";
+import { exportBoard, getAppConfig, getBoardForCampaign, submitDecision } from "./lib/api";
+import type { AppConfig, BoardResponse, CampaignKolItem, Filters, SelectionStatus, Summary } from "./lib/types";
 import { useDebouncedValue } from "./lib/useDebouncedValue";
 
 const initialFilters: Filters = {
@@ -40,9 +39,6 @@ export default function App() {
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [loadingTarget, setLoadingTarget] = useState<LoadingTarget>(null);
   const [modal, setModal] = useState<{ kind: "reject" | "question"; item: CampaignKolItem } | null>(null);
-  const [historyItem, setHistoryItem] = useState<CampaignKolItem | null>(null);
-  const [historyEvents, setHistoryEvents] = useState<SelectionEvent[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [exporting, setExporting] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query);
@@ -161,16 +157,6 @@ export default function App() {
     } finally {
       setLoadingTarget(null);
     }
-  };
-
-  const openHistory = (item: CampaignKolItem) => {
-    setHistoryItem(item);
-    setHistoryEvents([]);
-    setHistoryLoading(true);
-    getHistory(board.campaign.id, item.id)
-      .then(({ events }) => setHistoryEvents(events))
-      .catch((error) => pushToast("danger", error.message))
-      .finally(() => setHistoryLoading(false));
   };
 
   const handleExport = async (format: "json" | "csv") => {
@@ -323,7 +309,6 @@ export default function App() {
                         onReject={(candidate) => setModal({ kind: "reject", item: candidate })}
                         onQuestion={(candidate) => setModal({ kind: "question", item: candidate })}
                         onUndo={(candidate) => decide(candidate, "pending", [], "已撤回至待评审状态。", "undo")}
-                        onHistory={openHistory}
                       />
                     ))}
                   </AnimatePresence>
@@ -345,7 +330,6 @@ export default function App() {
         onSubmit={({ toStatus, reasonTags, note }) => modal && decide(modal.item, toStatus, reasonTags, note)}
       />
 
-      <HistoryDrawer item={historyItem} events={historyEvents} loading={historyLoading} onClose={() => setHistoryItem(null)} />
       <ToastStack toasts={toasts} onDismiss={(id) => setToasts((current) => current.filter((toast) => toast.id !== id))} />
       </main>
     </div>
@@ -425,8 +409,8 @@ function matchesFollowerRange(followers: number, range: string) {
 }
 
 function toastMessage(status: SelectionStatus) {
-  if (status === "approved") return "已记录为通过。";
-  if (status === "rejected") return "已记录排除原因。";
-  if (status === "question") return "补充请求已记录。";
+  if (status === "approved") return "已保存为通过。";
+  if (status === "rejected") return "已保存排除意见。";
+  if (status === "question") return "补充请求已保存。";
   return "已撤回至待评审。";
 }

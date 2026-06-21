@@ -58,12 +58,12 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
   const title = kind === "reject" ? "排除候选账号" : "请求补充信息";
   const helper =
     kind === "reject"
-      ? "请选择主要原因，用于校准下一轮推荐名单。"
-      : "请选择需要补充的信息类型，并写明需要确认的问题。";
+      ? "选择一个主要原因即可；细节可写在补充说明里。"
+      : "选择一个最需要补充的信息类型，并写明要确认的问题。";
   const invalid = selected.length === 0 || (kind === "question" && note.trim().length === 0);
 
   const toggle = (tag: string) => {
-    setSelected((current) => (current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]));
+    setSelected((current) => (current.includes(tag) ? [] : [tag]));
   };
 
   const submit = () => {

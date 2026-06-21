@@ -18,35 +18,38 @@ export const statusTone: Record<SelectionStatus, string> = {
 
 export const rejectReasons = [
   ["audience_mismatch", "受众不匹配"],
+  ["content_style_mismatch", "内容不适合"],
+  ["commercial_path_unclear", "商务不清楚"],
+  ["not_relevant_to_campaign", "本轮不优先"],
+  ["other", "其他原因"]
+] as const;
+
+export const questionReasons = [
+  ["need_price", "确认报价"],
+  ["need_contact_confirmation", "商务入口"],
+  ["need_recent_performance", "近期数据"],
+  ["need_case_sample", "案例/样张"],
+  ["other", "其他问题"]
+] as const;
+
+const legacyReasonLabels = [
   ["brand_fit_mismatch", "品牌适配度不足"],
-  ["content_style_mismatch", "内容风格不匹配"],
   ["too_expensive", "预算不匹配"],
   ["weak_creator_quality", "账号质量不足"],
   ["weak_engagement_quality", "互动质量不足"],
   ["wrong_region_or_language", "地区或语言不匹配"],
   ["platform_mismatch", "平台不匹配"],
-  ["not_relevant_to_campaign", "与本轮目标相关性不足"],
   ["too_generic", "内容过泛"],
   ["too_niche", "覆盖面过窄"],
   ["brand_safety_risk", "品牌安全风险"],
   ["competitor_conflict", "竞品或排他冲突"],
   ["duplicated_with_other_kol", "与其他账号重复"],
   ["not_a_real_creator", "非真实创作者账号"],
-  ["commercial_path_unclear", "商业合作路径不清晰"],
   ["client_internal_reason", "客户内部原因"],
-  ["other", "其他原因"]
-] as const;
-
-export const questionReasons = [
-  ["need_price", "确认报价"],
-  ["need_case_sample", "补充过往案例"],
   ["need_audience_data", "补充受众数据"],
-  ["need_recent_performance", "补充近期表现"],
-  ["need_contact_confirmation", "确认联系方式"],
   ["need_content_angle", "明确内容角度"],
   ["need_brand_safety_check", "确认品牌安全"],
-  ["need_internal_discussion", "待内部讨论"],
-  ["other", "其他问题"]
+  ["need_internal_discussion", "待内部讨论"]
 ] as const;
 
 const riskTagLabels: Record<string, string> = {
@@ -138,7 +141,7 @@ export function formatTime(value: string | null) {
   }).format(new Date(value));
 }
 
-const reasonLabelMap: Record<string, string> = Object.fromEntries([...rejectReasons, ...questionReasons]);
+const reasonLabelMap: Record<string, string> = Object.fromEntries([...legacyReasonLabels, ...rejectReasons, ...questionReasons]);
 
 function trimDecimal(value: number) {
   return value.toFixed(1).replace(/\\.0$/, "");

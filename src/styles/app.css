@@ -2654,17 +2654,42 @@ body {
   left: auto;
 }
 
-.root-person-popover strong {
+.root-popover-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.root-popover-head strong {
   display: block;
   color: var(--ink);
   font-size: 14px;
 }
 
 .root-popover-role {
-  margin: -6px 0 0;
+  margin: 5px 0 0;
   color: var(--teal);
   font-size: 12px;
   font-weight: 850;
+}
+
+.root-popover-close {
+  width: 31px;
+  height: 31px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 119, 117, 0.14);
+  background: #ffffff;
+  color: #466465;
+}
+
+.root-popover-close:hover,
+.root-popover-close:focus-visible {
+  border-color: rgba(13, 119, 117, 0.3);
+  background: #edf7f2;
+  color: var(--teal);
 }
 
 .root-person-popover dl {

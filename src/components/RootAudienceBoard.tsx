@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, RotateCcw, Sparkles, XCircle } from "lucide-react";
+import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, RotateCcw, Sparkles, X, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { RootAudienceConfig, RootPersonConfig } from "../lib/types";
 
@@ -185,6 +185,7 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
                         decision={state.decisions[person.handle]}
                         isActive={activeHandle === person.handle}
                         onToggle={() => setActiveHandle((current) => (current === person.handle ? null : person.handle))}
+                        onClose={() => setActiveHandle(null)}
                         onDecide={decide}
                         onNote={setNote}
                         lockedCopy={config.lockedCopy}
@@ -206,6 +207,7 @@ function RootPersonCard({
   decision,
   isActive,
   onToggle,
+  onClose,
   onDecide,
   onNote,
   lockedCopy
@@ -214,6 +216,7 @@ function RootPersonCard({
   decision?: RootDecision;
   isActive: boolean;
   onToggle: () => void;
+  onClose: () => void;
   onDecide: (person: RootPersonConfig, status: RootStatus, reason?: string) => void;
   onNote: (person: RootPersonConfig, note: string) => void;
   lockedCopy: string;
@@ -238,8 +241,15 @@ function RootPersonCard({
 
       {isActive && (
         <aside className="root-person-popover" role="dialog" aria-label={`${person.name} 判断依据`}>
-          <strong>判断依据</strong>
-          <p className="root-popover-role">{person.role}</p>
+          <div className="root-popover-head">
+            <div>
+              <strong>判断依据</strong>
+              <p className="root-popover-role">{person.role}</p>
+            </div>
+            <button type="button" className="root-popover-close" onClick={onClose} aria-label="关闭详情">
+              <X size={16} />
+            </button>
+          </div>
           <dl>
             <dt>为什么相关</dt>
             <dd>{person.why}</dd>

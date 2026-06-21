@@ -1,4 +1,4 @@
-import { Filter, Search, SlidersHorizontal, X } from "lucide-react";
+import { Filter, Search, X } from "lucide-react";
 import type { CampaignKolItem, Filters, SelectionStatus } from "../lib/types";
 import { formatContactStatus, formatContentCategory, formatRiskTag, statusLabels } from "../lib/status";
 
@@ -56,75 +56,124 @@ export function FilterBar({ items, filters, resultCount, onChange }: FilterBarPr
         </button>
       </div>
 
-      <div className="status-tabs" role="tablist" aria-label="评审状态筛选">
-        {statusOptions.map((status) => (
-          <button
-            key={status}
-            type="button"
-            role="tab"
-            aria-selected={filters.status === status}
-            className={filters.status === status ? "active" : ""}
-            onClick={() => set("status", status)}
-          >
-            {status === "all" ? "全部" : statusLabels[status]}
-          </button>
-        ))}
-      </div>
-
-      <div className="filter-grid">
-        <FilterSelect icon={<SlidersHorizontal size={15} />} label="平台" value={filters.platform} options={platforms} onChange={(value) => set("platform", value)} />
-        <FilterSelect label="内容方向" value={filters.category} options={categories} formatOption={formatContentCategory} onChange={(value) => set("category", value)} />
-        <FilterSelect label="语言" value={filters.language} options={languages} onChange={(value) => set("language", value)} />
-        <FilterSelect label="地区" value={filters.region} options={regions} onChange={(value) => set("region", value)} />
-        <FilterSelect
+      <div className="filter-pill-panel">
+        <PillGroup
+          label="评审状态"
+          value={filters.status}
+          allLabel="全部状态"
+          options={statusOptions.filter((status) => status !== "all")}
+          formatOption={(status) => statusLabels[status as SelectionStatus]}
+          countOption={(status) => countStatus(items, status as SelectionStatus)}
+          total={items.length}
+          onChange={(value) => set("status", value as SelectionStatus | "all")}
+        />
+        <PillGroup label="平台" value={filters.platform} allLabel="全部平台" options={platforms} total={items.length} countOption={(value) => countBy(items, (item) => item.kol.platform === value)} onChange={(value) => set("platform", value)} />
+        <PillGroup
+          label="内容方向"
+          value={filters.category}
+          allLabel="全部内容方向"
+          options={categories}
+          formatOption={formatContentCategory}
+          total={items.length}
+          countOption={(value) => countBy(items, (item) => item.kol.contentCategory === value)}
+          onChange={(value) => set("category", value)}
+        />
+        <PillGroup label="语言" value={filters.language} allLabel="全部语言" options={languages} total={items.length} countOption={(value) => countBy(items, (item) => item.kol.language === value)} onChange={(value) => set("language", value)} />
+        <PillGroup label="地区" value={filters.region} allLabel="全部地区" options={regions} total={items.length} countOption={(value) => countBy(items, (item) => item.kol.region === value)} onChange={(value) => set("region", value)} />
+        <PillGroup
           label="粉丝规模"
           value={filters.followers}
+          allLabel="全部粉丝规模"
           options={["<100k", "100k-250k", "250k-750k", "750k+"]}
           formatOption={formatFollowerRange}
+          total={items.length}
+          countOption={(value) => countBy(items, (item) => matchesFollowerRange(item.kol.followers, value))}
           onChange={(value) => set("followers", value)}
         />
-        <FilterSelect label="联系状态" value={filters.contactStatus} options={contacts} formatOption={formatContactStatus} onChange={(value) => set("contactStatus", value)} />
-        <FilterSelect label="风险项" value={filters.riskTag} options={risks} formatOption={formatRiskTag} onChange={(value) => set("riskTag", value)} />
+        <PillGroup
+          label="联系状态"
+          value={filters.contactStatus}
+          allLabel="全部联系状态"
+          options={contacts}
+          formatOption={formatContactStatus}
+          total={items.length}
+          countOption={(value) => countBy(items, (item) => item.contactStatus === value)}
+          onChange={(value) => set("contactStatus", value)}
+        />
+        <PillGroup
+          label="风险项"
+          value={filters.riskTag}
+          allLabel="全部风险项"
+          options={risks}
+          formatOption={formatRiskTag}
+          total={items.length}
+          countOption={(value) => countBy(items, (item) => item.riskTags.includes(value))}
+          onChange={(value) => set("riskTag", value)}
+        />
       </div>
     </section>
   );
 }
 
-function FilterSelect({
+function PillGroup({
   label,
   value,
+  allLabel,
   options,
+  total,
+  countOption,
   onChange,
-  icon,
   formatOption = (option: string) => option
 }: {
   label: string;
   value: string;
+  allLabel: string;
   options: string[];
+  total: number;
+  countOption: (value: string) => number;
   onChange: (value: string) => void;
-  icon?: React.ReactNode;
   formatOption?: (option: string) => string;
 }) {
   return (
-    <label className="filter-select">
-      <span>
-        {icon}
-        {label}
-      </span>
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="all">全部</option>
+    <div className="filter-pill-group">
+      <h3>{label}</h3>
+      <div className="filter-pill-row" role="group" aria-label={`${label}筛选`}>
+        <FilterPill active={value === "all"} label={allLabel} count={total} onClick={() => onChange("all")} />
         {options.map((option) => (
-          <option value={option} key={option}>
-            {formatOption(option)}
-          </option>
+          <FilterPill key={option} active={value === option} label={formatOption(option)} count={countOption(option)} onClick={() => onChange(option)} />
         ))}
-      </select>
-    </label>
+      </div>
+    </div>
+  );
+}
+
+function FilterPill({ active, label, count, onClick }: { active: boolean; label: string; count: number; onClick: () => void }) {
+  return (
+    <button type="button" className={active ? "filter-pill active" : "filter-pill"} aria-pressed={active} onClick={onClick}>
+      <span>{label}</span>
+      <strong>{count}</strong>
+    </button>
   );
 }
 
 function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b));
+}
+
+function countStatus(items: CampaignKolItem[], status: SelectionStatus) {
+  return countBy(items, (item) => item.currentState.currentStatus === status);
+}
+
+function countBy(items: CampaignKolItem[], predicate: (item: CampaignKolItem) => boolean) {
+  return items.reduce((count, item) => count + (predicate(item) ? 1 : 0), 0);
+}
+
+function matchesFollowerRange(followers: number, range: string) {
+  if (range === "<100k") return followers < 100000;
+  if (range === "100k-250k") return followers >= 100000 && followers < 250000;
+  if (range === "250k-750k") return followers >= 250000 && followers < 750000;
+  if (range === "750k+") return followers >= 750000;
+  return true;
 }
 
 function formatFollowerRange(value: string) {

@@ -119,7 +119,7 @@ app.post("/api/campaigns/:campaignId/kol-selection/lock", (req, res, next) => {
 app.post("/api/campaigns/:campaignId/kol-selection/sync-twitter241", async (req, res, next) => {
   try {
     const actorRole = parseActorRole(req.header("x-actor-role") ?? req.body?.actorRole ?? "agency");
-    if (actorRole === "client") throw new ApiError(403, "仅团队视图可以同步 Twitter241 执行池数据。");
+    if (actorRole === "client") throw new ApiError(403, "当前客户评审版不能同步 Twitter241 执行池数据。");
 
     const handles = Array.isArray(req.body?.handles) ? req.body.handles.map(String) : undefined;
     const tweetCount = Number(req.body?.tweet_count ?? req.body?.tweetCount ?? req.query.count ?? undefined);

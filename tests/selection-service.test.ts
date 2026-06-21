@@ -41,10 +41,12 @@ test("loads project config for project-specific UI and seed data", () => {
   const appConfig = getClientAppConfig("ilands-aaa-signal-map");
 
   assert.equal(config.client.name, "iLands");
+  assert.equal(config.templateId, "ilands-root-backed-kol-review");
   assert.equal(config.campaign.id, campaignId);
   assert.equal(config.ui.brand.name, "iLands KOL Selection Console");
   assert.equal(config.seed.candidates.length, 13);
   assert.equal(config.ui.roots?.groups.length, 3);
+  assert.equal(appConfig.templateId, "ilands-root-backed-kol-review");
   assert.equal(appConfig.campaignId, campaignId);
   assert.equal(appConfig.availableProjects.some((project) => project.projectId === "ilands-aaa-signal-map"), true);
 });

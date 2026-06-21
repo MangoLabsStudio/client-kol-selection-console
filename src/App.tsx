@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, FileJson, Inbox, LockKeyhole, RefreshCw, ShieldCheck } from "lucide-react";
+import { Download, FileJson, Inbox, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { DecisionModal } from "./components/DecisionModal";
 import { FilterBar } from "./components/FilterBar";
@@ -11,8 +11,8 @@ import { RuleBoard } from "./components/RuleBoard";
 import { SkeletonBoard } from "./components/SkeletonBoard";
 import { StrategyMethodBoard } from "./components/StrategyMethodBoard";
 import { ToastStack, type Toast } from "./components/ToastStack";
-import { exportBoard, getAppConfig, getBoardForCampaign, getHistory, lockBoard, submitDecision } from "./lib/api";
-import type { ActorRole, AppConfig, BoardResponse, CampaignKolItem, Filters, SelectionEvent, SelectionStatus, Summary } from "./lib/types";
+import { exportBoard, getAppConfig, getBoardForCampaign, getHistory, submitDecision } from "./lib/api";
+import type { AppConfig, BoardResponse, CampaignKolItem, Filters, SelectionEvent, SelectionStatus, Summary } from "./lib/types";
 import { useDebouncedValue } from "./lib/useDebouncedValue";
 
 const initialFilters: Filters = {
@@ -35,7 +35,6 @@ type LoadingTarget = {
 export default function App() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(() => getInitialProjectId());
   const [appConfig, setAppConfig] = useState<AppConfig | null>(null);
-  const [actorRole, setActorRole] = useState<ActorRole>("client");
   const [board, setBoard] = useState<BoardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -46,7 +45,6 @@ export default function App() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [exporting, setExporting] = useState(false);
-  const [locking, setLocking] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query);
 
   useEffect(() => {
@@ -58,7 +56,7 @@ export default function App() {
       .then(async (config) => {
         if (!active) return null;
         setAppConfig(config);
-        return getBoardForCampaign(config.campaignId, actorRole);
+        return getBoardForCampaign(config.campaignId, "client");
       })
       .then((data) => {
         if (active && data) setBoard(data);
@@ -70,7 +68,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [activeProjectId, actorRole]);
+  }, [activeProjectId]);
 
   const filteredItems = useMemo(() => {
     if (!board) return [];
@@ -133,7 +131,7 @@ export default function App() {
 
   const decide = async (item: CampaignKolItem, toStatus: SelectionStatus, reasonTags: string[] = [], note = "", loadingStatus: SelectionStatus | "undo" = toStatus) => {
     const previous = board;
-    const optimisticBoard = applyLocalState(board, item.id, toStatus, reasonTags, note, actorRole);
+    const optimisticBoard = applyLocalState(board, item.id, toStatus, reasonTags, note);
     setBoard(optimisticBoard);
     setLoadingTarget({ itemId: item.id, status: loadingStatus });
 
@@ -141,7 +139,7 @@ export default function App() {
       const result = await submitDecision({
         campaignId: board.campaign.id,
         itemId: item.id,
-        actorRole,
+        actorRole: "client",
         toStatus,
         reasonTags,
         note
@@ -184,19 +182,6 @@ export default function App() {
       pushToast("danger", error instanceof Error ? error.message : "导出失败，请稍后重试。");
     } finally {
       setExporting(false);
-    }
-  };
-
-  const handleLock = async () => {
-    setLocking(true);
-    try {
-      const nextBoard = await lockBoard(board.campaign.id, actorRole);
-      setBoard(nextBoard);
-      pushToast("success", "评审版本已锁定。");
-    } catch (error) {
-      pushToast("danger", error instanceof Error ? error.message : "锁定失败，请稍后重试。");
-    } finally {
-      setLocking(false);
     }
   };
 
@@ -272,14 +257,6 @@ export default function App() {
               ))}
             </div>
             <div className="hero-actions" id="export">
-              <div className="role-switch dark">
-                <button className={actorRole === "client" ? "active" : ""} onClick={() => setActorRole("client")} type="button">
-                  客户视图
-                </button>
-                <button className={actorRole === "agency" ? "active" : ""} onClick={() => setActorRole("agency")} type="button">
-                  团队视图
-                </button>
-              </div>
               <button className="hero-action" type="button" onClick={() => handleExport("json")} disabled={exporting}>
                 <FileJson size={17} />
                 JSON
@@ -288,12 +265,6 @@ export default function App() {
                 <Download size={17} />
                 CSV
               </button>
-              {actorRole !== "client" && (
-                <button className="hero-action lock" type="button" onClick={handleLock} disabled={locking || Boolean(board.campaign.lockedAt)}>
-                  <LockKeyhole size={17} />
-                  {board.campaign.lockedAt ? "已锁定" : "锁定版本"}
-                </button>
-              )}
             </div>
           </div>
         </section>
@@ -401,7 +372,7 @@ function getInitialProjectId() {
   return new URLSearchParams(window.location.search).get("project");
 }
 
-function applyLocalState(board: BoardResponse, itemId: string, status: SelectionStatus, reasonTags: string[], note: string, actorRole: ActorRole): BoardResponse {
+function applyLocalState(board: BoardResponse, itemId: string, status: SelectionStatus, reasonTags: string[], note: string): BoardResponse {
   const timestamp = new Date().toISOString();
   const items = board.items.map((item) =>
     item.id === itemId
@@ -413,8 +384,8 @@ function applyLocalState(board: BoardResponse, itemId: string, status: Selection
             currentDecision: status,
             currentReasonTags: reasonTags,
             currentNote: note,
-            lastActorId: actorRole === "agency" ? "agency-ops" : "client-reviewer-1",
-            lastActorRole: actorRole,
+            lastActorId: "client-reviewer-1",
+            lastActorRole: "client",
             lastUpdatedAt: timestamp
           }
         }

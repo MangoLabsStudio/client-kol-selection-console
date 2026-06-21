@@ -112,12 +112,14 @@ export type DecisionInput = {
 
 export type ProjectConfigSummary = {
   projectId: string;
+  templateId?: string;
   clientName: string;
   campaignName: string;
 };
 
 export type AppConfig = {
   projectId: string;
+  templateId?: string;
   clientName: string;
   campaignId: string;
   campaignName: string;

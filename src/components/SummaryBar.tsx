@@ -1,17 +1,13 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Download, FileJson, HelpCircle, LockKeyhole, ShieldCheck, Sparkles, XCircle } from "lucide-react";
-import type { ActorRole, Campaign, SelectionStatus, Summary } from "../lib/types";
+import { CheckCircle2, Download, FileJson, HelpCircle, ShieldCheck, Sparkles, XCircle } from "lucide-react";
+import type { Campaign, SelectionStatus, Summary } from "../lib/types";
 import { formatTime, statusLabels } from "../lib/status";
 
 type SummaryBarProps = {
   campaign: Campaign;
   summary: Summary;
-  actorRole: ActorRole;
   exporting: boolean;
-  locking: boolean;
   onExport: (format: "json" | "csv") => void;
-  onLock: () => void;
-  onRoleChange: (role: ActorRole) => void;
 };
 
 const statusMeta: Array<{ status: SelectionStatus; icon: React.ComponentType<{ size?: number }> }> = [
@@ -21,7 +17,7 @@ const statusMeta: Array<{ status: SelectionStatus; icon: React.ComponentType<{ s
   { status: "pending", icon: Sparkles }
 ];
 
-export function SummaryBar({ campaign, summary, actorRole, exporting, locking, onExport, onLock, onRoleChange }: SummaryBarProps) {
+export function SummaryBar({ campaign, summary, exporting, onExport }: SummaryBarProps) {
   const reviewed = summary.total - summary.pending;
   const progress = summary.total > 0 ? Math.round((reviewed / summary.total) * 100) : 0;
 
@@ -58,14 +54,6 @@ export function SummaryBar({ campaign, summary, actorRole, exporting, locking, o
       </div>
 
       <div className="summary-actions">
-        <div className="role-switch" aria-label="评审视图">
-          <button className={actorRole === "client" ? "active" : ""} onClick={() => onRoleChange("client")} type="button">
-            客户视图
-          </button>
-          <button className={actorRole === "agency" ? "active" : ""} onClick={() => onRoleChange("agency")} type="button">
-            团队视图
-          </button>
-        </div>
         <div className="summary-updated">
           <span>最近更新</span>
           <strong>{formatTime(campaign.lastUpdatedAt)}</strong>
@@ -77,12 +65,6 @@ export function SummaryBar({ campaign, summary, actorRole, exporting, locking, o
           <Download size={17} />
           {exporting ? "导出中" : "CSV"}
         </button>
-        {actorRole !== "client" && (
-          <button className="text-action lock-action" type="button" onClick={onLock} disabled={locking || Boolean(campaign.lockedAt)}>
-            <LockKeyhole size={17} />
-            {campaign.lockedAt ? "已锁定" : locking ? "锁定中" : "锁定版本"}
-          </button>
-        )}
       </div>
     </header>
   );

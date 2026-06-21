@@ -447,7 +447,7 @@ export function exportSelection(db: DatabaseSync, campaignId: string, format: "j
 export function lockSelection(db: DatabaseSync, campaignId: string, actorId: string, actorRole: ActorRole) {
   const campaign = db.prepare("SELECT * FROM campaigns WHERE id = ?").get(campaignId);
   if (!campaign) throw new ApiError(404, "未找到该项目。");
-  if (actorRole === "client") throw new ApiError(403, "仅团队视图可以锁定版本。");
+  if (actorRole === "client") throw new ApiError(403, "当前客户评审版不能锁定最终版本。");
 
   const timestamp = nowIso();
   const eventId = randomUUID();

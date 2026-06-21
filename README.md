@@ -11,8 +11,8 @@ This is not a KOL discovery system. Candidate KOLs are assumed to already exist 
 - Inline KOL decisions: approve, reject with reasons, ask a question, view history, and undo a recorded decision.
 - Append-only decision event log plus current-state table for fast board reads.
 - Optional Twitter241 backend sync for X/Twitter candidate scale and recent timeline metadata.
-- JSON and CSV export for agency handoff.
-- Project-specific configuration files for different client projects.
+- JSON and CSV export for follow-up handoff.
+- Template-backed project configuration for different client projects.
 
 Live preview:
 
@@ -22,19 +22,39 @@ https://client-kol-selection-console-production.up.railway.app
 
 ## Project Configs
 
-Project-specific names, client/campaign metadata, page copy, root audience groups, method sections, signal logic, KOL list rules, and seeded candidate pools live in JSON config files:
+Project-specific client/campaign metadata and seeded candidate pools are separated from reusable page templates:
 
 ```text
-server/project-configs/ilands-aaa-signal-map.json
+server/config/projects/ilands-aaa-signal-map.json
+server/config/templates/ilands-root-backed-kol-review.json
 ```
+
+Project config owns the client-specific layer:
+
+- `projectId`
+- `templateId`
+- `client`
+- `campaign`
+- `seed.candidates`
+- optional `uiOverrides`
+
+Template config owns the shared review experience:
+
+- navigation and hero copy
+- root audience groups
+- reverse-discovery method sections
+- KOL pool labels
+- learning/rule panels
+- signal logic board
 
 To add another project:
 
-1. Copy `server/project-configs/ilands-aaa-signal-map.json`.
-2. Change `projectId`, `client`, `campaign`, `ui`, and `seed.candidates`.
-3. Restart the app.
+1. Copy a file under `server/config/projects/`.
+2. Change `projectId`, `client`, `campaign`, `seed.candidates`, and keep or change `templateId`.
+3. If the new project needs a different page structure, copy a file under `server/config/templates/` and point the project to the new `templateId`.
+4. Restart the app.
 
-All config files in `server/project-configs/` are seeded into SQLite on startup if their campaign has no candidates yet. Existing client decisions are not overwritten when project copy changes.
+All config files in `server/config/projects/` are seeded into SQLite on startup if their campaign has no candidates yet. Existing client decisions are not overwritten when project copy changes.
 
 Select a default project:
 
@@ -191,13 +211,13 @@ GET /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/export?f
 GET /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/export?format=csv
 ```
 
-Lock selection, agency/admin only:
+Lock selection, internal API only:
 
 ```http
 POST /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/lock
 ```
 
-Sync X/Twitter profile scale through Twitter241, agency/admin only:
+Sync X/Twitter profile scale through Twitter241, internal API only:
 
 ```http
 POST /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/sync-twitter241
@@ -225,7 +245,7 @@ npm run build
 Covered behavior:
 
 - Board load and summary counts
-- Project config loading for UI and seed data
+- Template-backed project config loading for UI and seed data
 - Root audience config loading
 - Reject reason validation
 - Reject event persistence and current-state update
@@ -244,8 +264,8 @@ The GitHub repository is intended to be private under `MangoLabsStudio` with acc
 
 ## Next Work
 
-- Add an agency import/source table for future projects beyond the current JSON-backed config.
+- Add a source/import table for future projects beyond the current JSON-backed config.
 - Add authentication and client/campaign authorization middleware.
-- Add agency answer flow for resolving question follow-ups.
+- Add an operator answer flow for resolving question follow-ups.
 - Add table view and virtualization if boards exceed several hundred candidates.
 - Add a production database adapter if this moves beyond local MVP.

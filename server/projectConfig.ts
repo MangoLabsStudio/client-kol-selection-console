@@ -5,18 +5,23 @@ import { ApiError } from "./types.js";
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(serverDir, "..");
-const configDir = path.join(appRoot, "server", "project-configs");
+const configRoot = path.join(appRoot, "server", "config");
+const projectConfigDir = path.join(configRoot, "projects");
+const templateConfigDir = path.join(configRoot, "templates");
 const fallbackProjectId = "ilands-aaa-signal-map";
 const configCache = new Map<string, ProjectConfig>();
+const templateCache = new Map<string, ProjectTemplateConfig>();
 
 export type ProjectConfigSummary = {
   projectId: string;
+  templateId?: string;
   clientName: string;
   campaignName: string;
 };
 
 export type ProjectConfig = {
   projectId: string;
+  templateId?: string;
   client: {
     id: string;
     name: string;
@@ -33,6 +38,26 @@ export type ProjectConfig = {
     now?: string;
     candidates: SeedKolConfig[];
   };
+};
+
+export type ProjectConfigFile = Omit<ProjectConfig, "ui"> & {
+  ui?: ProjectUiConfig;
+  uiOverrides?: PartialProjectUiConfig;
+};
+
+export type ProjectTemplateConfig = {
+  templateId: string;
+  ui: ProjectUiConfig;
+};
+
+type PartialProjectUiConfig = DeepPartial<ProjectUiConfig>;
+
+type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends Array<unknown>
+    ? T[K]
+    : T[K] extends object
+      ? DeepPartial<T[K]>
+      : T[K];
 };
 
 export type ProjectUiConfig = {
@@ -217,6 +242,7 @@ export type SeedKolConfig = {
 
 export type ClientAppConfig = {
   projectId: string;
+  templateId?: string;
   clientName: string;
   campaignId: string;
   campaignName: string;
@@ -229,7 +255,7 @@ export function getDefaultProjectId() {
 }
 
 export function getProjectConfig(projectId = getDefaultProjectId()): ProjectConfig {
-  const configPath = resolveConfigPath(projectId);
+  const configPath = resolveProjectConfigPath(projectId);
   if (!existsSync(configPath)) {
     throw new ApiError(404, `Project config not found: ${projectId}`);
   }
@@ -237,16 +263,17 @@ export function getProjectConfig(projectId = getDefaultProjectId()): ProjectConf
   const cached = configCache.get(configPath);
   if (cached) return cached;
 
-  const parsed = JSON.parse(readFileSync(configPath, "utf8")) as ProjectConfig;
-  assertProjectConfig(parsed, configPath);
-  configCache.set(configPath, parsed);
-  return parsed;
+  const parsed = JSON.parse(readFileSync(configPath, "utf8")) as ProjectConfigFile;
+  const hydrated = hydrateProjectConfig(parsed, configPath);
+  assertProjectConfig(hydrated, configPath);
+  configCache.set(configPath, hydrated);
+  return hydrated;
 }
 
 export function getAllProjectConfigs() {
-  if (!existsSync(configDir)) return [getProjectConfig()];
+  if (!existsSync(projectConfigDir)) return [getProjectConfig()];
 
-  const configs = readdirSync(configDir)
+  const configs = readdirSync(projectConfigDir)
     .filter((file) => file.endsWith(".json"))
     .sort()
     .map((file) => getProjectConfig(file.replace(/\.json$/, "")));
@@ -258,12 +285,14 @@ export function getClientAppConfig(projectId?: string): ClientAppConfig {
   const config = getProjectConfig(projectId);
   return {
     projectId: config.projectId,
+    templateId: config.templateId,
     clientName: config.client.name,
     campaignId: config.campaign.id,
     campaignName: config.campaign.name,
     ui: config.ui,
     availableProjects: getAllProjectConfigs().map((candidate) => ({
       projectId: candidate.projectId,
+      templateId: candidate.templateId,
       clientName: candidate.client.name,
       campaignName: candidate.campaign.name
     }))
@@ -276,12 +305,70 @@ function normalizeProjectId(value: string) {
   return trimmed.replace(/\.json$/, "") || fallbackProjectId;
 }
 
-function resolveConfigPath(projectIdOrPath: string) {
+function resolveProjectConfigPath(projectIdOrPath: string) {
   const normalized = normalizeProjectId(projectIdOrPath);
   if (normalized.includes("/")) {
     return path.isAbsolute(normalized) ? normalized : path.resolve(appRoot, normalized);
   }
-  return path.join(configDir, `${normalized}.json`);
+  const projectConfigPath = path.join(projectConfigDir, `${normalized}.json`);
+  return projectConfigPath;
+}
+
+function resolveTemplateConfigPath(templateIdOrPath: string) {
+  const normalized = normalizeProjectId(templateIdOrPath);
+  if (normalized.includes("/")) {
+    return path.isAbsolute(normalized) ? normalized : path.resolve(appRoot, normalized);
+  }
+  return path.join(templateConfigDir, `${normalized}.json`);
+}
+
+function hydrateProjectConfig(config: ProjectConfigFile, source: string): ProjectConfig {
+  if (!config.templateId) return config as ProjectConfig;
+
+  const template = getTemplateConfig(config.templateId);
+  const ui = mergeConfig(mergeConfig(template.ui, config.ui ?? {}), config.uiOverrides ?? {});
+  return {
+    ...config,
+    ui
+  };
+}
+
+function getTemplateConfig(templateId: string): ProjectTemplateConfig {
+  const templatePath = resolveTemplateConfigPath(templateId);
+  if (!existsSync(templatePath)) {
+    throw new ApiError(500, `Project template not found: ${templateId}`);
+  }
+
+  const cached = templateCache.get(templatePath);
+  if (cached) return cached;
+
+  const parsed = JSON.parse(readFileSync(templatePath, "utf8")) as ProjectTemplateConfig;
+  assertProjectTemplateConfig(parsed, templatePath);
+  templateCache.set(templatePath, parsed);
+  return parsed;
+}
+
+function mergeConfig<T>(base: T, override: unknown): T {
+  if (!override || typeof override !== "object" || Array.isArray(override)) return base;
+  if (!base || typeof base !== "object" || Array.isArray(base)) return override as T;
+
+  const merged: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+  Object.entries(override as Record<string, unknown>).forEach(([key, value]) => {
+    const baseValue = merged[key];
+    if (
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      baseValue &&
+      typeof baseValue === "object" &&
+      !Array.isArray(baseValue)
+    ) {
+      merged[key] = mergeConfig(baseValue, value);
+      return;
+    }
+    merged[key] = value;
+  });
+  return merged as T;
 }
 
 function assertProjectConfig(config: ProjectConfig, source: string) {
@@ -298,5 +385,18 @@ function assertProjectConfig(config: ProjectConfig, source: string) {
 
   if (missing.length > 0) {
     throw new ApiError(500, `Invalid project config ${source}`, { missing });
+  }
+}
+
+function assertProjectTemplateConfig(config: ProjectTemplateConfig, source: string) {
+  const missing: string[] = [];
+  if (!config.templateId) missing.push("templateId");
+  if (!config.ui?.brand?.name) missing.push("ui.brand.name");
+  if (!Array.isArray(config.ui?.navigation)) missing.push("ui.navigation");
+  if (!Array.isArray(config.ui?.learning?.sections)) missing.push("ui.learning.sections");
+  if (!Array.isArray(config.ui?.rules?.sections)) missing.push("ui.rules.sections");
+
+  if (missing.length > 0) {
+    throw new ApiError(500, `Invalid project template ${source}`, { missing });
   }
 }

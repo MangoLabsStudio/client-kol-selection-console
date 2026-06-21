@@ -202,32 +202,6 @@ textarea:focus-visible {
   justify-content: flex-end;
 }
 
-.role-switch {
-  display: flex;
-  min-width: 148px;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: #eef2ef;
-}
-
-.role-switch button {
-  width: 50%;
-  min-height: 32px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.role-switch button.active {
-  background: var(--surface);
-  color: var(--brand-strong);
-  box-shadow: 0 4px 16px rgba(45, 63, 55, 0.12);
-}
-
 .summary-updated {
   display: grid;
   min-width: 112px;
@@ -1620,25 +1594,6 @@ body {
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.86);
   font-weight: 800;
-}
-
-.hero-action.lock {
-  background: rgba(216, 196, 120, 0.16);
-  border-color: rgba(216, 196, 120, 0.32);
-}
-
-.role-switch.dark {
-  border-color: rgba(255, 255, 255, 0.13);
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.role-switch.dark button {
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.role-switch.dark button.active {
-  background: #fffef8;
-  color: #163b3b;
 }
 
 .section-title {

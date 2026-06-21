@@ -1,23 +1,32 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Check, HelpCircle, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { questionReasons, rejectReasons } from "../lib/status";
 import type { CampaignKolItem, SelectionStatus } from "../lib/types";
+
+export type FeedbackAnchor = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
 
 type DecisionModalProps = {
   kind: "reject" | "question";
   item: CampaignKolItem | null;
+  anchor: FeedbackAnchor | null;
   submitting: boolean;
   onClose: () => void;
   onSubmit: (input: { toStatus: SelectionStatus; reasonTags: string[]; note: string }) => void;
 };
 
-export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: DecisionModalProps) {
+export function DecisionModal({ kind, item, anchor, submitting, onClose, onSubmit }: DecisionModalProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [attempted, setAttempted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const reasonOptions = useMemo(() => (kind === "reject" ? rejectReasons : questionReasons), [kind]);
+  const floatingStyle = useMemo(() => getFloatingStyle(anchor), [anchor]);
 
   useEffect(() => {
     if (!item) return;
@@ -79,7 +88,7 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
 
   return (
     <AnimatePresence>
-      <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="modal-backdrop" style={floatingStyle} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
         <motion.div
           className="decision-modal"
           role="dialog"
@@ -145,4 +154,44 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
       </motion.div>
     </AnimatePresence>
   );
+}
+
+function getFloatingStyle(anchor: FeedbackAnchor | null): CSSProperties {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const margin = viewportWidth < 720 ? 12 : 16;
+  const gap = viewportWidth < 720 ? 8 : 12;
+  const width = Math.min(430, Math.max(280, viewportWidth - margin * 2));
+  const estimatedHeight = viewportWidth < 720 ? 360 : 353;
+  const maxTop = Math.max(margin, viewportHeight - estimatedHeight - margin);
+
+  if (!anchor) {
+    return {
+      left: Math.round((viewportWidth - width) / 2),
+      top: margin + 24,
+      width
+    };
+  }
+
+  const rightOfTrigger = anchor.left + anchor.width + gap;
+  const leftOfTrigger = anchor.left - width - gap;
+  const centeredOnTrigger = anchor.left + anchor.width / 2 - width / 2;
+  const hasRoomRight = rightOfTrigger + width <= viewportWidth - margin;
+  const hasRoomLeft = leftOfTrigger >= margin;
+  const preferredLeft = hasRoomRight ? rightOfTrigger : hasRoomLeft ? leftOfTrigger : centeredOnTrigger;
+
+  return {
+    left: Math.round(clamp(preferredLeft, margin, viewportWidth - width - margin)),
+    top: Math.round(clamp(anchor.top - 10, margin, maxTop)),
+    width
+  };
+}
+
+function clamp(value: number, min: number, max: number) {
+  if (max < min) return min;
+  return Math.min(Math.max(value, min), max);
 }

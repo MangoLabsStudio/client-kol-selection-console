@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Download, FileJson, Inbox, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { DecisionModal } from "./components/DecisionModal";
+import type { FeedbackAnchor } from "./components/DecisionModal";
 import { FilterBar } from "./components/FilterBar";
 import { LearningBoard } from "./components/LearningBoard";
 import { ReviewPoolCard } from "./components/ReviewPoolCard";
@@ -31,6 +32,12 @@ type LoadingTarget = {
   status: SelectionStatus | "undo";
 } | null;
 
+type FeedbackModalState = {
+  kind: "reject" | "question";
+  item: CampaignKolItem;
+  anchor: FeedbackAnchor;
+};
+
 export default function App() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(() => getInitialProjectId());
   const [appConfig, setAppConfig] = useState<AppConfig | null>(null);
@@ -38,7 +45,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [loadingTarget, setLoadingTarget] = useState<LoadingTarget>(null);
-  const [modal, setModal] = useState<{ kind: "reject" | "question"; item: CampaignKolItem } | null>(null);
+  const [modal, setModal] = useState<FeedbackModalState | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [exporting, setExporting] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query);
@@ -308,8 +315,8 @@ export default function App() {
                         item={item}
                         loadingStatus={loadingTarget?.itemId === item.id ? loadingTarget.status : null}
                         onApprove={(candidate) => decide(candidate, "approved")}
-                        onReject={(candidate) => setModal({ kind: "reject", item: candidate })}
-                        onQuestion={(candidate) => setModal({ kind: "question", item: candidate })}
+                        onReject={(candidate, anchor) => setModal({ kind: "reject", item: candidate, anchor })}
+                        onQuestion={(candidate, anchor) => setModal({ kind: "question", item: candidate, anchor })}
                         onUndo={(candidate) => decide(candidate, "pending", [], "已撤回至待评审状态。", "undo")}
                       />
                     ))}
@@ -326,6 +333,7 @@ export default function App() {
       <DecisionModal
         kind={modal?.kind ?? "reject"}
         item={modal?.item ?? null}
+        anchor={modal?.anchor ?? null}
         submitting={Boolean(loadingTarget)}
         onClose={() => setModal(null)}
         onSubmit={({ toStatus, reasonTags, note }) => modal && decide(modal.item, toStatus, reasonTags, note)}

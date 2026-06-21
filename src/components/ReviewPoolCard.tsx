@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { BadgeCheck, CircleHelp, ExternalLink, Undo2, XCircle } from "lucide-react";
 import type { CampaignKolItem, SelectionStatus } from "../lib/types";
+import type { FeedbackAnchor } from "./DecisionModal";
 import { formatCompactNumber, formatContactStatus, formatContentCategory, formatRiskTag } from "../lib/status";
 
 type ReviewPoolCardProps = {
@@ -8,8 +9,8 @@ type ReviewPoolCardProps = {
   loadingStatus: SelectionStatus | "undo" | null;
   onApprove: (item: CampaignKolItem) => void;
   onUndo: (item: CampaignKolItem) => void;
-  onReject: (item: CampaignKolItem) => void;
-  onQuestion: (item: CampaignKolItem) => void;
+  onReject: (item: CampaignKolItem, anchor: FeedbackAnchor) => void;
+  onQuestion: (item: CampaignKolItem, anchor: FeedbackAnchor) => void;
 };
 
 export function ReviewPoolCard({ item, loadingStatus, onApprove, onReject, onQuestion, onUndo }: ReviewPoolCardProps) {
@@ -98,7 +99,7 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onReject, onQue
             className="reject"
             selected={status === "rejected"}
             loading={loadingStatus === "rejected"}
-            onClick={() => onReject(item)}
+            onClick={(event) => onReject(item, getAnchor(event.currentTarget))}
             icon={<XCircle size={14} />}
             label="排除"
           />
@@ -106,7 +107,7 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onReject, onQue
             className="question"
             selected={status === "question"}
             loading={loadingStatus === "question"}
-            onClick={() => onQuestion(item)}
+            onClick={(event) => onQuestion(item, getAnchor(event.currentTarget))}
             icon={<CircleHelp size={14} />}
             label="需补充"
           />
@@ -139,7 +140,7 @@ function DecisionButton({
   className: "approve" | "reject" | "question";
   selected: boolean;
   loading: boolean;
-  onClick: () => void;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   icon: React.ReactNode;
   label: string;
 }) {
@@ -149,6 +150,16 @@ function DecisionButton({
       {label}
     </button>
   );
+}
+
+function getAnchor(element: HTMLElement): FeedbackAnchor {
+  const rect = element.getBoundingClientRect();
+  return {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height
+  };
 }
 
 function tierFromFit(fit: number) {

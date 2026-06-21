@@ -793,10 +793,9 @@ textarea:focus-visible {
 
 .modal-backdrop {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
   z-index: 70;
   width: min(430px, calc(100vw - 32px));
+  max-width: calc(100vw - 24px);
   pointer-events: none;
 }
 
@@ -1302,14 +1301,6 @@ textarea:focus-visible {
 
   .signal-row {
     grid-template-columns: 1fr;
-  }
-
-  .modal-backdrop {
-    right: 12px;
-    bottom: 12px;
-    left: 12px;
-    width: auto;
-    padding: 0;
   }
 
   .decision-modal {

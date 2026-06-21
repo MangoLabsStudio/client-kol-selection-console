@@ -83,7 +83,7 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
         <motion.div
           className="decision-modal"
           role="dialog"
-          aria-modal="true"
+          aria-modal="false"
           aria-labelledby="decision-modal-title"
           ref={panelRef}
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -123,7 +123,7 @@ export function DecisionModal({ kind, item, submitting, onClose, onSubmit }: Dec
               value={note}
               onChange={(event) => setNote(event.target.value)}
               placeholder={kind === "reject" ? "可写具体顾虑、内部判断或替代建议" : "请写明需要补充确认的信息"}
-              rows={4}
+              rows={3}
             />
           </label>
 

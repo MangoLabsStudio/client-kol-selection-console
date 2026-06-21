@@ -1,0 +1,453 @@
+{
+  "projectId": "ilands-aaa-signal-map",
+  "client": {
+    "id": "client-ilands",
+    "name": "iLands",
+    "tier": "premium"
+  },
+  "campaign": {
+    "id": "campaign-frontier-ai-launch",
+    "name": "AAA AI Circle Activation Map",
+    "reviewRound": "Round 1 / Client review",
+    "objective": "Review a target-backed AI KOL execution pool and turn client feedback into reusable selection rules."
+  },
+  "ui": {
+    "brand": {
+      "mark": "i",
+      "name": "ilands AAA Signal Map",
+      "subtitle": "Client review console · backend logged"
+    },
+    "navigation": [
+      {
+        "label": "判别逻辑",
+        "target": "#learning",
+        "index": "01"
+      },
+      {
+        "label": "KOL 执行池",
+        "target": "#pool",
+        "index": "02"
+      },
+      {
+        "label": "排序规则",
+        "target": "#rules",
+        "index": "03"
+      },
+      {
+        "label": "导出 / 锁定",
+        "target": "#export",
+        "index": "04"
+      }
+    ],
+    "sideNote": "客户版只展示可执行路径；每一次选择都会写入后端 event log。",
+    "hero": {
+      "eyebrow": "AAA AI Circle Activation Map",
+      "title": "用“被看到”和“被互动”两条线反推可执行 KOL。",
+      "lede": "iLands 的目标不是先找泛 AI KOL，而是把客户反馈前置成可追踪的 selection board：客户在前端 approve、reject、question、hold，agency 在后端拿到完整决策记录、否决原因和 follow-up。",
+      "metricLabels": {
+        "total": "KOL candidates",
+        "approved": "approved",
+        "rejected": "rejected with reasons",
+        "question": "open questions"
+      }
+    },
+    "pool": {
+      "eyebrow": "Dual-Axis KOL Pool",
+      "title": "候选 KOL 直接进入客户可见执行池，再用反馈回流排序。",
+      "description": "这里不是 discovery。候选已经被 agency 放入 campaign pool；客户只负责审核、否决、提问和确认。页面刷新后状态来自后端 current state，历史来自 append-only event log。",
+      "allCandidatesLabel": "全部候选",
+      "pendingDecisionLabel": "pending decisions",
+      "reviewedLabel": "All candidates have been reviewed.",
+      "emptyTitle": "No KOLs match this filter.",
+      "emptyAction": "Clear filters"
+    },
+    "learning": {
+      "storageKey": "client-kol-selection-learning-profile-ilands-aaa-v1",
+      "eyebrow": "Client Preference Learning",
+      "title": "先把“AI 行业大佬”翻译成可被客户修正的判别逻辑。",
+      "description": "每一轮 KOL 反馈都会回到这里：Approve 强化相似人群，Reject 形成扣分规则，Question 保留成下一轮需要验证的边界案例。",
+      "systemTitle": "系统当前理解",
+      "systemDescription": "初始需求：客户要找“AI 行业大佬”。当前版本先假设客户真正要的是能影响 AI 圈讨论、能带来投资/BD 连接，或能让产品叙事更可信的人。",
+      "exportProject": "ilands",
+      "exportRound": "client_review_round_1",
+      "sections": [
+        {
+          "id": "want",
+          "title": "更想要的人",
+          "subtitle": "Approve 会强化这些信号",
+          "open": true,
+          "defaultRules": [
+            "技术圈或产品圈有可信权威，能让讨论不只是硬广。",
+            "能带来 warm intro、投资兴趣、BD 连接或高质量二跳可见面。",
+            "和 AI agent、character / social AI、AI-native app layer 有真实关系。",
+            "优先真实个人账号，而不是公司官方号或泛媒体账号。"
+          ]
+        },
+        {
+          "id": "avoid",
+          "title": "不想要的人",
+          "subtitle": "Reject 会形成扣分规则",
+          "open": true,
+          "defaultRules": [
+            "泛 AI 工具号、prompt hack 账号、纯流量型 newsletter。",
+            "官方公司号、机构号，除非只作为远端 root 而不是可投放 KOL。",
+            "和 iLands 叙事太远，无法自然解释为什么会看到这个产品。",
+            "品牌、关系或竞品风险太高，容易让合作显得不自然。"
+          ]
+        },
+        {
+          "id": "uncertain",
+          "title": "还在确认的边界",
+          "subtitle": "Question 会进入下一轮验证题",
+          "defaultRules": [
+            "纯学术人物是可信背书目标，还是离商业转化太远。",
+            "超大号更适合当远端 root，还是值得尝试直接触达。",
+            "VC root 更看重投资 fit、warm intro，还是公开信息流可见性。",
+            "客户是否接受媒体 / podcast 作为二跳路径，而不是直接 KOL。"
+          ]
+        },
+        {
+          "id": "next",
+          "title": "下一轮推荐如何调整",
+          "subtitle": "反馈会进入 root / KOL 排序",
+          "defaultRules": [
+            "Approve 的 KOL 会扩散更多相似身份、组织、话题和二跳关注对象。",
+            "Reject 的原因会变成扣分项，例如媒体化、离叙事太远、品牌敏感。",
+            "Question 的对象保留为边界样本，下一轮继续问客户“到底要不要”。",
+            "下一轮名单保持 70% 高匹配、20% 边界确认、10% 探索样本。"
+          ]
+        }
+      ]
+    },
+    "rules": {
+      "title": "KOL List 判别逻辑",
+      "description": "下面负责解释为什么一个账号会进入执行池、为什么排到 A/B/C/D，以及客户对单个 KOL 的 Approve / Reject / Question 会怎样回流到下一轮排序。",
+      "statLabel": "KOL rules",
+      "sections": [
+        {
+          "title": "为什么进入 KOL List",
+          "subtitle": "进入执行池的最低条件",
+          "open": true,
+          "rules": [
+            "能把内容送进某类 root 平时会看的信息流。",
+            "内容方向和 iLands 的 AI agent / AI community / AI-native social 叙事有关。",
+            "账号必须有真实表达面：近期内容、受众、互动或媒体路径能被检查。"
+          ]
+        },
+        {
+          "title": "优先推进谁",
+          "subtitle": "Approve 会强化这些信号",
+          "open": true,
+          "rules": [
+            "A 类优先确认报价、样张、投放档期和可定制角度。",
+            "B 类先做 BD 验证：联系方式、接单意愿、历史合作和报价区间。",
+            "C 类走 warm intro、PR 或媒体库存，不按普通 paid KOL 处理。"
+          ]
+        },
+        {
+          "title": "需要补充验证",
+          "subtitle": "Question 会进入核查清单",
+          "rules": [
+            "需要补近期样张、真实曝光、评论区回复者质量或 sponsor 入口。",
+            "需要解释这个 KOL 对应哪类 root，以及为什么该 root 可能会看到。",
+            "需要确认这是可合作账号、媒体路径，还是只适合内部观察的参考账号。"
+          ]
+        },
+        {
+          "title": "什么会扣分",
+          "subtitle": "Reject 会形成排除或降权规则",
+          "rules": [
+            "泛工具号、prompt hack 账号或纯流量内容会降权。",
+            "和目标 root 的信息流关系弱、内容角度牵强、看到后价值不明确会降权。",
+            "品牌、竞品、身份或合作风险太高时，不进入本轮优先推进。"
+          ]
+        }
+      ]
+    }
+  },
+  "seed": {
+    "now": "2026-06-21T09:00:00.000Z",
+    "candidates": [
+      {
+        "id": "kol-lena-vos",
+        "itemId": "item-kol-lena-vos",
+        "name": "Lena Vos",
+        "handle": "@lenavossays",
+        "platform": "X",
+        "profileUrl": "https://example.com/lenavossays",
+        "avatarUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=240&h=240&q=80",
+        "followers": 248000,
+        "region": "North America",
+        "language": "English",
+        "contentCategory": "AI infrastructure",
+        "bio": "Writes practical analysis on applied AI systems, inference economics, and founder-led launches.",
+        "audienceSummary": "AI founders, infrastructure operators, seed-to-Series B investors, and technical PMs.",
+        "whyIncluded": "Strong overlap with budget-owning AI operators and a track record of sober product explainers.",
+        "recommendedAngle": "Use a concise launch thread around the operating bottleneck the product removes.",
+        "clientFacingNote": "Best fit for a credibility-first launch, not a broad awareness push.",
+        "agencyInternalNote": "Warm intro path through prior newsletter sponsor. Ask for thread + quote bundle.",
+        "estimatedPrice": "$8k-$12k",
+        "contactStatus": "warm intro available",
+        "riskTags": ["price_sensitive", "technical_depth_required"],
+        "metadata": {
+          "previousExamples": ["AI ops cost teardown", "Founder launch thread"],
+          "audienceFit": 92
+        },
+        "initial": {
+          "status": "approved",
+          "reasonTags": ["priority_fit"],
+          "note": "Strong audience and credible technical tone."
+        }
+      },
+      {
+        "id": "kol-omar-klein",
+        "itemId": "item-kol-omar-klein",
+        "name": "Omar Klein",
+        "handle": "@omarkleinlab",
+        "platform": "YouTube",
+        "profileUrl": "https://example.com/omarkleinlab",
+        "avatarUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=240&h=240&q=80",
+        "followers": 612000,
+        "region": "Europe",
+        "language": "English",
+        "contentCategory": "Developer education",
+        "bio": "Long-form technical educator covering AI developer tooling and production engineering.",
+        "audienceSummary": "Senior developers, solution architects, and AI platform teams evaluating tools.",
+        "whyIncluded": "High-trust demo format and strong watch time on implementation-heavy content.",
+        "recommendedAngle": "Sponsor a build-through walkthrough with one concrete workflow and a clear before/after.",
+        "clientFacingNote": "Good for explaining complexity, but turnaround is slower than social-first channels.",
+        "agencyInternalNote": "Requires a detailed brief and demo environment two weeks before filming.",
+        "estimatedPrice": "$18k-$26k",
+        "contactStatus": "manager contacted",
+        "riskTags": ["long_lead_time"],
+        "metadata": {
+          "previousExamples": ["Agent workflow build", "AI infra buyer guide"],
+          "audienceFit": 86
+        },
+        "initial": {
+          "status": "question",
+          "reasonTags": ["need_price", "need_recent_performance"],
+          "note": "Please confirm current pricing and last 90 day view range."
+        }
+      },
+      {
+        "id": "kol-mira-chen",
+        "itemId": "item-kol-mira-chen",
+        "name": "Mira Chen",
+        "handle": "@mirabuilds",
+        "platform": "Newsletter",
+        "profileUrl": "https://example.com/mirabuilds",
+        "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&h=240&q=80",
+        "followers": 98000,
+        "region": "North America",
+        "language": "English",
+        "contentCategory": "Founder strategy",
+        "bio": "Weekly essays on AI go-to-market, enterprise adoption, and founder positioning.",
+        "audienceSummary": "Founders, GTM leads, product marketers, and early enterprise buyers.",
+        "whyIncluded": "Editorial tone matches the client-facing narrative and can frame the category cleanly.",
+        "recommendedAngle": "Place a sponsored note around the buyer decision and link to a launch memo.",
+        "clientFacingNote": "A premium narrative channel for decision-makers rather than pure traffic.",
+        "agencyInternalNote": "Newsletter sponsor calendar has limited July slots.",
+        "estimatedPrice": "$6k-$9k",
+        "contactStatus": "direct contact",
+        "riskTags": ["limited_inventory"],
+        "metadata": {
+          "previousExamples": ["Enterprise AI adoption essay", "Launch memo placement"],
+          "audienceFit": 89
+        }
+      },
+      {
+        "id": "kol-nadia-hart",
+        "itemId": "item-kol-nadia-hart",
+        "name": "Nadia Hart",
+        "handle": "@nadiadesignops",
+        "platform": "Instagram",
+        "profileUrl": "https://example.com/nadiadesignops",
+        "avatarUrl": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=240&h=240&q=80",
+        "followers": 188000,
+        "region": "North America",
+        "language": "English",
+        "contentCategory": "Product design",
+        "bio": "Visual case studies on product workflows, design systems, and AI-assisted creative operations.",
+        "audienceSummary": "Design leads, creative operators, and product teams inside growth-stage software companies.",
+        "whyIncluded": "Can translate technical value into crisp workflow visuals for a non-engineering buyer.",
+        "recommendedAngle": "Carousel showing the old review loop versus the new decision workflow.",
+        "clientFacingNote": "Useful if the launch needs a polished creative-ops angle.",
+        "agencyInternalNote": "Brand safety is clean; past sponsored content is polished but less technical.",
+        "estimatedPrice": "$7k-$11k",
+        "contactStatus": "not contacted",
+        "riskTags": ["less_technical"],
+        "metadata": {
+          "previousExamples": ["Workflow teardown carousel", "SaaS launch visual guide"],
+          "audienceFit": 78
+        },
+        "initial": {
+          "status": "hold",
+          "reasonTags": ["need_internal_discussion"],
+          "note": "Maybe useful for creative angle after the technical launch list is locked."
+        }
+      },
+      {
+        "id": "kol-theo-park",
+        "itemId": "item-kol-theo-park",
+        "name": "Theo Park",
+        "handle": "@theoparkbuilds",
+        "platform": "Podcast",
+        "profileUrl": "https://example.com/theoparkbuilds",
+        "avatarUrl": "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=240&h=240&q=80",
+        "followers": 74000,
+        "region": "Global",
+        "language": "English",
+        "contentCategory": "Founder interviews",
+        "bio": "Interview host focused on infrastructure founders, product strategy, and technical GTM.",
+        "audienceSummary": "Founders, operators, and investor listeners who prefer deeper context over short posts.",
+        "whyIncluded": "Strong host credibility and a format suited for explaining an unfamiliar category.",
+        "recommendedAngle": "Founder interview with concrete customer problem, not a generic launch spot.",
+        "clientFacingNote": "Good for authority building, weaker for immediate traffic.",
+        "agencyInternalNote": "Ask for episode clip rights for social reuse.",
+        "estimatedPrice": "$10k-$15k",
+        "contactStatus": "warm intro available",
+        "riskTags": ["long_form", "lower_immediacy"],
+        "metadata": {
+          "previousExamples": ["Infra founder episode", "Category creation interview"],
+          "audienceFit": 82
+        }
+      },
+      {
+        "id": "kol-jules-gray",
+        "itemId": "item-kol-jules-gray",
+        "name": "Jules Gray",
+        "handle": "@julesgrowth",
+        "platform": "TikTok",
+        "profileUrl": "https://example.com/julesgrowth",
+        "avatarUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=240&h=240&q=80",
+        "followers": 830000,
+        "region": "North America",
+        "language": "English",
+        "contentCategory": "Startup growth",
+        "bio": "Short-form creator covering startup tactics, growth myths, and founder productivity.",
+        "audienceSummary": "Broad startup audience with heavy junior founder and creator skew.",
+        "whyIncluded": "Large reach and fast turnaround, but fit depends on how broad the campaign should go.",
+        "recommendedAngle": "A myth-busting short on how AI products should measure traction.",
+        "clientFacingNote": "High reach, lower precision. Worth using only if awareness is the priority.",
+        "agencyInternalNote": "Audience quality varies. Request story view and saves before recommending strongly.",
+        "estimatedPrice": "$14k-$22k",
+        "contactStatus": "manager contacted",
+        "riskTags": ["broad_audience", "engagement_quality_check"],
+        "metadata": {
+          "previousExamples": ["Startup myth shorts", "Founder productivity series"],
+          "audienceFit": 63
+        },
+        "initial": {
+          "status": "rejected",
+          "reasonTags": ["audience_mismatch", "too_generic"],
+          "note": "Reach is attractive, but the audience is too broad for this round."
+        }
+      },
+      {
+        "id": "kol-iris-okane",
+        "itemId": "item-kol-iris-okane",
+        "name": "Iris O'Kane",
+        "handle": "@irisokane",
+        "platform": "X",
+        "profileUrl": "https://example.com/irisokane",
+        "avatarUrl": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=240&h=240&q=80",
+        "followers": 134000,
+        "region": "Europe",
+        "language": "English",
+        "contentCategory": "AI research",
+        "bio": "Research translator explaining model evaluation, synthetic data, and benchmark reliability.",
+        "audienceSummary": "ML researchers, applied AI engineers, and technical founders.",
+        "whyIncluded": "Gives the campaign research credibility without turning it into an academic pitch.",
+        "recommendedAngle": "Quote post or short thread on why evaluation quality matters before scaling spend.",
+        "clientFacingNote": "Best as a credibility layer alongside a larger launch voice.",
+        "agencyInternalNote": "Avoid over-commercial copy. Works better with technical proof points.",
+        "estimatedPrice": "$5k-$8k",
+        "contactStatus": "not contacted",
+        "riskTags": ["niche_audience"],
+        "metadata": {
+          "previousExamples": ["Benchmark critique", "Synthetic data explainer"],
+          "audienceFit": 84
+        }
+      },
+      {
+        "id": "kol-alex-ramos",
+        "itemId": "item-kol-alex-ramos",
+        "name": "Alex Ramos",
+        "handle": "@alexramospod",
+        "platform": "Podcast",
+        "profileUrl": "https://example.com/alexramospod",
+        "avatarUrl": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=240&h=240&q=80",
+        "followers": 121000,
+        "region": "North America",
+        "language": "English",
+        "contentCategory": "Venture and markets",
+        "bio": "Podcast and newsletter covering software markets, startup finance, and investor narratives.",
+        "audienceSummary": "Investors, CFO-minded founders, and GTM leaders tracking category momentum.",
+        "whyIncluded": "Useful if the campaign needs investor and market narrative credibility.",
+        "recommendedAngle": "Discuss the budget decision pressure behind the category, not only product features.",
+        "clientFacingNote": "Good for investor-facing credibility and market framing.",
+        "agencyInternalNote": "Potential conflict with a competitor sponsor. Check exclusivity before outreach.",
+        "estimatedPrice": "$12k-$18k",
+        "contactStatus": "needs conflict check",
+        "riskTags": ["competitor_conflict"],
+        "metadata": {
+          "previousExamples": ["Market map episode", "Category sponsor segment"],
+          "audienceFit": 81
+        }
+      },
+      {
+        "id": "kol-sasha-wu",
+        "itemId": "item-kol-sasha-wu",
+        "name": "Sasha Wu",
+        "handle": "@sashawuai",
+        "platform": "YouTube",
+        "profileUrl": "https://example.com/sashawuai",
+        "avatarUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=240&h=240&q=80",
+        "followers": 275000,
+        "region": "APAC",
+        "language": "English",
+        "contentCategory": "AI tooling",
+        "bio": "Hands-on AI tooling reviewer with clear benchmarks, demos, and buyer checklists.",
+        "audienceSummary": "AI builders, developer advocates, and hands-on operators comparing tool stacks.",
+        "whyIncluded": "Can make the product tangible through a controlled demo and measured comparison.",
+        "recommendedAngle": "Review workflow using a real campaign scenario and before/after benchmarks.",
+        "clientFacingNote": "Strong if we can provide a clean demo path and measured proof.",
+        "agencyInternalNote": "Needs product access and sandbox data before committing.",
+        "estimatedPrice": "$16k-$24k",
+        "contactStatus": "not contacted",
+        "riskTags": ["demo_dependency"],
+        "metadata": {
+          "previousExamples": ["Tool comparison video", "AI benchmark walkthrough"],
+          "audienceFit": 88
+        }
+      },
+      {
+        "id": "kol-hana-lee",
+        "itemId": "item-kol-hana-lee",
+        "name": "Hana Lee",
+        "handle": "@hanaleeops",
+        "platform": "Newsletter",
+        "profileUrl": "https://example.com/hanaleeops",
+        "avatarUrl": "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?auto=format&fit=crop&w=240&h=240&q=80",
+        "followers": 52000,
+        "region": "APAC",
+        "language": "English",
+        "contentCategory": "Operations",
+        "bio": "Operator newsletter on lean GTM systems, sales process design, and marketing execution discipline.",
+        "audienceSummary": "Operators, GTM managers, agency founders, and B2B service leaders.",
+        "whyIncluded": "Good fit for decision-process messaging and lower-friction sponsored notes.",
+        "recommendedAngle": "Frame the console as a way to remove scattered client feedback from KOL execution.",
+        "clientFacingNote": "More agency/operator fit than pure AI buyer fit.",
+        "agencyInternalNote": "Affordable test slot; consider as backup if budget tightens.",
+        "estimatedPrice": "$2k-$4k",
+        "contactStatus": "direct contact",
+        "riskTags": ["smaller_reach"],
+        "metadata": {
+          "previousExamples": ["Ops checklist sponsor", "Workflow newsletter placement"],
+          "audienceFit": 72
+        }
+      }
+    ]
+  }
+}

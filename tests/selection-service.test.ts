@@ -3,6 +3,7 @@ import test from "node:test";
 import type { DatabaseSync } from "node:sqlite";
 import { createDatabase } from "../server/db.js";
 import { getClientAppConfig, getProjectConfig } from "../server/projectConfig.js";
+import { seedDemoData } from "../server/seed.js";
 import { createSelectionEvent, exportSelection, getCampaignBoard, getSelectionHistory, lockSelection } from "../server/selectionService.js";
 import { ApiError } from "../server/types.js";
 
@@ -64,6 +65,38 @@ test("reject requires at least one reason tag", () => {
         }),
       (error) => error instanceof ApiError && error.status === 400 && /排除原因/.test(error.message)
     );
+  });
+});
+
+test("seed sync refreshes demo notes without overwriting real review decisions", () => {
+  withDb((db) => {
+    db
+      .prepare("UPDATE kol_selection_current_state SET current_note = ? WHERE campaign_kol_item_id = ?")
+      .run("Old English seed note.", "item-kol-lena-vos");
+    db
+      .prepare("UPDATE kol_selection_events SET note = ? WHERE campaign_kol_item_id = ? AND id LIKE 'event-seed%'")
+      .run("Old English seed event.", "item-kol-lena-vos");
+
+    createSelectionEvent(db, {
+      campaignId,
+      itemId: "item-kol-mira-chen",
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      toStatus: "rejected",
+      decision: "rejected",
+      reasonTags: ["brand_fit_mismatch"],
+      note: "客户后续评审备注，不应被 seed 覆盖。",
+      clientRequestId: "real-client-decision"
+    });
+
+    seedDemoData(db);
+
+    const board = getCampaignBoard(db, campaignId, "client");
+    const lena = board.items.find((item) => item.id === "item-kol-lena-vos");
+    const mira = board.items.find((item) => item.id === "item-kol-mira-chen");
+
+    assert.equal(lena?.currentState.currentNote, "受众匹配度高，技术表达可信。");
+    assert.equal(mira?.currentState.currentNote, "客户后续评审备注，不应被 seed 覆盖。");
   });
 });
 

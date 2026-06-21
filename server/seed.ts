@@ -243,6 +243,37 @@ function syncExistingProjectCopy(db: DatabaseSync, config: ProjectConfig, timest
       updated_at = ?
     WHERE id = ? AND campaign_id = ?`
   );
+  const updateSeededCurrentState = db.prepare(
+    `UPDATE kol_selection_current_state SET
+      current_status = ?,
+      current_decision = ?,
+      current_reason_tags = ?,
+      current_note = ?,
+      updated_at = ?
+    WHERE campaign_id = ?
+      AND campaign_kol_item_id = ?
+      AND last_event_id LIKE 'event-seed%'`
+  );
+  const updateSeededEvent = db.prepare(
+    `UPDATE kol_selection_events SET
+      to_status = ?,
+      decision = ?,
+      reason_tags = ?,
+      note = ?
+    WHERE campaign_id = ?
+      AND campaign_kol_item_id = ?
+      AND id LIKE 'event-seed%'`
+  );
+  const updateSeededFollowup = db.prepare(
+    `UPDATE kol_selection_followups SET
+      task_type = ?,
+      question_text = ?,
+      updated_at = ?
+    WHERE campaign_id = ?
+      AND campaign_kol_item_id = ?
+      AND created_from_event_id LIKE 'event-seed%'
+      AND status = 'open'`
+  );
 
   config.seed.candidates.forEach((kol, index) => {
     const itemId = getItemId(config, kol);
@@ -281,6 +312,26 @@ function syncExistingProjectCopy(db: DatabaseSync, config: ProjectConfig, timest
       itemId,
       config.campaign.id
     );
+
+    if (kol.initial) {
+      const decision = seedDecision(kol.initial.status);
+      const reasonTags = JSON.stringify(kol.initial.reasonTags);
+
+      updateSeededCurrentState.run(
+        kol.initial.status,
+        decision,
+        reasonTags,
+        kol.initial.note,
+        timestamp,
+        config.campaign.id,
+        itemId
+      );
+      updateSeededEvent.run(kol.initial.status, decision, reasonTags, kol.initial.note, config.campaign.id, itemId);
+
+      if (kol.initial.status === "question") {
+        updateSeededFollowup.run(kol.initial.reasonTags[0] ?? "other", kol.initial.note, timestamp, config.campaign.id, itemId);
+      }
+    }
   });
 }
 

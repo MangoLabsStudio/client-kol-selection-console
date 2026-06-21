@@ -274,19 +274,19 @@ function RootPersonCard({
 
   return (
     <article className={`root-person-card is-${status}`}>
-      <button className="root-person-main" type="button" onClick={onToggle} aria-expanded={isActive}>
-        <div className="root-avatar" aria-hidden>
-          {person.avatarUrl ? <img src={person.avatarUrl} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <span>{initials(person.name)}</span>}
-        </div>
-        <div className="root-person-name">
-          <strong>{person.name}</strong>
-          <span>
-            {person.handle}
-            <ExternalLink size={10} />
-          </span>
-        </div>
+      <div className="root-person-main">
+        <button className="root-person-toggle" type="button" onClick={onToggle} aria-expanded={isActive}>
+          <div className="root-avatar" aria-hidden>
+            {person.avatarUrl ? <img src={person.avatarUrl} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <span>{initials(person.name)}</span>}
+          </div>
+          <strong className="root-person-title">{person.name}</strong>
+        </button>
+        <a className="root-person-link" href={xProfileUrl(person.handle)} target="_blank" rel="noreferrer" aria-label={`打开 ${person.name} 的 X 主页`}>
+          {person.handle}
+          <ExternalLink size={10} />
+        </a>
         <StatusChip status={status} />
-      </button>
+      </div>
 
       {isActive && (
         <aside className="root-person-popover" role="dialog" aria-label={`${person.name} 判断依据`}>
@@ -406,4 +406,9 @@ function initials(name: string) {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
+}
+
+function xProfileUrl(handle: string) {
+  const username = handle.trim().replace(/^@/, "").split(/[/?#]/)[0] ?? "";
+  return `https://x.com/${encodeURIComponent(username)}`;
 }

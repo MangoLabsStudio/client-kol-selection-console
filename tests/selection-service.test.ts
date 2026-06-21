@@ -24,10 +24,10 @@ test("loads the seeded campaign board with current-state summary", () => {
 
     assert.equal(board.campaign.clientName, "iLands");
     assert.equal(board.campaign.name, "iLands Root-backed KOL 候选评审");
-    assert.equal(board.items.length, 13);
+    assert.equal(board.items.length, 107);
     assert.deepEqual(board.summary, {
-      total: 13,
-      pending: 13,
+      total: 107,
+      pending: 107,
       approved: 0,
       rejected: 0,
       question: 0,
@@ -44,7 +44,7 @@ test("loads project config for project-specific UI and seed data", () => {
   assert.equal(config.templateId, "ilands-root-backed-kol-review");
   assert.equal(config.campaign.id, campaignId);
   assert.equal(config.ui.brand.name, "iLands KOL Selection Console");
-  assert.equal(config.seed.candidates.length, 13);
+  assert.equal(config.seed.candidates.length, 107);
   assert.equal(config.ui.roots?.groups.length, 3);
   assert.equal(appConfig.templateId, "ilands-root-backed-kol-review");
   assert.equal(appConfig.campaignId, campaignId);
@@ -102,6 +102,24 @@ test("seed sync refreshes candidate copy without overwriting real review decisio
   });
 });
 
+test("seed sync inserts newly added candidates into an existing campaign", () => {
+  withDb((db) => {
+    db.prepare("DELETE FROM campaign_kol_items WHERE id = ?").run("item-kol-jonerlichman");
+
+    let board = getCampaignBoard(db, campaignId, "client");
+    assert.equal(board.items.length, 106);
+    assert.equal(board.items.some((item) => item.id === "item-kol-jonerlichman"), false);
+
+    seedDemoData(db);
+
+    board = getCampaignBoard(db, campaignId, "client");
+    const restored = board.items.find((item) => item.id === "item-kol-jonerlichman");
+    assert.equal(board.items.length, 107);
+    assert.equal(restored?.kol.handle, "@jonerlichman");
+    assert.equal(restored?.currentState.currentStatus, "pending");
+  });
+});
+
 test("reject writes event log, current state, and summary", () => {
   withDb((db) => {
     const result = createSelectionEvent(db, {
@@ -118,7 +136,7 @@ test("reject writes event log, current state, and summary", () => {
 
     assert.equal(result.currentState.currentStatus, "rejected");
     assert.deepEqual(result.currentState.currentReasonTags, ["brand_fit_mismatch", "too_niche"]);
-    assert.equal(result.summary.pending, 12);
+    assert.equal(result.summary.pending, 106);
     assert.equal(result.summary.rejected, 1);
 
     const history = getSelectionHistory(db, campaignId, "item-kol-trungtphan");

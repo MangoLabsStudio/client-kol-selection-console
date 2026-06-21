@@ -245,6 +245,33 @@ function syncExistingProjectCopy(db: DatabaseSync, config: ProjectConfig, timest
       updated_at = ?
     WHERE id = ? AND campaign_id = ?`
   );
+  const insertMissingItem = db.prepare(
+    `INSERT INTO campaign_kol_items (
+      id, client_id, campaign_id, kol_id, display_order, status_current, client_facing_note,
+      agency_internal_note, why_included, recommended_angle, estimated_price, contact_status,
+      risk_tags, metadata, created_by, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  const insertSeedEvent = db.prepare(
+    `INSERT INTO kol_selection_events (
+      id, client_id, campaign_id, campaign_kol_item_id, kol_id, actor_id, actor_role, event_type,
+      from_status, to_status, decision, reason_tags, note, visibility, client_request_id, metadata, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  const insertSeedCurrentState = db.prepare(
+    `INSERT INTO kol_selection_current_state (
+      id, client_id, campaign_id, campaign_kol_item_id, kol_id, current_status, current_decision,
+      current_reason_tags, current_note, last_event_id, last_actor_id, last_actor_role, last_updated_at,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  const insertSeedFollowup = db.prepare(
+    `INSERT INTO kol_selection_followups (
+      id, client_id, campaign_id, campaign_kol_item_id, kol_id, task_type, question_text,
+      status, assigned_to, answer_text, created_from_event_id, resolved_by, resolved_at,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
   const updateSeededCurrentState = db.prepare(
     `UPDATE kol_selection_current_state SET
       current_status = ?,
@@ -307,38 +334,123 @@ function syncExistingProjectCopy(db: DatabaseSync, config: ProjectConfig, timest
       timestamp
     );
 
-    updateItemCopy.run(
-      index + 1,
-      kol.clientFacingNote,
-      kol.agencyInternalNote,
-      kol.whyIncluded,
-      kol.recommendedAngle,
-      kol.estimatedPrice,
-      kol.contactStatus,
-      JSON.stringify(kol.riskTags ?? []),
-      JSON.stringify(mergeLiveMetadata({ importedFrom: `${config.projectId}_config`, rankHint: index + 1 }, existingItemMetadata)),
-      timestamp,
-      itemId,
-      config.campaign.id
-    );
+    const itemMetadata = JSON.stringify(mergeLiveMetadata({ importedFrom: `${config.projectId}_config`, rankHint: index + 1 }, existingItemMetadata));
+
+    if (existingItem) {
+      updateItemCopy.run(
+        index + 1,
+        kol.clientFacingNote,
+        kol.agencyInternalNote,
+        kol.whyIncluded,
+        kol.recommendedAngle,
+        kol.estimatedPrice,
+        kol.contactStatus,
+        JSON.stringify(kol.riskTags ?? []),
+        itemMetadata,
+        timestamp,
+        itemId,
+        config.campaign.id
+      );
+    } else {
+      const status = kol.initial?.status ?? "pending";
+      insertMissingItem.run(
+        itemId,
+        config.client.id,
+        config.campaign.id,
+        kol.id,
+        index + 1,
+        status,
+        kol.clientFacingNote,
+        kol.agencyInternalNote,
+        kol.whyIncluded,
+        kol.recommendedAngle,
+        kol.estimatedPrice,
+        kol.contactStatus,
+        JSON.stringify(kol.riskTags ?? []),
+        itemMetadata,
+        "agency-config-sync",
+        timestamp,
+        timestamp
+      );
+    }
 
     if (kol.initial) {
       const decision = seedDecision(kol.initial.status);
       const reasonTags = JSON.stringify(kol.initial.reasonTags);
 
-      updateSeededCurrentState.run(
-        kol.initial.status,
-        decision,
-        reasonTags,
-        kol.initial.note,
-        timestamp,
-        config.campaign.id,
-        itemId
-      );
-      updateSeededEvent.run(kol.initial.status, decision, reasonTags, kol.initial.note, config.campaign.id, itemId);
+      if (existingItem) {
+        updateSeededCurrentState.run(
+          kol.initial.status,
+          decision,
+          reasonTags,
+          kol.initial.note,
+          timestamp,
+          config.campaign.id,
+          itemId
+        );
+        updateSeededEvent.run(kol.initial.status, decision, reasonTags, kol.initial.note, config.campaign.id, itemId);
+      } else {
+        const eventId = `event-seed-${config.projectId}-${kol.id}`;
+        insertSeedEvent.run(
+          eventId,
+          config.client.id,
+          config.campaign.id,
+          itemId,
+          kol.id,
+          "client-reviewer-1",
+          kol.initial.actorRole ?? "client",
+          "decision_created",
+          "pending",
+          kol.initial.status,
+          decision,
+          reasonTags,
+          kol.initial.note,
+          "client_visible",
+          `seed-${config.projectId}-${kol.id}`,
+          JSON.stringify({ seeded: true, projectId: config.projectId }),
+          timestamp
+        );
+        insertSeedCurrentState.run(
+          `state-${config.projectId}-${kol.id}`,
+          config.client.id,
+          config.campaign.id,
+          itemId,
+          kol.id,
+          kol.initial.status,
+          decision,
+          reasonTags,
+          kol.initial.note,
+          eventId,
+          "client-reviewer-1",
+          kol.initial.actorRole ?? "client",
+          timestamp,
+          timestamp,
+          timestamp
+        );
+      }
 
       if (kol.initial.status === "question") {
-        updateSeededFollowup.run(kol.initial.reasonTags[0] ?? "other", kol.initial.note, timestamp, config.campaign.id, itemId);
+        if (existingItem) {
+          updateSeededFollowup.run(kol.initial.reasonTags[0] ?? "other", kol.initial.note, timestamp, config.campaign.id, itemId);
+        } else {
+          insertSeedFollowup.run(
+            `followup-seed-${config.projectId}-${kol.id}`,
+            config.client.id,
+            config.campaign.id,
+            itemId,
+            kol.id,
+            kol.initial.reasonTags[0] ?? "other",
+            kol.initial.note,
+            "open",
+            "agency-ops",
+            null,
+            `event-seed-${config.projectId}-${kol.id}`,
+            null,
+            null,
+            timestamp,
+            timestamp
+          );
+        }
       }
     }
   });

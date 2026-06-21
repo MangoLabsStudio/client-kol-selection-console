@@ -2143,8 +2143,7 @@ body {
   line-height: 1.45;
 }
 
-.expanded-next,
-.review-current {
+.expanded-next {
   padding: 9px 10px;
   border-radius: var(--radius);
   border: 1px solid rgba(13, 119, 117, 0.12);
@@ -2154,21 +2153,8 @@ body {
   line-height: 1.45;
 }
 
-.expanded-next b,
-.review-current strong {
+.expanded-next b {
   color: var(--ink);
-}
-
-.review-current {
-  display: grid;
-  gap: 4px;
-  background: #fffdf5;
-}
-
-.review-current span {
-  color: var(--teal);
-  font-size: 11px;
-  font-weight: 850;
 }
 
 .expanded-kol-card details {

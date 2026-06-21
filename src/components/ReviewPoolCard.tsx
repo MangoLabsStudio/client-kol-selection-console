@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { BadgeCheck, CircleHelp, ExternalLink, History, Undo2, XCircle } from "lucide-react";
 import type { CampaignKolItem, SelectionStatus } from "../lib/types";
-import { formatCompactNumber, formatContactStatus, formatContentCategory, formatReasonTag, formatRiskTag, statusLabels } from "../lib/status";
+import { formatCompactNumber, formatContactStatus, formatContentCategory, formatRiskTag } from "../lib/status";
 
 type ReviewPoolCardProps = {
   item: CampaignKolItem;
@@ -65,14 +65,6 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onReject, onQue
         {item.recommendedAngle}
       </div>
 
-      {status !== "pending" && (
-        <div className="review-current">
-          <strong>{statusLabels[status]}</strong>
-          <span>{item.currentState.currentReasonTags.map(formatReasonTag).join("、") || "已记录"}</span>
-          {item.currentState.currentNote && <p>{item.currentState.currentNote}</p>}
-        </div>
-      )}
-
       <details>
         <summary>判断依据</summary>
         <dl>
@@ -125,12 +117,16 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onReject, onQue
             <History size={13} />
             记录
           </button>
-          {status !== "pending" && (
-            <button type="button" className="review-utility review-undo" onClick={() => onUndo(item)} disabled={loadingStatus === "undo"}>
-              {loadingStatus === "undo" ? <span className="spinner" /> : <Undo2 size={13} />}
-              撤回
-            </button>
-          )}
+          <button
+            type="button"
+            className="review-utility review-undo"
+            onClick={() => onUndo(item)}
+            disabled={status === "pending" || loadingStatus === "undo"}
+            aria-label={status === "pending" ? `${item.kol.name} 暂无可撤回的评审` : `撤回 ${item.kol.name} 的评审`}
+          >
+            {loadingStatus === "undo" ? <span className="spinner" /> : <Undo2 size={13} />}
+            撤回
+          </button>
         </div>
       </div>
     </motion.article>

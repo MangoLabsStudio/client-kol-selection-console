@@ -8,8 +8,9 @@ This is not a KOL discovery system. Candidate KOLs are assumed to already exist 
 
 - Dark left-nav review console aligned with the iLands client review mock.
 - AAA signal-map hero, client preference learning board, root audience confirmation, reverse-discovery method board, KOL execution pool, and signal logic board.
-- Inline KOL decisions: approve, reject with reasons, and ask a question.
+- Inline KOL decisions: approve, reject with reasons, ask a question, view history, and undo a recorded decision.
 - Append-only decision event log plus current-state table for fast board reads.
+- Optional Twitter241 backend sync for X/Twitter candidate scale and recent timeline metadata.
 - JSON and CSV export for agency handoff.
 - Project-specific configuration files for different client projects.
 
@@ -39,6 +40,14 @@ Select a default project:
 
 ```bash
 KOL_PROJECT_CONFIG=ilands-aaa-signal-map npm run dev
+```
+
+Optional Twitter241 sync environment:
+
+```bash
+TWITTER241_RAPIDAPI_KEY=your_primary_key
+TWITTER241_RAPIDAPI_KEY_FALLBACK=your_fallback_key
+TWITTER241_SYNC_TWEET_COUNT=20
 ```
 
 Open a specific project:
@@ -188,6 +197,21 @@ Lock selection, agency/admin only:
 POST /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/lock
 ```
 
+Sync X/Twitter profile scale through Twitter241, agency/admin only:
+
+```http
+POST /api/campaigns/campaign-ilands-root-backed-kol-review/kol-selection/sync-twitter241
+Content-Type: application/json
+x-actor-role: agency
+
+{
+  "handles": ["rohanpaul_ai"],
+  "tweetCount": 20
+}
+```
+
+The sync resolves each handle through `/user?username=...`, then fetches recent timeline data through `/user-tweets?user=<numeric_id>&count=...`. Results are written to `kol_profiles` and `campaign_kol_items.metadata.twitter241`.
+
 ## Validation
 
 Run:
@@ -210,6 +234,7 @@ Covered behavior:
 - `client_request_id` idempotency
 - JSON and CSV export grouping
 - Client cannot lock final selection
+- Twitter241 sync uses numeric user IDs for timeline fetch and preserves live metadata during config re-seeding
 
 ## Security Notes
 

@@ -351,7 +351,6 @@ export default function App() {
                         onApprove={(candidate) => decide(candidate, "approved")}
                         onReject={(candidate) => setModal({ kind: "reject", item: candidate })}
                         onQuestion={(candidate) => setModal({ kind: "question", item: candidate })}
-                        onHold={(candidate) => decide(candidate, "hold", [], "暂缓，留待后续比较。")}
                         onUndo={(candidate) => decide(candidate, "pending", [], "已撤回至待评审状态。", "undo")}
                         onHistory={openHistory}
                       />
@@ -458,6 +457,5 @@ function toastMessage(status: SelectionStatus) {
   if (status === "approved") return "已记录为通过。";
   if (status === "rejected") return "已记录排除原因。";
   if (status === "question") return "补充请求已记录。";
-  if (status === "hold") return "已记录为暂缓。";
   return "已撤回至待评审。";
 }

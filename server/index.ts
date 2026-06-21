@@ -10,6 +10,7 @@ import {
   getSelectionHistory,
   lockSelection
 } from "./selectionService.js";
+import { syncCampaignTwitter241 } from "./twitter241SyncService.js";
 import { ApiError, actorRoles, type ActorRole, type ApiErrorPayload, type SelectionStatus } from "./types.js";
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
@@ -110,6 +111,25 @@ app.post("/api/campaigns/:campaignId/kol-selection/lock", (req, res, next) => {
     const actorRole = parseActorRole(req.header("x-actor-role") ?? req.body?.actorRole ?? "agency");
     const actorId = String(req.header("x-actor-id") ?? req.body?.actorId ?? "agency-ops");
     res.json(lockSelection(db, req.params.campaignId, actorId, actorRole));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/campaigns/:campaignId/kol-selection/sync-twitter241", async (req, res, next) => {
+  try {
+    const actorRole = parseActorRole(req.header("x-actor-role") ?? req.body?.actorRole ?? "agency");
+    if (actorRole === "client") throw new ApiError(403, "仅团队视图可以同步 Twitter241 执行池数据。");
+
+    const handles = Array.isArray(req.body?.handles) ? req.body.handles.map(String) : undefined;
+    const tweetCount = Number(req.body?.tweet_count ?? req.body?.tweetCount ?? req.query.count ?? undefined);
+
+    res.json(
+      await syncCampaignTwitter241(db, req.params.campaignId, {
+        handles,
+        tweetCount
+      })
+    );
   } catch (error) {
     next(error);
   }

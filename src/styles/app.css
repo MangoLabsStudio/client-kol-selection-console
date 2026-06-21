@@ -2268,6 +2268,10 @@ body {
   background: #ffffff;
 }
 
+.review-undo {
+  color: #466465;
+}
+
 .root-title-row {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
@@ -2718,7 +2722,8 @@ body {
 }
 
 .root-decision-row button,
-.root-reason-row button {
+.root-reason-row button,
+.root-utility {
   min-height: 28px;
   display: inline-flex;
   align-items: center;
@@ -2733,6 +2738,57 @@ body {
   font-weight: 900;
   line-height: 1;
   white-space: nowrap;
+}
+
+.root-utility-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.root-utility {
+  color: var(--teal);
+}
+
+.root-undo {
+  color: #466465;
+}
+
+.root-history-list {
+  display: grid;
+  gap: 7px;
+  max-height: 174px;
+  overflow: auto;
+  padding: 9px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(13, 119, 117, 0.12);
+  background: #ffffff;
+}
+
+.root-history-list article {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(13, 119, 117, 0.09);
+}
+
+.root-history-list article:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.root-history-list strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.root-history-list span,
+.root-history-list p,
+.root-history-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .root-decision-row .approve.active,

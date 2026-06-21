@@ -3,7 +3,6 @@ import {
   BadgeCheck,
   ChevronDown,
   ChevronUp,
-  Clock3,
   ExternalLink,
   HelpCircle,
   History,
@@ -20,14 +19,13 @@ type KolCardProps = {
   item: CampaignKolItem;
   loadingStatus: SelectionStatus | "undo" | null;
   onApprove: (item: CampaignKolItem) => void;
-  onHold: (item: CampaignKolItem) => void;
   onUndo: (item: CampaignKolItem) => void;
   onReject: (item: CampaignKolItem) => void;
   onQuestion: (item: CampaignKolItem) => void;
   onHistory: (item: CampaignKolItem) => void;
 };
 
-export function KolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReject, onQuestion, onHistory }: KolCardProps) {
+export function KolCard({ item, loadingStatus, onApprove, onUndo, onReject, onQuestion, onHistory }: KolCardProps) {
   const [expanded, setExpanded] = useState(false);
   const status = item.currentState.currentStatus;
   const audienceFit = Number(item.kol.metadata.audienceFit ?? 0);
@@ -182,14 +180,6 @@ export function KolCard({ item, loadingStatus, onApprove, onHold, onUndo, onReje
           onClick={() => onQuestion(item)}
           icon={<HelpCircle size={17} />}
           label={status === "question" ? "待补充" : "需补充"}
-        />
-        <ActionButton
-          tone="warning"
-          active={status === "hold"}
-          loading={loadingStatus === "hold"}
-          onClick={() => onHold(item)}
-          icon={<Clock3 size={17} />}
-          label={status === "hold" ? "已暂缓" : "暂缓"}
         />
         {status !== "pending" && (
           <button className="undo-button" type="button" onClick={() => onUndo(item)} disabled={loadingStatus === "undo"} aria-label={`撤回 ${item.kol.name} 的评审`}>

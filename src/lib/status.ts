@@ -5,7 +5,7 @@ export const statusLabels: Record<SelectionStatus, string> = {
   approved: "已通过",
   rejected: "已排除",
   question: "待补充",
-  hold: "暂缓"
+  hold: "待评审"
 };
 
 export const statusTone: Record<SelectionStatus, string> = {

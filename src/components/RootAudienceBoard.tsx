@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, RotateCcw, Sparkles, X, XCircle } from "lucide-react";
+import { CheckCircle2, CircleHelp, ExternalLink, History, LockKeyhole, RotateCcw, Sparkles, Undo2, X, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { RootAudienceConfig, RootPersonConfig } from "../lib/types";
 
@@ -18,10 +18,22 @@ type RootMemory = {
   decisions: Record<string, RootDecision>;
 };
 
+type RootDecisionEvent = {
+  id: string;
+  handle: string;
+  eventType: "decision_created" | "decision_changed" | "undo";
+  fromStatus: RootStatus;
+  toStatus: RootStatus;
+  reason?: string;
+  note?: string;
+  createdAt: string;
+};
+
 type RootAudienceState = {
   round: number;
   decisions: Record<string, RootDecision>;
   memory: RootMemory[];
+  events: RootDecisionEvent[];
 };
 
 type RootAudienceBoardProps = {
@@ -42,18 +54,60 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
   const stats = useMemo(() => summarizeRootDecisions(config, state.decisions), [config, state.decisions]);
 
   const decide = (person: RootPersonConfig, status: RootStatus, reason?: string) => {
-    setState((current) => ({
-      ...current,
-      decisions: {
-        ...current.decisions,
-        [person.handle]: {
-          ...current.decisions[person.handle],
-          status,
+    setState((current) => {
+      const previous = current.decisions[person.handle];
+      const timestamp = new Date().toISOString();
+      const nextDecision: RootDecision = {
+        status,
+        reason,
+        note: status === "question" ? previous?.note ?? "" : undefined,
+        updatedAt: timestamp
+      };
+
+      return {
+        ...current,
+        decisions: {
+          ...current.decisions,
+          [person.handle]: nextDecision
+        },
+        events: appendRootEvent(current.events, {
+          id: crypto.randomUUID(),
+          handle: person.handle,
+          eventType: !previous || previous.status === "pending" ? "decision_created" : "decision_changed",
+          fromStatus: previous?.status ?? "pending",
+          toStatus: status,
           reason,
-          updatedAt: new Date().toISOString()
-        }
-      }
-    }));
+          note: nextDecision.note,
+          createdAt: timestamp
+        })
+      };
+    });
+  };
+
+  const undoDecision = (person: RootPersonConfig) => {
+    setState((current) => {
+      const previous = current.decisions[person.handle];
+      if (!previous) return current;
+
+      const timestamp = new Date().toISOString();
+      const nextDecisions = { ...current.decisions };
+      delete nextDecisions[person.handle];
+
+      return {
+        ...current,
+        decisions: nextDecisions,
+        events: appendRootEvent(current.events, {
+          id: crypto.randomUUID(),
+          handle: person.handle,
+          eventType: "undo",
+          fromStatus: previous.status,
+          toStatus: "pending",
+          reason: previous.reason,
+          note: previous.note,
+          createdAt: timestamp
+        })
+      };
+    });
   };
 
   const setNote = (person: RootPersonConfig, note: string) => {
@@ -87,7 +141,8 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
       return {
         round: current.round + 1,
         decisions: locked,
-        memory: nextMemory
+        memory: nextMemory,
+        events: current.events
       };
     });
   };
@@ -99,7 +154,8 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
       return {
         round: previous.round,
         decisions: previous.decisions,
-        memory: current.memory.slice(0, -1)
+        memory: current.memory.slice(0, -1),
+        events: current.events
       };
     });
   };
@@ -183,11 +239,13 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
                         key={person.handle}
                         person={person}
                         decision={state.decisions[person.handle]}
+                        events={state.events.filter((event) => event.handle === person.handle)}
                         isActive={activeHandle === person.handle}
                         onToggle={() => setActiveHandle((current) => (current === person.handle ? null : person.handle))}
                         onClose={() => setActiveHandle(null)}
                         onDecide={decide}
                         onNote={setNote}
+                        onUndo={undoDecision}
                         lockedCopy={config.lockedCopy}
                       />
                     ))}
@@ -205,23 +263,28 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
 function RootPersonCard({
   person,
   decision,
+  events,
   isActive,
   onToggle,
   onClose,
   onDecide,
   onNote,
+  onUndo,
   lockedCopy
 }: {
   person: RootPersonConfig;
   decision?: RootDecision;
+  events: RootDecisionEvent[];
   isActive: boolean;
   onToggle: () => void;
   onClose: () => void;
   onDecide: (person: RootPersonConfig, status: RootStatus, reason?: string) => void;
   onNote: (person: RootPersonConfig, note: string) => void;
+  onUndo: (person: RootPersonConfig) => void;
   lockedCopy: string;
 }) {
   const status = decision?.status ?? "pending";
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   return (
     <article className={`root-person-card is-${status}`}>
@@ -273,6 +336,38 @@ function RootPersonCard({
               需补充
             </button>
           </div>
+
+          <div className="root-utility-row">
+            <button type="button" className="root-utility" onClick={() => setHistoryOpen((value) => !value)} aria-expanded={historyOpen}>
+              <History size={13} />
+              记录
+            </button>
+            {status !== "pending" && (
+              <button type="button" className="root-utility root-undo" onClick={() => onUndo(person)}>
+                <Undo2 size={13} />
+                撤回
+              </button>
+            )}
+          </div>
+
+          {historyOpen && (
+            <div className="root-history-list" aria-label={`${person.name} 判断记录`}>
+              {events.length === 0 ? (
+                <span className="root-history-empty">暂无记录</span>
+              ) : (
+                events.slice(0, 6).map((event) => (
+                  <article key={event.id}>
+                    <strong>{formatRootEventType(event.eventType)}</strong>
+                    <span>
+                      {formatRootStatus(event.fromStatus)} → {formatRootStatus(event.toStatus)} · {formatRootTime(event.createdAt)}
+                    </span>
+                    {event.reason && <p>{event.reason}</p>}
+                    {event.note && <p>{event.note}</p>}
+                  </article>
+                ))
+              )}
+            </div>
+          )}
 
           {status === "approved" && (
             <div className="root-inline-state locked">
@@ -330,13 +425,40 @@ function readState(storageKey: string): RootAudienceState {
       return {
         round: Number(parsed.round ?? 1),
         decisions: parsed.decisions ?? {},
-        memory: Array.isArray(parsed.memory) ? parsed.memory : []
+        memory: Array.isArray(parsed.memory) ? parsed.memory : [],
+        events: Array.isArray(parsed.events) ? parsed.events : []
       };
     }
   } catch {
     // Ignore malformed local state and start from a clean round.
   }
-  return { round: 1, decisions: {}, memory: [] };
+  return { round: 1, decisions: {}, memory: [], events: [] };
+}
+
+function appendRootEvent(events: RootDecisionEvent[], event: RootDecisionEvent) {
+  return [event, ...events].slice(0, 120);
+}
+
+function formatRootStatus(status: RootStatus) {
+  if (status === "approved") return "已通过";
+  if (status === "rejected") return "已排除";
+  if (status === "question") return "待补充";
+  return "待确认";
+}
+
+function formatRootEventType(type: RootDecisionEvent["eventType"]) {
+  if (type === "undo") return "撤回";
+  if (type === "decision_changed") return "调整";
+  return "记录";
+}
+
+function formatRootTime(value: string) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
 }
 
 function initials(name: string) {

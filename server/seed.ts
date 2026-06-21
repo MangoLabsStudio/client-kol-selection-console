@@ -3,6 +3,8 @@ import { getAllProjectConfigs, getProjectConfig, type ProjectConfig, type SeedKo
 
 export const seedCampaignId = getProjectConfig().campaign.id;
 
+type Row = Record<string, unknown>;
+
 export function seedDemoData(db: DatabaseSync) {
   for (const config of getAllProjectConfigs()) {
     seedProjectData(db, config);
@@ -274,26 +276,33 @@ function syncExistingProjectCopy(db: DatabaseSync, config: ProjectConfig, timest
       AND created_from_event_id LIKE 'event-seed%'
       AND status = 'open'`
   );
+  const getExistingProfile = db.prepare("SELECT * FROM kol_profiles WHERE id = ?");
+  const getExistingItem = db.prepare("SELECT metadata FROM campaign_kol_items WHERE id = ? AND campaign_id = ?");
 
   config.seed.candidates.forEach((kol, index) => {
     const itemId = getItemId(config, kol);
+    const existingProfile = getExistingProfile.get(kol.id) as Row | undefined;
+    const existingProfileMetadata = readJsonObject(existingProfile?.metadata);
+    const hasLiveProfile = Boolean(existingProfileMetadata.twitter241);
+    const existingItem = getExistingItem.get(itemId, config.campaign.id) as Row | undefined;
+    const existingItemMetadata = readJsonObject(existingItem?.metadata);
 
     upsertProfile.run(
       kol.id,
       kol.name,
       kol.handle,
       kol.platform,
-      kol.profileUrl,
-      kol.avatarUrl,
-      kol.bio,
-      kol.followers,
+      hasLiveProfile ? String(existingProfile?.profile_url ?? kol.profileUrl) : kol.profileUrl,
+      hasLiveProfile ? String(existingProfile?.avatar_url ?? kol.avatarUrl) : kol.avatarUrl,
+      hasLiveProfile ? String(existingProfile?.bio ?? kol.bio) : kol.bio,
+      hasLiveProfile ? Number(existingProfile?.followers ?? kol.followers) : kol.followers,
       kol.region,
       kol.language,
       kol.contentCategory,
       null,
       kol.profileUrl,
       kol.audienceSummary,
-      JSON.stringify(kol.metadata ?? {}),
+      JSON.stringify(mergeLiveMetadata(kol.metadata ?? {}, existingProfileMetadata)),
       timestamp,
       timestamp
     );
@@ -307,7 +316,7 @@ function syncExistingProjectCopy(db: DatabaseSync, config: ProjectConfig, timest
       kol.estimatedPrice,
       kol.contactStatus,
       JSON.stringify(kol.riskTags ?? []),
-      JSON.stringify({ importedFrom: `${config.projectId}_config`, rankHint: index + 1 }),
+      JSON.stringify(mergeLiveMetadata({ importedFrom: `${config.projectId}_config`, rankHint: index + 1 }, existingItemMetadata)),
       timestamp,
       itemId,
       config.campaign.id
@@ -343,4 +352,24 @@ function seedDecision(status: "approved" | "rejected" | "question" | "hold") {
   if (status === "approved") return "approve";
   if (status === "rejected") return "reject";
   return status;
+}
+
+function mergeLiveMetadata(base: Record<string, unknown>, existing: Record<string, unknown>) {
+  const liveKeys = ["twitter241", "poolScaleStatus", "poolScaleSource", "poolScaleSyncedAt"];
+  const liveEntries = Object.fromEntries(liveKeys.filter((key) => key in existing).map((key) => [key, existing[key]]));
+  return {
+    ...base,
+    ...liveEntries
+  };
+}
+
+function readJsonObject(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (typeof value !== "string" || value.trim() === "") return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
 }

@@ -9,7 +9,7 @@ type FilterBarProps = {
   onChange: (filters: Filters) => void;
 };
 
-const statusOptions: Array<SelectionStatus | "all"> = ["all", "pending", "approved", "rejected", "question", "hold"];
+const statusOptions: Array<SelectionStatus | "all"> = ["all", "pending", "approved", "rejected", "question"];
 
 export function FilterBar({ items, filters, resultCount, onChange }: FilterBarProps) {
   const platforms = unique(items.map((item) => item.kol.platform));

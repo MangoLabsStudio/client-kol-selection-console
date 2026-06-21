@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BadgeCheck, CircleHelp, ExternalLink, XCircle } from "lucide-react";
+import { BadgeCheck, CircleHelp, ExternalLink, History, Undo2, XCircle } from "lucide-react";
 import type { CampaignKolItem, SelectionStatus } from "../lib/types";
 import { formatCompactNumber, formatContactStatus, formatContentCategory, formatReasonTag, formatRiskTag, statusLabels } from "../lib/status";
 
@@ -7,14 +7,13 @@ type ReviewPoolCardProps = {
   item: CampaignKolItem;
   loadingStatus: SelectionStatus | "undo" | null;
   onApprove: (item: CampaignKolItem) => void;
-  onHold: (item: CampaignKolItem) => void;
   onUndo: (item: CampaignKolItem) => void;
   onReject: (item: CampaignKolItem) => void;
   onQuestion: (item: CampaignKolItem) => void;
   onHistory: (item: CampaignKolItem) => void;
 };
 
-export function ReviewPoolCard({ item, loadingStatus, onApprove, onReject, onQuestion }: ReviewPoolCardProps) {
+export function ReviewPoolCard({ item, loadingStatus, onApprove, onReject, onQuestion, onUndo, onHistory }: ReviewPoolCardProps) {
   const status = item.currentState.currentStatus;
   const reviewStatus = status === "approved" ? "approve" : status === "rejected" ? "reject" : status === "question" ? "question" : status === "hold" ? "hold" : "";
   const audienceFit = Number(item.kol.metadata.audienceFit ?? 0);
@@ -120,6 +119,18 @@ export function ReviewPoolCard({ item, loadingStatus, onApprove, onReject, onQue
             icon={<CircleHelp size={14} />}
             label="需补充"
           />
+        </div>
+        <div className="review-utility-row">
+          <button type="button" className="review-utility" onClick={() => onHistory(item)}>
+            <History size={13} />
+            记录
+          </button>
+          {status !== "pending" && (
+            <button type="button" className="review-utility review-undo" onClick={() => onUndo(item)} disabled={loadingStatus === "undo"}>
+              {loadingStatus === "undo" ? <span className="spinner" /> : <Undo2 size={13} />}
+              撤回
+            </button>
+          )}
         </div>
       </div>
     </motion.article>

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Clock3, Download, FileJson, HelpCircle, LockKeyhole, ShieldCheck, Sparkles, XCircle } from "lucide-react";
+import { CheckCircle2, Download, FileJson, HelpCircle, LockKeyhole, ShieldCheck, Sparkles, XCircle } from "lucide-react";
 import type { ActorRole, Campaign, SelectionStatus, Summary } from "../lib/types";
 import { formatTime, statusLabels } from "../lib/status";
 
@@ -18,7 +18,6 @@ const statusMeta: Array<{ status: SelectionStatus; icon: React.ComponentType<{ s
   { status: "approved", icon: CheckCircle2 },
   { status: "rejected", icon: XCircle },
   { status: "question", icon: HelpCircle },
-  { status: "hold", icon: Clock3 },
   { status: "pending", icon: Sparkles }
 ];
 

@@ -3,6 +3,7 @@ import { Download, FileJson, Inbox, RefreshCw, ShieldCheck } from "lucide-react"
 import { useEffect, useMemo, useState } from "react";
 import { DecisionModal } from "./components/DecisionModal";
 import type { FeedbackAnchor } from "./components/DecisionModal";
+import { DecisionHistoryPanel } from "./components/DecisionHistoryPanel";
 import { FilterBar } from "./components/FilterBar";
 import { LearningBoard } from "./components/LearningBoard";
 import { ReviewPoolCard } from "./components/ReviewPoolCard";
@@ -11,8 +12,8 @@ import { RuleBoard } from "./components/RuleBoard";
 import { SkeletonBoard } from "./components/SkeletonBoard";
 import { StrategyMethodBoard } from "./components/StrategyMethodBoard";
 import { ToastStack, type Toast } from "./components/ToastStack";
-import { exportBoard, getAppConfig, getBoardForCampaign, submitDecision } from "./lib/api";
-import type { AppConfig, BoardResponse, CampaignKolItem, Filters, SelectionStatus, Summary } from "./lib/types";
+import { exportBoard, getAppConfig, getBoardForCampaign, getDecisionHistory, submitClientAction, submitDecision } from "./lib/api";
+import type { AppConfig, BoardResponse, CampaignKolItem, DecisionHistoryResponse, Filters, SelectionStatus, Summary } from "./lib/types";
 import { useDebouncedValue } from "./lib/useDebouncedValue";
 
 const initialFilters: Filters = {
@@ -42,7 +43,9 @@ export default function App() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(() => getInitialProjectId());
   const [appConfig, setAppConfig] = useState<AppConfig | null>(null);
   const [board, setBoard] = useState<BoardResponse | null>(null);
+  const [decisionHistory, setDecisionHistory] = useState<DecisionHistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [loadingTarget, setLoadingTarget] = useState<LoadingTarget>(null);
   const [modal, setModal] = useState<FeedbackModalState | null>(null);
@@ -53,20 +56,29 @@ export default function App() {
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setHistoryLoading(true);
     setBoard(null);
+    setDecisionHistory(null);
 
     getAppConfig(activeProjectId)
       .then(async (config) => {
         if (!active) return null;
         setAppConfig(config);
-        return getBoardForCampaign(config.campaignId, "client");
+        const [boardData, historyData] = await Promise.all([getBoardForCampaign(config.campaignId, "client"), getDecisionHistory(config.campaignId, "client")]);
+        return { boardData, historyData };
       })
       .then((data) => {
-        if (active && data) setBoard(data);
+        if (active && data) {
+          setBoard(data.boardData);
+          setDecisionHistory(data.historyData);
+        }
       })
       .catch((error) => pushToast("danger", error.message))
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+          setHistoryLoading(false);
+        }
       });
     return () => {
       active = false;
@@ -158,6 +170,7 @@ export default function App() {
       });
       setModal(null);
       pushToast("success", toastMessage(toStatus));
+      void refreshDecisionHistory(board.campaign.id);
     } catch (error) {
       setBoard(previous);
       pushToast("danger", error instanceof Error ? error.message : "保存失败，请稍后重试。");
@@ -176,6 +189,40 @@ export default function App() {
     } finally {
       setExporting(false);
     }
+  };
+
+  const recordKolAction = (
+    item: CampaignKolItem,
+    actionType: string,
+    input: {
+      fromValue?: string | null;
+      toValue?: string | null;
+      reasonTags?: string[];
+      note?: string;
+      metadata?: Record<string, unknown>;
+    } = {}
+  ) => {
+    void submitClientAction({
+      campaignId: board.campaign.id,
+      actorRole: "client",
+      surface: "kol_selection",
+      entityType: "campaign_kol_item",
+      entityId: item.id,
+      actionType,
+      fromValue: input.fromValue ?? item.currentState.currentStatus,
+      toValue: input.toValue ?? null,
+      reasonTags: input.reasonTags ?? [],
+      note: input.note ?? "",
+      metadata: {
+        kolName: item.kol.name,
+        kolHandle: item.kol.handle,
+        currentStatus: item.currentState.currentStatus,
+        ...input.metadata
+      }
+    }).catch((error) => {
+      console.warn("KOL action log failed", error);
+      pushToast("danger", "KOL 点击记录保存失败，请刷新后再试。");
+    });
   };
 
   return (
@@ -270,7 +317,7 @@ export default function App() {
           }}
         />
 
-        {ui.roots && <RootAudienceBoard config={ui.roots} />}
+        {ui.roots && <RootAudienceBoard campaignId={board.campaign.id} config={ui.roots} onActionError={(message) => pushToast("danger", message)} />}
 
         <StrategyMethodBoard method={ui.method} />
 
@@ -298,6 +345,8 @@ export default function App() {
                 </div>
               </div>
 
+              <DecisionHistoryPanel history={decisionHistory} loading={historyLoading} />
+
               {filteredItems.length === 0 ? (
                 <motion.section className="empty-state" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                   <Inbox size={34} />
@@ -314,10 +363,22 @@ export default function App() {
                         key={item.id}
                         item={item}
                         loadingStatus={loadingTarget?.itemId === item.id ? loadingTarget.status : null}
-                        onApprove={(candidate) => decide(candidate, "approved")}
-                        onReject={(candidate, anchor) => setModal({ kind: "reject", item: candidate, anchor })}
-                        onQuestion={(candidate, anchor) => setModal({ kind: "question", item: candidate, anchor })}
-                        onUndo={(candidate) => decide(candidate, "pending", [], "已撤回至待评审状态。", "undo")}
+                        onApprove={(candidate) => {
+                          recordKolAction(candidate, "decision_click", { toValue: "approved", metadata: { decision: "approve" } });
+                          decide(candidate, "approved");
+                        }}
+                        onReject={(candidate, anchor) => {
+                          recordKolAction(candidate, "feedback_open", { toValue: "rejected", metadata: { kind: "reject" } });
+                          setModal({ kind: "reject", item: candidate, anchor });
+                        }}
+                        onQuestion={(candidate, anchor) => {
+                          recordKolAction(candidate, "feedback_open", { toValue: "question", metadata: { kind: "question" } });
+                          setModal({ kind: "question", item: candidate, anchor });
+                        }}
+                        onUndo={(candidate) => {
+                          recordKolAction(candidate, "decision_undo_click", { fromValue: candidate.currentState.currentStatus, toValue: "pending" });
+                          decide(candidate, "pending", [], "已撤回至待评审状态。", "undo");
+                        }}
                       />
                     ))}
                   </AnimatePresence>
@@ -335,7 +396,31 @@ export default function App() {
         item={modal?.item ?? null}
         anchor={modal?.anchor ?? null}
         submitting={Boolean(loadingTarget)}
-        onClose={() => setModal(null)}
+        onClose={() => {
+          if (modal) {
+            recordKolAction(modal.item, "feedback_close", { toValue: modal.kind === "reject" ? "rejected" : "question", metadata: { kind: modal.kind } });
+          }
+          setModal(null);
+        }}
+        onReasonToggle={({ tag, selected, currentTags }) => {
+          if (modal) {
+            recordKolAction(modal.item, "feedback_reason_toggle", {
+              toValue: modal.kind === "reject" ? "rejected" : "question",
+              reasonTags: [tag],
+              metadata: { kind: modal.kind, selected, currentTags }
+            });
+          }
+        }}
+        onSubmitAttempt={({ valid, toStatus, reasonTags, note, error }) => {
+          if (modal) {
+            recordKolAction(modal.item, valid ? "feedback_submit" : "feedback_submit_invalid", {
+              toValue: toStatus,
+              reasonTags,
+              note,
+              metadata: { kind: modal.kind, error }
+            });
+          }
+        }}
         onSubmit={({ toStatus, reasonTags, note }) => modal && decide(modal.item, toStatus, reasonTags, note)}
       />
 
@@ -358,6 +443,17 @@ export default function App() {
     window.history.replaceState({}, "", nextUrl);
     setFilters(initialFilters);
     setActiveProjectId(projectId);
+  }
+
+  async function refreshDecisionHistory(campaignId: string) {
+    setHistoryLoading(true);
+    try {
+      setDecisionHistory(await getDecisionHistory(campaignId, "client"));
+    } catch (error) {
+      pushToast("danger", error instanceof Error ? error.message : "历史记录同步失败。");
+    } finally {
+      setHistoryLoading(false);
+    }
   }
 }
 

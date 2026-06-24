@@ -18,9 +18,11 @@ type DecisionModalProps = {
   submitting: boolean;
   onClose: () => void;
   onSubmit: (input: { toStatus: SelectionStatus; reasonTags: string[]; note: string }) => void;
+  onReasonToggle?: (input: { tag: string; selected: boolean; currentTags: string[] }) => void;
+  onSubmitAttempt?: (input: { valid: boolean; toStatus: SelectionStatus; reasonTags: string[]; note: string; error: string | null }) => void;
 };
 
-export function DecisionModal({ kind, item, anchor, submitting, onClose, onSubmit }: DecisionModalProps) {
+export function DecisionModal({ kind, item, anchor, submitting, onClose, onSubmit, onReasonToggle, onSubmitAttempt }: DecisionModalProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [attempted, setAttempted] = useState(false);
@@ -73,14 +75,27 @@ export function DecisionModal({ kind, item, anchor, submitting, onClose, onSubmi
   const invalid = selected.length === 0 || (requiresNote && note.trim().length === 0);
 
   const toggle = (tag: string) => {
-    setSelected((current) => (current.includes(tag) ? [] : [tag]));
+    setSelected((current) => {
+      const next = current.includes(tag) ? [] : [tag];
+      onReasonToggle?.({ tag, selected: next.includes(tag), currentTags: next });
+      return next;
+    });
   };
 
   const submit = () => {
     setAttempted(true);
+    const toStatus = kind === "reject" ? "rejected" : "question";
+    const error = selected.length === 0 ? "missing_reason" : requiresNote && note.trim().length === 0 ? "missing_note" : null;
+    onSubmitAttempt?.({
+      valid: !error,
+      toStatus,
+      reasonTags: selected,
+      note: note.trim(),
+      error
+    });
     if (invalid) return;
     onSubmit({
-      toStatus: kind === "reject" ? "rejected" : "question",
+      toStatus,
       reasonTags: selected,
       note: note.trim()
     });

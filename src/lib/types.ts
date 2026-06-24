@@ -91,6 +91,39 @@ export type SelectionEvent = {
   createdAt: string;
 };
 
+export type DecisionHistoryEntry = SelectionEvent & {
+  kolName: string | null;
+  kolHandle: string | null;
+  kolProfileUrl: string | null;
+  kolAvatarUrl: string | null;
+  currentStatus: SelectionStatus;
+};
+
+export type DecisionHistoryResponse = {
+  generatedAt: string;
+  approved: DecisionHistoryEntry[];
+  rejected: DecisionHistoryEntry[];
+};
+
+export type ClientActionEvent = {
+  id: string;
+  clientId: string;
+  campaignId: string;
+  surface: string;
+  entityType: string;
+  entityId: string;
+  actionType: string;
+  actorId: string;
+  actorRole: ActorRole;
+  fromValue: string | null;
+  toValue: string | null;
+  reasonTags: string[];
+  note: string;
+  metadata: Record<string, unknown>;
+  clientRequestId: string | null;
+  createdAt: string;
+};
+
 export type Filters = {
   status: SelectionStatus | "all";
   platform: string;

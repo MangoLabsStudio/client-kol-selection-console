@@ -4,9 +4,12 @@ import { fileURLToPath } from "node:url";
 import { createDatabase } from "./db.js";
 import { getClientAppConfig, getDefaultProjectId, getProjectConfig } from "./projectConfig.js";
 import {
+  createClientActionEvent,
   createSelectionEvent,
+  getCampaignDecisionHistory,
   exportSelection,
   getCampaignBoard,
+  getClientActionEvents,
   getSelectionHistory,
   lockSelection
 } from "./selectionService.js";
@@ -50,6 +53,57 @@ app.get("/api/campaigns/:campaignId/kol-selection", (req, res, next) => {
   try {
     const actorRole = parseActorRole(req.query.role ?? req.header("x-actor-role") ?? "client");
     res.json(getCampaignBoard(db, req.params.campaignId, actorRole));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/campaigns/:campaignId/kol-selection/decision-history", (req, res, next) => {
+  try {
+    const actorRole = parseActorRole(req.query.role ?? req.header("x-actor-role") ?? "client");
+    res.json(getCampaignDecisionHistory(db, req.params.campaignId, actorRole));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/campaigns/:campaignId/client-actions", (req, res, next) => {
+  try {
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    res.json({
+      events: getClientActionEvents(db, req.params.campaignId, {
+        surface: typeof req.query.surface === "string" ? req.query.surface : undefined,
+        entityType: typeof req.query.entity_type === "string" ? req.query.entity_type : typeof req.query.entityType === "string" ? req.query.entityType : undefined,
+        entityId: typeof req.query.entity_id === "string" ? req.query.entity_id : typeof req.query.entityId === "string" ? req.query.entityId : undefined,
+        limit
+      })
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/campaigns/:campaignId/client-actions", (req, res, next) => {
+  try {
+    const body = req.body ?? {};
+    const actorRole = parseActorRole(req.header("x-actor-role") ?? body.actor_role ?? body.actorRole ?? "client");
+    const actorId = String(req.header("x-actor-id") ?? body.actor_id ?? body.actorId ?? "client-reviewer-1");
+    const event = createClientActionEvent(db, {
+      campaignId: req.params.campaignId,
+      actorId,
+      actorRole,
+      surface: String(body.surface ?? ""),
+      entityType: String(body.entity_type ?? body.entityType ?? ""),
+      entityId: String(body.entity_id ?? body.entityId ?? ""),
+      actionType: String(body.action_type ?? body.actionType ?? ""),
+      fromValue: body.from_value ?? body.fromValue ?? null,
+      toValue: body.to_value ?? body.toValue ?? null,
+      reasonTags: body.reason_tags ?? body.reasonTags ?? [],
+      note: body.note ?? "",
+      metadata: body.metadata ?? {},
+      clientRequestId: body.client_request_id ?? body.clientRequestId
+    });
+    res.status(201).json({ event });
   } catch (error) {
     next(error);
   }

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
-import { ApiError, selectionStatuses, type ActorRole, type CreateSelectionEventInput, type SelectionStatus, type Summary } from "./types.js";
+import { ApiError, selectionStatuses, type ActorRole, type CreateClientActionEventInput, type CreateSelectionEventInput, type SelectionStatus, type Summary } from "./types.js";
 
 const statusSet = new Set<string>(selectionStatuses);
 
@@ -62,6 +62,11 @@ function getItemForUpdate(db: DatabaseSync, campaignId: string, itemId: string) 
 function getEventByRequest(db: DatabaseSync, clientRequestId?: string) {
   if (!clientRequestId) return undefined;
   return db.prepare("SELECT * FROM kol_selection_events WHERE client_request_id = ?").get(clientRequestId);
+}
+
+function getClientActionEventByRequest(db: DatabaseSync, clientRequestId?: string) {
+  if (!clientRequestId) return undefined;
+  return db.prepare("SELECT * FROM client_action_events WHERE client_request_id = ?").get(clientRequestId);
 }
 
 export function getCampaignBoard(db: DatabaseSync, campaignId: string, actorRole: ActorRole = "client") {
@@ -347,6 +352,124 @@ export function getSelectionHistory(db: DatabaseSync, campaignId: string, itemId
     .map(normalizeEvent);
 }
 
+export function createClientActionEvent(db: DatabaseSync, input: CreateClientActionEventInput) {
+  const existing = getClientActionEventByRequest(db, input.clientRequestId);
+  if (existing) return normalizeClientActionEvent(existing);
+
+  const campaign = db.prepare("SELECT id, client_id FROM campaigns WHERE id = ?").get(input.campaignId);
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
+
+  const surface = input.surface.trim();
+  const entityType = input.entityType.trim();
+  const entityId = input.entityId.trim();
+  const actionType = input.actionType.trim();
+  if (!surface || !entityType || !entityId || !actionType) {
+    throw new ApiError(400, "行为日志缺少必要字段。");
+  }
+
+  const timestamp = nowIso();
+  const eventId = randomUUID();
+  db
+    .prepare(
+      `INSERT INTO client_action_events (
+        id, client_id, campaign_id, surface, entity_type, entity_id, action_type,
+        actor_id, actor_role, from_value, to_value, reason_tags, note, metadata,
+        client_request_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      eventId,
+      campaign.client_id,
+      input.campaignId,
+      surface,
+      entityType,
+      entityId,
+      actionType,
+      input.actorId,
+      input.actorRole,
+      input.fromValue ?? null,
+      input.toValue ?? null,
+      JSON.stringify(uniqueTags(input.reasonTags)),
+      input.note?.trim() ?? "",
+      JSON.stringify(input.metadata ?? {}),
+      input.clientRequestId ?? null,
+      timestamp
+    );
+  db.prepare("UPDATE campaigns SET last_updated_at = ? WHERE id = ?").run(timestamp, input.campaignId);
+
+  return normalizeClientActionEvent(db.prepare("SELECT * FROM client_action_events WHERE id = ?").get(eventId));
+}
+
+export function getClientActionEvents(
+  db: DatabaseSync,
+  campaignId: string,
+  filters: { surface?: string; entityType?: string; entityId?: string; limit?: number } = {}
+) {
+  const campaign = db.prepare("SELECT id FROM campaigns WHERE id = ?").get(campaignId);
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
+
+  const clauses = ["campaign_id = ?"];
+  const params: Array<string | number> = [campaignId];
+  if (filters.surface) {
+    clauses.push("surface = ?");
+    params.push(filters.surface);
+  }
+  if (filters.entityType) {
+    clauses.push("entity_type = ?");
+    params.push(filters.entityType);
+  }
+  if (filters.entityId) {
+    clauses.push("entity_id = ?");
+    params.push(filters.entityId);
+  }
+
+  const limit = Number.isFinite(filters.limit) ? Math.max(1, Math.min(Number(filters.limit), 1000)) : 500;
+  params.push(limit);
+
+  return db
+    .prepare(
+      `SELECT * FROM client_action_events
+      WHERE ${clauses.join(" AND ")}
+      ORDER BY created_at DESC
+      LIMIT ?`
+    )
+    .all(...params)
+    .map(normalizeClientActionEvent);
+}
+
+export function getCampaignDecisionHistory(db: DatabaseSync, campaignId: string, actorRole: ActorRole = "client") {
+  const campaign = db.prepare("SELECT id FROM campaigns WHERE id = ?").get(campaignId);
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
+
+  const visibilityClause = actorRole === "client" ? "AND e.visibility <> 'agency_only'" : "";
+  const rows = db
+    .prepare(
+      `SELECT
+        e.*,
+        p.name AS kol_name,
+        p.handle AS kol_handle,
+        p.profile_url AS kol_profile_url,
+        p.avatar_url AS kol_avatar_url,
+        COALESCE(s.current_status, i.status_current, 'pending') AS current_status
+      FROM kol_selection_events e
+      LEFT JOIN campaign_kol_items i ON i.id = e.campaign_kol_item_id
+      LEFT JOIN kol_profiles p ON p.id = e.kol_id
+      LEFT JOIN kol_selection_current_state s ON s.campaign_kol_item_id = e.campaign_kol_item_id
+      WHERE e.campaign_id = ?
+        AND e.to_status IN ('approved', 'rejected')
+        ${visibilityClause}
+      ORDER BY e.created_at DESC`
+    )
+    .all(campaignId)
+    .map(normalizeDecisionHistoryEntry);
+
+  return {
+    generatedAt: nowIso(),
+    approved: rows.filter((event) => event.toStatus === "approved"),
+    rejected: rows.filter((event) => event.toStatus === "rejected")
+  };
+}
+
 export function getCampaignEvents(db: DatabaseSync, campaignId: string) {
   return db
     .prepare(
@@ -388,6 +511,7 @@ export function getCurrentState(db: DatabaseSync, itemId: string) {
 export function exportSelection(db: DatabaseSync, campaignId: string, format: "json" | "csv") {
   const board = getCampaignBoard(db, campaignId, "agency");
   const events = getCampaignEvents(db, campaignId);
+  const clientActionLog = getClientActionEvents(db, campaignId, { limit: 1000 });
   const generatedAt = nowIso();
 
   const payload = {
@@ -398,7 +522,9 @@ export function exportSelection(db: DatabaseSync, campaignId: string, format: "j
     question: board.items.filter((item) => item.currentState.currentStatus === "question"),
     hold: board.items.filter((item) => item.currentState.currentStatus === "hold"),
     pending: board.items.filter((item) => item.currentState.currentStatus === "pending"),
-    fullDecisionLog: events
+    fullDecisionLog: events,
+    clientActionLog,
+    rootAudienceLog: clientActionLog.filter((event) => event.surface === "root_audience")
   };
 
   if (format === "json") return payload;
@@ -584,6 +710,42 @@ function normalizeEvent(row: Row | undefined) {
     clientRequestId: row.client_request_id ? String(row.client_request_id) : null,
     metadata: readJsonObject(row.metadata),
     createdAt: String(row.created_at)
+  };
+}
+
+function normalizeClientActionEvent(row: Row | undefined) {
+  if (!row) throw new ApiError(404, "未找到行为记录。");
+  return {
+    id: String(row.id),
+    clientId: String(row.client_id),
+    campaignId: String(row.campaign_id),
+    surface: String(row.surface),
+    entityType: String(row.entity_type),
+    entityId: String(row.entity_id),
+    actionType: String(row.action_type),
+    actorId: String(row.actor_id),
+    actorRole: String(row.actor_role),
+    fromValue: row.from_value ? String(row.from_value) : null,
+    toValue: row.to_value ? String(row.to_value) : null,
+    reasonTags: readJsonArray(row.reason_tags),
+    note: String(row.note ?? ""),
+    metadata: readJsonObject(row.metadata),
+    clientRequestId: row.client_request_id ? String(row.client_request_id) : null,
+    createdAt: String(row.created_at)
+  };
+}
+
+function normalizeDecisionHistoryEntry(row: Row) {
+  const currentStatus = String(row.current_status ?? "pending");
+  assertStatus(currentStatus);
+
+  return {
+    ...normalizeEvent(row),
+    kolName: row.kol_name ? String(row.kol_name) : null,
+    kolHandle: row.kol_handle ? String(row.kol_handle) : null,
+    kolProfileUrl: row.kol_profile_url ? String(row.kol_profile_url) : null,
+    kolAvatarUrl: row.kol_avatar_url ? String(row.kol_avatar_url) : null,
+    currentStatus
   };
 }
 

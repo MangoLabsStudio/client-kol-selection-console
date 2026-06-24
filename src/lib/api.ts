@@ -1,4 +1,4 @@
-import type { ActorRole, AppConfig, BoardResponse, SelectionEvent, SelectionStatus } from "./types";
+import type { ActorRole, AppConfig, BoardResponse, ClientActionEvent, DecisionHistoryResponse, SelectionEvent, SelectionStatus } from "./types";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -26,6 +26,10 @@ export function getBoardForCampaign(campaignId: string, actorRole: ActorRole) {
   return request<BoardResponse>(`/api/campaigns/${campaignId}/kol-selection?role=${actorRole}`);
 }
 
+export function getDecisionHistory(campaignId: string, actorRole: ActorRole) {
+  return request<DecisionHistoryResponse>(`/api/campaigns/${campaignId}/kol-selection/decision-history?role=${actorRole}`);
+}
+
 export function submitDecision(input: {
   campaignId: string;
   itemId: string;
@@ -49,6 +53,40 @@ export function submitDecision(input: {
       decision: input.toStatus === "approved" ? "approve" : input.toStatus,
       reason_tags: input.reasonTags ?? [],
       note: input.note ?? "",
+      client_request_id: crypto.randomUUID()
+    })
+  });
+}
+
+export function submitClientAction(input: {
+  campaignId: string;
+  actorRole: ActorRole;
+  surface: string;
+  entityType: string;
+  entityId: string;
+  actionType: string;
+  fromValue?: string | null;
+  toValue?: string | null;
+  reasonTags?: string[];
+  note?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  return request<{ event: ClientActionEvent }>(`/api/campaigns/${input.campaignId}/client-actions`, {
+    method: "POST",
+    headers: {
+      "x-actor-role": input.actorRole,
+      "x-actor-id": input.actorRole === "agency" ? "agency-ops" : "client-reviewer-1"
+    },
+    body: JSON.stringify({
+      surface: input.surface,
+      entity_type: input.entityType,
+      entity_id: input.entityId,
+      action_type: input.actionType,
+      from_value: input.fromValue ?? null,
+      to_value: input.toValue ?? null,
+      reason_tags: input.reasonTags ?? [],
+      note: input.note ?? "",
+      metadata: input.metadata ?? {},
       client_request_id: crypto.randomUUID()
     })
   });

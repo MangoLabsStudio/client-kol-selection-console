@@ -109,6 +109,32 @@ CREATE TABLE IF NOT EXISTS kol_selection_current_state (
 
 CREATE INDEX IF NOT EXISTS idx_kol_selection_current_campaign ON kol_selection_current_state(campaign_id, current_status);
 
+CREATE TABLE IF NOT EXISTS client_action_events (
+  id TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL REFERENCES clients(id),
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id),
+  surface TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  action_type TEXT NOT NULL,
+  actor_id TEXT NOT NULL,
+  actor_role TEXT NOT NULL,
+  from_value TEXT,
+  to_value TEXT,
+  reason_tags TEXT NOT NULL DEFAULT '[]',
+  note TEXT NOT NULL DEFAULT '',
+  metadata TEXT NOT NULL DEFAULT '{}',
+  client_request_id TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_client_action_events_request
+  ON client_action_events(client_request_id)
+  WHERE client_request_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_client_action_events_campaign ON client_action_events(campaign_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_client_action_events_surface ON client_action_events(campaign_id, surface, entity_type, entity_id, created_at);
+
 CREATE TABLE IF NOT EXISTS kol_selection_followups (
   id TEXT PRIMARY KEY,
   client_id TEXT NOT NULL REFERENCES clients(id),

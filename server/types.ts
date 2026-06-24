@@ -37,6 +37,22 @@ export type CreateSelectionEventInput = {
   metadata?: Record<string, unknown>;
 };
 
+export type CreateClientActionEventInput = {
+  campaignId: string;
+  actorId: string;
+  actorRole: ActorRole;
+  surface: string;
+  entityType: string;
+  entityId: string;
+  actionType: string;
+  fromValue?: string | null;
+  toValue?: string | null;
+  reasonTags?: string[];
+  note?: string;
+  metadata?: Record<string, unknown>;
+  clientRequestId?: string;
+};
+
 export type ApiErrorPayload = {
   error: string;
   details?: unknown;

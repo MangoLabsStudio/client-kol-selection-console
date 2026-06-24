@@ -1,5 +1,6 @@
 import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, MessageSquareText, RotateCcw, Sparkles, Undo2, X, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { submitClientAction } from "../lib/api";
 import type { RootAudienceConfig, RootPersonConfig } from "../lib/types";
 
 type RootStatus = "pending" | "approved" | "rejected" | "question";
@@ -26,12 +27,14 @@ type RootAudienceState = {
 };
 
 type RootAudienceBoardProps = {
+  campaignId: string;
   config: RootAudienceConfig;
+  onActionError?: (message: string) => void;
 };
 
 const rejectReasons = ["目标层级不匹配", "议题关联不足", "本轮不优先", "需要换一批"];
 
-export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
+export function RootAudienceBoard({ campaignId, config, onActionError }: RootAudienceBoardProps) {
   const [state, setState] = useState<RootAudienceState>(() => readState(config.storageKey));
   const [expandedRules, setExpandedRules] = useState<Record<string, boolean>>({});
   const [activeHandle, setActiveHandle] = useState<string | null>(null);
@@ -41,8 +44,90 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
   }, [config.storageKey, state]);
 
   const stats = useMemo(() => summarizeRootDecisions(config, state.decisions), [config, state.decisions]);
+  const rootLookup = useMemo(() => {
+    const lookup = new Map<string, { person: RootPersonConfig; groupName: string }>();
+    config.groups.forEach((group) => {
+      group.people.forEach((person) => lookup.set(person.handle, { person, groupName: group.name }));
+    });
+    return lookup;
+  }, [config]);
 
-  const decide = (person: RootPersonConfig, status: RootStatus, reason?: string) => {
+  const recordAction = (input: {
+    entityType: string;
+    entityId: string;
+    actionType: string;
+    fromValue?: string | null;
+    toValue?: string | null;
+    reasonTags?: string[];
+    note?: string;
+    metadata?: Record<string, unknown>;
+  }) => {
+    void submitClientAction({
+      campaignId,
+      actorRole: "client",
+      surface: "root_audience",
+      ...input
+    }).catch((error) => {
+      console.warn("Root audience action log failed", error);
+      onActionError?.("目标人群点击记录保存失败，请刷新后再试。");
+    });
+  };
+
+  useEffect(() => {
+    const syncKey = `${config.storageKey}:server-sync:${campaignId}:v1`;
+    if (localStorage.getItem(syncKey)) return;
+
+    const decisions = Object.entries(state.decisions);
+    const comments = Object.entries(state.ruleComments).filter(([, comment]) => comment.trim().length > 0);
+    if (decisions.length === 0 && comments.length === 0) {
+      localStorage.setItem(syncKey, new Date().toISOString());
+      return;
+    }
+
+    decisions.forEach(([handle, decision]) => {
+      const root = rootLookup.get(handle);
+      recordAction({
+        entityType: "root_person",
+        entityId: handle,
+        actionType: "local_decision_sync",
+        fromValue: "localStorage",
+        toValue: decision.status,
+        reasonTags: decision.reason ? [decision.reason] : [],
+        note: decision.note ?? "",
+        metadata: {
+          source: "localStorage_recovery",
+          originalUpdatedAt: decision.updatedAt,
+          personName: root?.person.name ?? handle,
+          personRole: root?.person.role ?? "",
+          groupName: root?.groupName ?? "",
+          round: state.round,
+          memoryRounds: state.memory.length
+        }
+      });
+    });
+
+    comments.forEach(([groupName, comment]) => {
+      recordAction({
+        entityType: "root_group",
+        entityId: groupName,
+        actionType: "local_rule_comment_sync",
+        fromValue: "localStorage",
+        toValue: "server",
+        note: comment,
+        metadata: {
+          source: "localStorage_recovery",
+          groupName,
+          round: state.round,
+          memoryRounds: state.memory.length
+        }
+      });
+    });
+
+    localStorage.setItem(syncKey, new Date().toISOString());
+  }, [campaignId, config.storageKey, rootLookup, state.decisions, state.memory.length, state.round, state.ruleComments]);
+
+  const decide = (person: RootPersonConfig, status: RootStatus, reason?: string, groupName?: string) => {
+    const previous = state.decisions[person.handle];
     setState((current) => {
       const previous = current.decisions[person.handle];
       const timestamp = new Date().toISOString();
@@ -61,9 +146,27 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
         }
       };
     });
+
+    recordAction({
+      entityType: "root_person",
+      entityId: person.handle,
+      actionType: previous?.status === status && status === "rejected" ? "reject_reason_selected" : "decision_set",
+      fromValue: previous?.status ?? "pending",
+      toValue: status,
+      reasonTags: reason ? [reason] : [],
+      note: status === "question" ? previous?.note ?? "" : "",
+      metadata: {
+        personName: person.name,
+        personRole: person.role,
+        groupName,
+        round: state.round,
+        previousReason: previous?.reason ?? null
+      }
+    });
   };
 
-  const undoDecision = (person: RootPersonConfig) => {
+  const undoDecision = (person: RootPersonConfig, groupName?: string) => {
+    const previous = state.decisions[person.handle];
     setState((current) => {
       const previous = current.decisions[person.handle];
       if (!previous) return current;
@@ -76,6 +179,24 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
         decisions: nextDecisions
       };
     });
+
+    if (previous) {
+      recordAction({
+        entityType: "root_person",
+        entityId: person.handle,
+        actionType: "decision_undo",
+        fromValue: previous.status,
+        toValue: "pending",
+        reasonTags: previous.reason ? [previous.reason] : [],
+        note: previous.note ?? "",
+        metadata: {
+          personName: person.name,
+          personRole: person.role,
+          groupName,
+          round: state.round
+        }
+      });
+    }
   };
 
   const setNote = (person: RootPersonConfig, note: string) => {
@@ -93,6 +214,23 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
     }));
   };
 
+  const commitNote = (person: RootPersonConfig, note: string, groupName?: string) => {
+    recordAction({
+      entityType: "root_person",
+      entityId: person.handle,
+      actionType: "question_note_updated",
+      fromValue: state.decisions[person.handle]?.note ?? "",
+      toValue: note,
+      note,
+      metadata: {
+        personName: person.name,
+        personRole: person.role,
+        groupName,
+        round: state.round
+      }
+    });
+  };
+
   const setRuleComment = (groupName: string, comment: string) => {
     setState((current) => ({
       ...current,
@@ -103,7 +241,21 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
     }));
   };
 
+  const commitRuleComment = (groupName: string, comment: string) => {
+    recordAction({
+      entityType: "root_group",
+      entityId: groupName,
+      actionType: "rule_comment_updated",
+      fromValue: state.ruleComments[groupName] ?? "",
+      toValue: comment,
+      note: comment,
+      metadata: { groupName, round: state.round }
+    });
+  };
+
   const rerun = () => {
+    const currentRound = state.round;
+    const decisionCount = Object.keys(state.decisions).length;
     setState((current) => {
       const nextMemory = [
         ...current.memory,
@@ -123,9 +275,18 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
         memory: nextMemory
       };
     });
+    recordAction({
+      entityType: "root_round",
+      entityId: String(currentRound),
+      actionType: "rerun_next_round",
+      fromValue: String(currentRound),
+      toValue: String(currentRound + 1),
+      metadata: { round: currentRound, decisionCount }
+    });
   };
 
   const rollback = () => {
+    const previous = state.memory.at(-1);
     setState((current) => {
       const previous = current.memory.at(-1);
       if (!previous) return current;
@@ -135,6 +296,53 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
         ruleComments: current.ruleComments,
         memory: current.memory.slice(0, -1)
       };
+    });
+    if (previous) {
+      recordAction({
+        entityType: "root_round",
+        entityId: String(state.round),
+        actionType: "rollback_round",
+        fromValue: String(state.round),
+        toValue: String(previous.round),
+        metadata: { restoredRound: previous.round, restoredDecisionCount: Object.keys(previous.decisions).length }
+      });
+    }
+  };
+
+  const toggleRules = (groupName: string, open: boolean) => {
+    setExpandedRules((current) => ({ ...current, [groupName]: !open }));
+    recordAction({
+      entityType: "root_group",
+      entityId: groupName,
+      actionType: open ? "rules_collapse" : "rules_expand",
+      fromValue: open ? "open" : "closed",
+      toValue: open ? "closed" : "open",
+      metadata: { groupName, round: state.round }
+    });
+  };
+
+  const togglePerson = (person: RootPersonConfig, groupName: string) => {
+    const willOpen = activeHandle !== person.handle;
+    setActiveHandle(willOpen ? person.handle : null);
+    recordAction({
+      entityType: "root_person",
+      entityId: person.handle,
+      actionType: willOpen ? "popover_open" : "popover_close",
+      fromValue: willOpen ? "closed" : "open",
+      toValue: willOpen ? "open" : "closed",
+      metadata: { personName: person.name, personRole: person.role, groupName, round: state.round }
+    });
+  };
+
+  const closePerson = (person: RootPersonConfig, groupName: string) => {
+    setActiveHandle(null);
+    recordAction({
+      entityType: "root_person",
+      entityId: person.handle,
+      actionType: "popover_close",
+      fromValue: "open",
+      toValue: "closed",
+      metadata: { personName: person.name, personRole: person.role, groupName, round: state.round }
     });
   };
 
@@ -187,7 +395,7 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
 
                 <div className="root-group-main">
                   <article className={`root-rule-card ${rulesOpen ? "is-open" : ""}`}>
-                    <button className="root-rule-head" type="button" onClick={() => setExpandedRules((current) => ({ ...current, [group.name]: !rulesOpen }))} aria-expanded={rulesOpen}>
+                    <button className="root-rule-head" type="button" onClick={() => toggleRules(group.name, rulesOpen)} aria-expanded={rulesOpen}>
                       <div>
                         <span>{group.index} · category rule</span>
                         <h4>{group.name} 的细分规则</h4>
@@ -215,6 +423,7 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
                           <textarea
                             value={state.ruleComments[group.name] ?? ""}
                             onChange={(event) => setRuleComment(group.name, event.target.value)}
+                            onBlur={(event) => commitRuleComment(group.name, event.target.value)}
                             placeholder="对这一类目标人群或细分规则写补充意见"
                             rows={3}
                           />
@@ -230,11 +439,12 @@ export function RootAudienceBoard({ config }: RootAudienceBoardProps) {
                         person={person}
                         decision={state.decisions[person.handle]}
                         isActive={activeHandle === person.handle}
-                        onToggle={() => setActiveHandle((current) => (current === person.handle ? null : person.handle))}
-                        onClose={() => setActiveHandle(null)}
-                        onDecide={decide}
+                        onToggle={() => togglePerson(person, group.name)}
+                        onClose={() => closePerson(person, group.name)}
+                        onDecide={(rootPerson, status, reason) => decide(rootPerson, status, reason, group.name)}
                         onNote={setNote}
-                        onUndo={undoDecision}
+                        onNoteCommit={(rootPerson, note) => commitNote(rootPerson, note, group.name)}
+                        onUndo={(rootPerson) => undoDecision(rootPerson, group.name)}
                         lockedCopy={config.lockedCopy}
                       />
                     ))}
@@ -257,6 +467,7 @@ function RootPersonCard({
   onClose,
   onDecide,
   onNote,
+  onNoteCommit,
   onUndo,
   lockedCopy
 }: {
@@ -267,6 +478,7 @@ function RootPersonCard({
   onClose: () => void;
   onDecide: (person: RootPersonConfig, status: RootStatus, reason?: string) => void;
   onNote: (person: RootPersonConfig, note: string) => void;
+  onNoteCommit: (person: RootPersonConfig, note: string) => void;
   onUndo: (person: RootPersonConfig) => void;
   lockedCopy: string;
 }) {
@@ -355,7 +567,13 @@ function RootPersonCard({
           {status === "question" && (
             <label className="root-inline-state root-question-field">
               <span>需补充的问题</span>
-              <textarea value={decision?.note ?? ""} onChange={(event) => onNote(person, event.target.value)} placeholder="写明需要补充确认的判断依据" rows={2} />
+              <textarea
+                value={decision?.note ?? ""}
+                onChange={(event) => onNote(person, event.target.value)}
+                onBlur={(event) => onNoteCommit(person, event.target.value)}
+                placeholder="写明需要补充确认的判断依据"
+                rows={2}
+              />
             </label>
           )}
         </aside>

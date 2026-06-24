@@ -4,7 +4,15 @@ import type { DatabaseSync } from "node:sqlite";
 import { createDatabase } from "../server/db.js";
 import { getClientAppConfig, getProjectConfig } from "../server/projectConfig.js";
 import { seedDemoData } from "../server/seed.js";
-import { createSelectionEvent, exportSelection, getCampaignBoard, getSelectionHistory, lockSelection } from "../server/selectionService.js";
+import {
+  createClientActionEvent,
+  createSelectionEvent,
+  exportSelection,
+  getCampaignBoard,
+  getClientActionEvents,
+  getSelectionHistory,
+  lockSelection
+} from "../server/selectionService.js";
 import { ApiError } from "../server/types.js";
 
 const campaignId = "campaign-ilands-root-backed-kol-review";
@@ -230,6 +238,65 @@ test("client_request_id makes selection events idempotent", () => {
   });
 });
 
+test("root audience client actions are append-only and idempotent", () => {
+  withDb((db) => {
+    const first = createClientActionEvent(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      surface: "root_audience",
+      entityType: "root_person",
+      entityId: "@sama",
+      actionType: "decision_set",
+      fromValue: "pending",
+      toValue: "approved",
+      reasonTags: [],
+      note: "",
+      metadata: { personName: "Sam Altman", groupName: "行业超级大佬", round: 1 },
+      clientRequestId: "root-sam-approve-once"
+    });
+    const second = createClientActionEvent(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      surface: "root_audience",
+      entityType: "root_person",
+      entityId: "@sama",
+      actionType: "decision_set",
+      fromValue: "pending",
+      toValue: "approved",
+      reasonTags: [],
+      note: "",
+      metadata: { personName: "Sam Altman", groupName: "行业超级大佬", round: 1 },
+      clientRequestId: "root-sam-approve-once"
+    });
+
+    createClientActionEvent(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      surface: "root_audience",
+      entityType: "root_person",
+      entityId: "@sama",
+      actionType: "decision_undo",
+      fromValue: "approved",
+      toValue: "pending",
+      reasonTags: [],
+      note: "",
+      metadata: { personName: "Sam Altman", groupName: "行业超级大佬", round: 1 },
+      clientRequestId: "root-sam-undo"
+    });
+
+    assert.equal(first.id, second.id);
+
+    const events = getClientActionEvents(db, campaignId, { surface: "root_audience", entityId: "@sama" });
+    assert.equal(events.length, 2);
+    assert.equal(events[0].actionType, "decision_undo");
+    assert.equal(events[1].actionType, "decision_set");
+    assert.equal(events[1].metadata.personName, "Sam Altman");
+  });
+});
+
 test("exports grouped JSON and CSV decision packages", () => {
   withDb((db) => {
     createSelectionEvent(db, {
@@ -265,11 +332,26 @@ test("exports grouped JSON and CSV decision packages", () => {
       note: "请先确认是否接受 sponsor 或只能走 earned media。",
       clientRequestId: "export-question-binarybits"
     });
+    createClientActionEvent(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      surface: "root_audience",
+      entityType: "root_group",
+      entityId: "行业超级大佬",
+      actionType: "rules_expand",
+      fromValue: "closed",
+      toValue: "open",
+      metadata: { round: 1 },
+      clientRequestId: "export-root-action"
+    });
 
     const json = exportSelection(db, campaignId, "json") as Exclude<ReturnType<typeof exportSelection>, string>;
     assert.equal(json.approved.length, 1);
     assert.equal(json.rejected.length, 1);
     assert.equal(json.question.length, 1);
+    assert.equal(json.rootAudienceLog.length, 1);
+    assert.equal(json.rootAudienceLog[0].actionType, "rules_expand");
 
     const csv = exportSelection(db, campaignId, "csv") as string;
     assert.equal(typeof csv, "string");

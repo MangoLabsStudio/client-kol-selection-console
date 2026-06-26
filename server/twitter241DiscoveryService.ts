@@ -50,6 +50,7 @@ export async function discoverRootAudienceKolCandidates(
 ): Promise<Twitter241DiscoveryResult> {
   const client = options.client === undefined ? createTwitter241ClientFromEnv() : options.client;
   const rootSeeds = readRootSeeds(snapshot).slice(0, clampCount(options.rootLimit ?? Number(process.env.TWITTER241_DISCOVERY_ROOT_LIMIT ?? 5), 1, 12));
+  const rootHandleExclusions = readRootHandleExclusions(snapshot);
   const searchQueries = buildSearchQueries(snapshot, rootSeeds).slice(0, 5);
   const metadata = {
     provider: "twitter241" as const,
@@ -70,7 +71,6 @@ export async function discoverRootAudienceKolCandidates(
   const searchCount = clampCount(options.searchCount ?? Number(process.env.TWITTER241_DISCOVERY_SEARCH_COUNT ?? 25), 5, 80);
   const maxCandidates = clampCount(options.maxCandidates ?? Number(process.env.TWITTER241_DISCOVERY_MAX_CANDIDATES ?? 140), 20, 300);
   const candidates = new Map<string, DiscoveredKolCandidateInput>();
-  const seedHandles = new Set(rootSeeds.map((seed) => seed.handle));
 
   for (const seed of rootSeeds) {
     try {
@@ -82,7 +82,7 @@ export async function discoverRootAudienceKolCandidates(
       }
 
       const followingsPayload = await client.get("/followings", { user: rootProfile.restId, count: followingCount });
-      const users = collectUserResults(followingsPayload).map(flattenUser).filter((user) => isUsableCandidate(user, seedHandles));
+      const users = collectUserResults(followingsPayload).map(flattenUser).filter((user) => isUsableCandidate(user, rootHandleExclusions));
       metadata.fetchedUserCount += users.length;
       for (const user of users) addCandidate(candidates, user, seed, "root_followings");
     } catch (error) {
@@ -93,7 +93,7 @@ export async function discoverRootAudienceKolCandidates(
   for (const query of searchQueries) {
     try {
       const searchPayload = await fetchSearch(client, query, searchCount);
-      const users = collectUserResults(searchPayload).map(flattenUser).filter((user) => isUsableCandidate(user, seedHandles));
+      const users = collectUserResults(searchPayload).map(flattenUser).filter((user) => isUsableCandidate(user, rootHandleExclusions));
       metadata.fetchedUserCount += users.length;
       for (const user of users) addCandidate(candidates, user, undefined, "people_search", query);
     } catch (error) {
@@ -210,6 +210,21 @@ function readRootSeeds(snapshot: RootAudienceSnapshotPayload | Record<string, un
 
   const statusRank = { approved: 0, question: 1, pending: 2, rejected: 3 } as Record<string, number>;
   return seeds.sort((a, b) => (statusRank[a.status] ?? 9) - (statusRank[b.status] ?? 9));
+}
+
+function readRootHandleExclusions(snapshot: RootAudienceSnapshotPayload | Record<string, unknown>) {
+  const handles = new Set<string>();
+  const groups = Array.isArray(snapshot.groups) ? snapshot.groups : [];
+  for (const group of groups) {
+    const groupRecord = readObject(group) ?? {};
+    const people = Array.isArray(groupRecord.people) ? groupRecord.people : [];
+    for (const person of people) {
+      const personRecord = readObject(person) ?? {};
+      const handle = normalizeHandle(String(personRecord.handle ?? ""));
+      if (handle) handles.add(handle);
+    }
+  }
+  return handles;
 }
 
 function buildSearchQueries(snapshot: RootAudienceSnapshotPayload | Record<string, unknown>, seeds: RootSeed[]) {

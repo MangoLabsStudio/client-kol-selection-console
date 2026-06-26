@@ -46,6 +46,22 @@ test("twitter241 discovery fetches root followings and people search candidates"
                     }
                   }
                 }
+              },
+              {
+                content: {
+                  itemContent: {
+                    user_results: {
+                      result: {
+                        rest_id: "root-list-member",
+                        core: { screen_name: "karpathy", name: "Andrej Karpathy" },
+                        legacy: {
+                          description: "AI researcher.",
+                          followers_count: 3_000_000
+                        }
+                      }
+                    }
+                  }
+                }
               }
             ]
           }
@@ -84,7 +100,10 @@ test("twitter241 discovery fetches root followings and people search candidates"
       groups: [
         {
           name: "行业超级大佬",
-          people: [{ name: "Sam Altman", handle: "@sama", role: "OpenAI", status: "approved" }]
+          people: [
+            { name: "Sam Altman", handle: "@sama", role: "OpenAI", status: "approved" },
+            { name: "Andrej Karpathy", handle: "@karpathy", role: "AI researcher", status: "pending" }
+          ]
         }
       ]
     },
@@ -94,6 +113,7 @@ test("twitter241 discovery fetches root followings and people search candidates"
   assert.equal(result.status, "succeeded");
   assert.equal(result.candidates.some((candidate) => candidate.handle === "agentbuilder"), true);
   assert.equal(result.candidates.some((candidate) => candidate.handle === "ainewsletter"), true);
+  assert.equal(result.candidates.some((candidate) => candidate.handle === "karpathy"), false);
   assert.equal(calls.some((call) => call.endpoint === "/user" && call.params.username === "sama"), true);
   assert.equal(calls.some((call) => call.endpoint === "/followings" && call.params.user === "root-1"), true);
   assert.equal(calls.some((call) => call.endpoint === "/search"), true);

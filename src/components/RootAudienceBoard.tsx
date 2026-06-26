@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, MessageSquareText, Sparkles, Undo2, X, XCircle } from "lucide-react";
+import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, MessageSquareText, Undo2, X, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createRootAudienceGeneration, submitClientAction } from "../lib/api";
 import type { KolGenerationRun, RootAudienceConfig, RootAudienceSnapshotInput, RootPersonConfig } from "../lib/types";
@@ -310,7 +310,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
 
   const actionableRootCount = stats.approved + stats.question + stats.rejected;
   const generateDisabled = isGenerating || actionableRootCount < 1;
-  const generateLabel = isGenerating ? "更新中" : actionableRootCount < 1 ? "先标记 1 个 root 再更新" : "从 107 基础池更新 KOL list";
+  const generateLabel = isGenerating ? "更新中" : actionableRootCount < 1 ? "先标记 1 个目标人群再更新" : "从 107 基础池更新 KOL list";
 
   useEffect(() => {
     onGenerateControlChange?.({
@@ -376,10 +376,6 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
             <strong>{stats.approved}/{stats.total}</strong>
             <small>已通过 root</small>
           </div>
-          <button type="button" className="root-title-generate" onClick={confirmAndGenerate} disabled={generateDisabled}>
-            <Sparkles size={16} />
-            {generateLabel}
-          </button>
         </div>
 
         <div className="root-control-bar">
@@ -388,12 +384,6 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
             <span>已通过 <strong>{stats.approved}</strong></span>
             <span>已排除 <strong>{stats.rejected}</strong></span>
             <span>待补充 <strong>{stats.question}</strong></span>
-          </div>
-          <div className="root-memory-actions">
-            <button type="button" className="root-primary-action" onClick={confirmAndGenerate} disabled={generateDisabled}>
-              <Sparkles size={15} />
-              {isGenerating ? "更新中" : actionableRootCount < 1 ? "先标记 1 个 root 再更新" : "确认目标人群，更新 KOL list"}
-            </button>
           </div>
         </div>
 

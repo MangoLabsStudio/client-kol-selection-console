@@ -2331,11 +2331,10 @@ body {
 }
 
 .root-title-row {
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
 }
 
-.root-title-generate,
 .pool-regenerate-action {
   min-height: 44px;
   display: inline-flex;
@@ -2367,7 +2366,6 @@ body {
   font-weight: 900;
 }
 
-.root-title-generate:disabled,
 .pool-regenerate-action:disabled,
 .pool-reset-action:disabled {
   cursor: not-allowed;
@@ -2440,12 +2438,6 @@ body {
 
 .root-memory-actions button {
   color: var(--teal);
-}
-
-.root-memory-actions .root-primary-action {
-  border-color: rgba(13, 119, 117, 0.35);
-  background: #e7f3ef;
-  color: #0d7775;
 }
 
 .root-groups {

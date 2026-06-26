@@ -1267,8 +1267,8 @@ function rootGroupMatchScore(text: string, groupName: string) {
 }
 
 function contactBoostFor(contactStatus: string) {
-  if (/明确|confirmed|contact|sponsor|可走/.test(contactStatus)) return 4;
-  if (/需|待|unknown|验证/.test(contactStatus)) return 1;
+  if (/明确|confirmed|contact|sponsor|commercial|booking|creator|可走/.test(contactStatus)) return 4;
+  if (/需|待|unknown|验证|verification|required|bd/.test(contactStatus)) return 1;
   return 0;
 }
 

@@ -3,7 +3,6 @@ import { Download, FileJson, Inbox, RefreshCw, ShieldCheck, Sparkles } from "luc
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DecisionModal } from "./components/DecisionModal";
 import type { FeedbackAnchor } from "./components/DecisionModal";
-import { DecisionHistoryPanel } from "./components/DecisionHistoryPanel";
 import { FilterBar } from "./components/FilterBar";
 import { LearningBoard } from "./components/LearningBoard";
 import { ReviewPoolCard } from "./components/ReviewPoolCard";
@@ -12,8 +11,8 @@ import { RuleBoard } from "./components/RuleBoard";
 import { SkeletonBoard } from "./components/SkeletonBoard";
 import { StrategyMethodBoard } from "./components/StrategyMethodBoard";
 import { ToastStack, type Toast } from "./components/ToastStack";
-import { exportBoard, getAppConfig, getBoardForCampaign, getDecisionHistory, submitClientAction, submitDecision } from "./lib/api";
-import type { AppConfig, BoardResponse, CampaignKolItem, DecisionHistoryResponse, Filters, SelectionStatus, Summary } from "./lib/types";
+import { exportBoard, getAppConfig, getBoardForCampaign, submitClientAction, submitDecision } from "./lib/api";
+import type { AppConfig, BoardResponse, CampaignKolItem, Filters, SelectionStatus, Summary } from "./lib/types";
 import { useDebouncedValue } from "./lib/useDebouncedValue";
 
 const initialFilters: Filters = {
@@ -43,9 +42,7 @@ export default function App() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(() => getInitialProjectId());
   const [appConfig, setAppConfig] = useState<AppConfig | null>(null);
   const [board, setBoard] = useState<BoardResponse | null>(null);
-  const [decisionHistory, setDecisionHistory] = useState<DecisionHistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [historyLoading, setHistoryLoading] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [loadingTarget, setLoadingTarget] = useState<LoadingTarget>(null);
   const [modal, setModal] = useState<FeedbackModalState | null>(null);
@@ -79,28 +76,24 @@ export default function App() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    setHistoryLoading(true);
     setBoard(null);
-    setDecisionHistory(null);
 
     getAppConfig(activeProjectId)
       .then(async (config) => {
         if (!active) return null;
         setAppConfig(config);
-        const [boardData, historyData] = await Promise.all([getBoardForCampaign(config.campaignId, "client"), getDecisionHistory(config.campaignId, "client")]);
-        return { boardData, historyData };
+        const boardData = await getBoardForCampaign(config.campaignId, "client");
+        return { boardData };
       })
       .then((data) => {
         if (active && data) {
           setBoard(data.boardData);
-          setDecisionHistory(data.historyData);
         }
       })
       .catch((error) => pushToast("danger", error.message))
       .finally(() => {
         if (active) {
           setLoading(false);
-          setHistoryLoading(false);
         }
       });
     return () => {
@@ -194,7 +187,6 @@ export default function App() {
       });
       setModal(null);
       pushToast("success", toastMessage(toStatus));
-      void refreshDecisionHistory(board.campaign.id);
     } catch (error) {
       setBoard(previous);
       pushToast("danger", error instanceof Error ? error.message : "保存失败，请稍后重试。");
@@ -395,8 +387,6 @@ export default function App() {
                 </button>
               </div>
 
-              <DecisionHistoryPanel history={decisionHistory} loading={historyLoading} />
-
               {filteredItems.length === 0 ? (
                 <motion.section className="empty-state" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                   <Inbox size={34} />
@@ -495,23 +485,11 @@ export default function App() {
     setActiveProjectId(projectId);
   }
 
-  async function refreshDecisionHistory(campaignId: string) {
-    setHistoryLoading(true);
-    try {
-      setDecisionHistory(await getDecisionHistory(campaignId, "client"));
-    } catch (error) {
-      pushToast("danger", error instanceof Error ? error.message : "历史记录同步失败。");
-    } finally {
-      setHistoryLoading(false);
-    }
-  }
-
   async function refreshBoard(campaignId: string) {
     setGeneratingPool(true);
     try {
-      const [boardData, historyData] = await Promise.all([getBoardForCampaign(campaignId, "client"), getDecisionHistory(campaignId, "client")]);
+      const boardData = await getBoardForCampaign(campaignId, "client");
       setBoard(boardData);
-      setDecisionHistory(historyData);
     } catch (error) {
       pushToast("danger", error instanceof Error ? error.message : "KOL list 刷新失败。");
     } finally {

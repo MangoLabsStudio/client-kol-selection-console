@@ -68,6 +68,10 @@ Optional Twitter241 sync environment:
 TWITTER241_RAPIDAPI_KEY=your_primary_key
 TWITTER241_RAPIDAPI_KEY_FALLBACK=your_fallback_key
 TWITTER241_SYNC_TWEET_COUNT=20
+TWITTER241_DISCOVERY_ROOT_LIMIT=5
+TWITTER241_DISCOVERY_FOLLOWING_COUNT=40
+TWITTER241_DISCOVERY_SEARCH_COUNT=25
+TWITTER241_DISCOVERY_MAX_CANDIDATES=140
 ```
 
 Open a specific project:
@@ -232,6 +236,21 @@ x-actor-role: agency
 
 The sync resolves each handle through `/user?username=...`, then fetches recent timeline data through `/user-tweets?user=<numeric_id>&count=...`. Results are written to `kol_profiles` and `campaign_kol_items.metadata.twitter241`.
 
+Regenerate a KOL list from the client's selected root audience:
+
+```http
+POST /api/campaigns/campaign-ilands-root-backed-kol-review/kol-generation-runs
+Content-Type: application/json
+x-actor-role: client
+
+{
+  "source_snapshot_id": "root_audience_snapshot_id",
+  "trigger_reason": "root_audience_confirmed"
+}
+```
+
+The generation endpoint reads approved/question root accounts from the snapshot, resolves each root through Twitter241 `/user`, crawls `/followings`, adds people-search recall through `/search` with `type=People`, de-duplicates by X handle, writes new candidates into `kol_profiles` and `campaign_kol_items`, then creates a versioned `kol_generation_run`. If Twitter241 returns no candidates, the request fails instead of silently re-ranking the old pool. Set `KOL_GENERATION_ALLOW_LOCAL_FALLBACK=1` only for local demos that must permit old-pool fallback.
+
 ## Validation
 
 Run:
@@ -247,6 +266,7 @@ Covered behavior:
 - Board load and summary counts
 - Template-backed project config loading for UI and seed data
 - Root audience config loading
+- Twitter241 root-audience discovery and new candidate insertion
 - Reject reason validation
 - Reject event persistence and current-state update
 - Question follow-up creation

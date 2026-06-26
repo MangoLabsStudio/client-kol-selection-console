@@ -162,11 +162,12 @@ export default function App() {
       });
       setBoard((current) => {
         if (!current) return current;
+        const items = current.items.map((candidate) => (candidate.id === item.id ? { ...candidate, currentState: result.currentState } : candidate));
         return {
           ...current,
-          summary: result.summary,
+          summary: summarize(items),
           campaign: { ...current.campaign, lastUpdatedAt: result.currentState.lastUpdatedAt },
-          items: current.items.map((candidate) => (candidate.id === item.id ? { ...candidate, currentState: result.currentState } : candidate))
+          items
         };
       });
       setModal(null);
@@ -324,7 +325,7 @@ export default function App() {
             config={ui.roots}
             generating={generatingPool}
             onGenerated={async (run) => {
-              pushToast("success", `已生成 ${run.versionLabel}。`);
+              pushToast("success", `已重新爬取 ${run.versionLabel}。`);
               await refreshBoard(board.campaign.id);
             }}
             onActionError={(message) => pushToast("danger", message)}
@@ -354,7 +355,7 @@ export default function App() {
                 <div className="pool-version-note">
                   <span>当前版本</span>
                   <strong>{board.activeGenerationRun?.versionLabel ?? "初始候选池"}</strong>
-                  <small>{board.activeGenerationRun ? `${board.activeGenerationRun.itemCount} 个候选 · ${formatDate(board.activeGenerationRun.createdAt)}` : "尚未基于目标人群重跑"}</small>
+                  <small>{board.activeGenerationRun ? `${board.activeGenerationRun.itemCount} 个候选 · ${formatDate(board.activeGenerationRun.createdAt)}` : "尚未基于目标人群重新爬取"}</small>
                 </div>
                 <div className="pool-status-note">
                   <ShieldCheck size={17} />

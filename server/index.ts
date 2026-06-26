@@ -15,9 +15,11 @@ import {
   getGenerationRuns,
   getGenerationRunWithItems,
   getLatestRootAudienceSnapshot,
+  getRootAudienceSnapshot,
   getSelectionHistory,
   lockSelection
 } from "./selectionService.js";
+import { discoverRootAudienceKolCandidates } from "./twitter241DiscoveryService.js";
 import { syncCampaignTwitter241 } from "./twitter241SyncService.js";
 import { ApiError, actorRoles, type ActorRole, type ApiErrorPayload, type SelectionStatus } from "./types.js";
 
@@ -141,19 +143,33 @@ app.get("/api/campaigns/:campaignId/root-audience/snapshots/latest", (req, res, 
   }
 });
 
-app.post("/api/campaigns/:campaignId/kol-generation-runs", (req, res, next) => {
+app.post("/api/campaigns/:campaignId/kol-generation-runs", async (req, res, next) => {
   try {
     const body = req.body ?? {};
     const actorRole = parseActorRole(req.header("x-actor-role") ?? body.actor_role ?? body.actorRole ?? "client");
     const actorId = String(req.header("x-actor-id") ?? body.actor_id ?? body.actorId ?? "client-reviewer-1");
+    const sourceSnapshotId = String(body.source_snapshot_id ?? body.sourceSnapshotId ?? "");
+    const sourceSnapshot = getRootAudienceSnapshot(db, req.params.campaignId, sourceSnapshotId);
+    if (!sourceSnapshot) throw new ApiError(404, "未找到目标人群确认快照。");
+
+    const discovery = await discoverRootAudienceKolCandidates(sourceSnapshot.snapshot);
+    if (discovery.candidates.length === 0 && process.env.KOL_GENERATION_ALLOW_LOCAL_FALLBACK !== "1") {
+      throw new ApiError(503, "Twitter241 未返回新的 KOL 候选，已停止本轮生成，避免把旧列表伪装成重新爬取。", discovery.metadata);
+    }
+
     const run = createKolGenerationRun(db, {
       campaignId: req.params.campaignId,
       actorId,
       actorRole,
-      sourceSnapshotId: String(body.source_snapshot_id ?? body.sourceSnapshotId ?? ""),
+      sourceSnapshotId,
       versionLabel: body.version_label ?? body.versionLabel,
       triggerReason: body.trigger_reason ?? body.triggerReason,
-      metadata: body.metadata ?? {},
+      metadata: {
+        ...(body.metadata ?? {}),
+        providerStatus: discovery.status
+      },
+      discoveredCandidates: discovery.candidates,
+      discoveryMetadata: discovery.metadata,
       clientRequestId: body.client_request_id ?? body.clientRequestId
     });
     res.status(201).json({ run });

@@ -326,7 +326,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
         }
       });
     } catch (error) {
-      onActionError?.(error instanceof Error ? error.message : "生成 KOL list 失败，请稍后重试。");
+      onActionError?.(error instanceof Error ? error.message : "重新爬取 KOL list 失败，请稍后重试。");
     } finally {
       setSubmittingGeneration(false);
     }
@@ -419,7 +419,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
           <div className="root-memory-actions">
             <button type="button" className="root-primary-action" onClick={confirmAndGenerate} disabled={isGenerating || stats.approved === 0}>
               <Sparkles size={15} />
-              {isGenerating ? "生成中" : "确认目标人群，生成 KOL list"}
+              {isGenerating ? "爬取中" : "确认目标人群，重新爬取 KOL list"}
             </button>
             <button type="button" onClick={rerun}>
               <Sparkles size={15} />

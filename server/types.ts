@@ -80,11 +80,36 @@ export type CreateKolGenerationRunInput = {
   triggerReason?: string;
   metadata?: Record<string, unknown>;
   clientRequestId?: string;
+  discoveredCandidates?: DiscoveredKolCandidateInput[];
+  discoveryMetadata?: Record<string, unknown>;
+  itemLimit?: number;
 };
 
 export type ApiErrorPayload = {
   error: string;
   details?: unknown;
+};
+
+export type DiscoveredKolCandidateInput = {
+  handle: string;
+  name: string;
+  platform?: string;
+  profileUrl?: string;
+  avatarUrl?: string;
+  bio?: string;
+  followers?: number;
+  region?: string;
+  language?: string;
+  contentCategory?: string;
+  audienceSummary?: string;
+  whyIncluded?: string;
+  recommendedAngle?: string;
+  contactStatus?: string;
+  riskTags?: string[];
+  scoreHint?: number;
+  source?: string;
+  sourceRootHandle?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export class ApiError extends Error {

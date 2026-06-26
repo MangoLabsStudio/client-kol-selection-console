@@ -7,6 +7,7 @@ import {
   type CreateClientActionEventInput,
   type CreateKolGenerationRunInput,
   type CreateRootAudienceSnapshotInput,
+  type DiscoveredKolCandidateInput,
   type CreateSelectionEventInput,
   type SelectionStatus,
   type Summary
@@ -215,12 +216,32 @@ export function getCampaignBoard(db: DatabaseSync, campaignId: string, actorRole
         )
         .all(campaignId);
 
+  const items = itemRows.map((row) => normalizeBoardItem(row, actorRole));
+
   return {
     campaign: normalizeCampaign(campaign),
-    summary: getCampaignSelectionSummary(db, campaignId),
+    summary: summarizeBoardItems(items),
     activeGenerationRun: activeRun,
-    items: itemRows.map((row) => normalizeBoardItem(row, actorRole))
+    items
   };
+}
+
+function summarizeBoardItems(items: Array<{ currentState: { currentStatus: string } }>): Summary {
+  const summary: Summary = {
+    total: items.length,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    question: 0,
+    hold: 0
+  };
+
+  for (const item of items) {
+    const status = item.currentState.currentStatus;
+    if (statusSet.has(status)) summary[status as SelectionStatus] += 1;
+  }
+
+  return summary;
 }
 
 export function getCampaignSelectionSummary(db: DatabaseSync, campaignId: string): Summary {
@@ -584,6 +605,11 @@ export function getLatestRootAudienceSnapshot(db: DatabaseSync, campaignId: stri
   return row ? normalizeRootAudienceSnapshot(row) : null;
 }
 
+export function getRootAudienceSnapshot(db: DatabaseSync, campaignId: string, snapshotId: string) {
+  const row = db.prepare("SELECT * FROM root_audience_snapshots WHERE campaign_id = ? AND id = ?").get(campaignId, snapshotId);
+  return row ? normalizeRootAudienceSnapshot(row) : null;
+}
+
 export function getRootAudienceSnapshots(db: DatabaseSync, campaignId: string) {
   const campaign = db.prepare("SELECT id FROM campaigns WHERE id = ?").get(campaignId);
   if (!campaign) throw new ApiError(404, "未找到该项目。");
@@ -613,17 +639,30 @@ export function createKolGenerationRun(db: DatabaseSync, input: CreateKolGenerat
   const timestamp = nowIso();
   const runId = randomUUID();
   const runCount = db.prepare("SELECT COUNT(*) AS count FROM kol_generation_runs WHERE campaign_id = ?").get(input.campaignId);
-  const versionLabel = input.versionLabel?.trim() || `Round ${Number(runCount?.count ?? 0) + 2} · 基于目标人群重跑`;
+  const versionLabel = input.versionLabel?.trim() || `Round ${Number(runCount?.count ?? 0) + 2} · 重新爬取 KOL list`;
   const snapshotPayload = readJsonObject(snapshot.snapshot_json);
-  const runMetadata = {
+  const baseItemCount = Number(db.prepare("SELECT COUNT(*) AS count FROM campaign_kol_items WHERE campaign_id = ?").get(input.campaignId)?.count ?? 0);
+  const itemLimit = clampRunItemLimit(input.itemLimit ?? baseItemCount);
+  const runMetadata: Record<string, unknown> = {
     source: "root_audience_snapshot",
-    generator: "local_weighted_rerank_v1",
-    ...input.metadata
+    generator: input.discoveredCandidates?.length ? "twitter241_root_discovery_v1" : "local_weighted_rerank_v1",
+    itemLimit,
+    ...input.metadata,
+    discovery: input.discoveryMetadata ?? null
   };
-  const rankedItems = rankItemsForSnapshot(db, input.campaignId, snapshotPayload);
 
   db.exec("BEGIN IMMEDIATE");
   try {
+    const discoveryWrite = upsertDiscoveredCandidates(db, {
+      campaignId: input.campaignId,
+      clientId: String(campaign.client_id),
+      runId,
+      timestamp,
+      candidates: input.discoveredCandidates ?? []
+    });
+    runMetadata.discoveryWrite = discoveryWrite;
+    const rankedItems = rankItemsForSnapshot(db, input.campaignId, snapshotPayload, itemLimit);
+
     db
       .prepare(
         `INSERT INTO kol_generation_runs (
@@ -1104,7 +1143,173 @@ function normalizeGenerationRunItem(row: Row | undefined) {
   };
 }
 
-function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Record<string, unknown>) {
+function upsertDiscoveredCandidates(
+  db: DatabaseSync,
+  input: {
+    campaignId: string;
+    clientId: string;
+    runId: string;
+    timestamp: string;
+    candidates: DiscoveredKolCandidateInput[];
+  }
+) {
+  if (input.candidates.length === 0) return { received: 0, insertedProfiles: 0, insertedItems: 0, reusedItems: 0, skipped: 0 };
+
+  const insertProfile = db.prepare(
+    `INSERT INTO kol_profiles (
+      id, name, handle, platform, profile_url, avatar_url, bio, followers, region, language,
+      content_category, email, contact_url, audience_summary, metadata, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  const updateProfile = db.prepare(
+    `UPDATE kol_profiles
+      SET name = ?, profile_url = ?, avatar_url = ?, bio = ?, followers = ?, content_category = ?,
+        audience_summary = ?, metadata = ?, updated_at = ?
+      WHERE id = ?`
+  );
+  const insertItem = db.prepare(
+    `INSERT INTO campaign_kol_items (
+      id, client_id, campaign_id, kol_id, display_order, status_current, client_facing_note,
+      agency_internal_note, why_included, recommended_angle, estimated_price, contact_status,
+      risk_tags, metadata, created_by, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  const updateItem = db.prepare("UPDATE campaign_kol_items SET metadata = ?, updated_at = ? WHERE id = ?");
+  const maxOrder = db.prepare("SELECT COALESCE(MAX(display_order), 0) AS max_order FROM campaign_kol_items WHERE campaign_id = ?").get(input.campaignId);
+  let nextOrder = Number(maxOrder?.max_order ?? 0) + 1;
+  let insertedProfiles = 0;
+  let insertedItems = 0;
+  let reusedItems = 0;
+  let skipped = 0;
+  const seenHandles = new Set<string>();
+
+  for (const candidate of input.candidates) {
+    const handle = normalizeHandle(candidate.handle);
+    if (!handle || seenHandles.has(handle)) {
+      skipped += 1;
+      continue;
+    }
+    seenHandles.add(handle);
+
+    const profileMetadata = {
+      audienceFit: Math.max(55, Math.round(Number(candidate.scoreHint ?? 60))),
+      discovery: {
+        runId: input.runId,
+        source: candidate.source ?? "twitter241",
+        sourceRootHandle: candidate.sourceRootHandle ?? null,
+        scoreHint: Number(candidate.scoreHint ?? 0),
+        discoveredAt: input.timestamp,
+        ...(candidate.metadata ?? {})
+      }
+    };
+    const name = candidate.name.trim() || handle;
+    const profileUrl = candidate.profileUrl?.trim() || `https://x.com/${handle}`;
+    const avatarUrl = candidate.avatarUrl?.trim() || "";
+    const bio = candidate.bio?.trim() || "";
+    const contentCategory = candidate.contentCategory?.trim() || inferContentCategory(`${name} ${bio}`);
+    const audienceSummary = candidate.audienceSummary?.trim() || inferAudienceSummary(candidate);
+
+    let profile = db
+      .prepare("SELECT * FROM kol_profiles WHERE lower(handle) = ? AND lower(platform) IN ('x', 'twitter', 'x/twitter') ORDER BY updated_at DESC LIMIT 1")
+      .get(handle);
+
+    if (profile) {
+      const mergedMetadata = {
+        ...readJsonObject(profile.metadata),
+        ...profileMetadata
+      };
+      updateProfile.run(
+        name,
+        profileUrl,
+        avatarUrl || String(profile.avatar_url ?? ""),
+        bio || String(profile.bio ?? ""),
+        Math.max(Number(candidate.followers ?? 0), Number(profile.followers ?? 0)),
+        contentCategory,
+        audienceSummary || String(profile.audience_summary ?? ""),
+        JSON.stringify(mergedMetadata),
+        input.timestamp,
+        String(profile.id)
+      );
+    } else {
+      const profileId = uniqueEntityId(db, "kol_profiles", `kol-${slugify(handle)}`);
+      insertProfile.run(
+        profileId,
+        name,
+        handle,
+        candidate.platform?.trim() || "X",
+        profileUrl,
+        avatarUrl,
+        bio,
+        Math.max(0, Math.floor(Number(candidate.followers ?? 0))),
+        candidate.region?.trim() || "Global",
+        candidate.language?.trim() || "EN",
+        contentCategory,
+        null,
+        null,
+        audienceSummary,
+        JSON.stringify(profileMetadata),
+        input.timestamp,
+        input.timestamp
+      );
+      insertedProfiles += 1;
+      profile = { id: profileId };
+    }
+
+    const existingItem = db
+      .prepare(
+        `SELECT i.*
+        FROM campaign_kol_items i
+        JOIN kol_profiles p ON p.id = i.kol_id
+        WHERE i.campaign_id = ? AND lower(p.handle) = ?
+        ORDER BY i.updated_at DESC
+        LIMIT 1`
+      )
+      .get(input.campaignId, handle);
+    const itemMetadata = {
+      discovery: {
+        runId: input.runId,
+        source: candidate.source ?? "twitter241",
+        sourceRootHandle: candidate.sourceRootHandle ?? null,
+        scoreHint: Number(candidate.scoreHint ?? 0),
+        discoveredAt: input.timestamp,
+        ...(candidate.metadata ?? {})
+      }
+    };
+
+    if (existingItem) {
+      updateItem.run(JSON.stringify({ ...readJsonObject(existingItem.metadata), ...itemMetadata }), input.timestamp, String(existingItem.id));
+      reusedItems += 1;
+      continue;
+    }
+
+    const itemId = uniqueEntityId(db, "campaign_kol_items", `item-${slugify(input.campaignId)}-${slugify(handle)}`);
+    insertItem.run(
+      itemId,
+      input.clientId,
+      input.campaignId,
+      String(profile.id),
+      nextOrder,
+      "pending",
+      candidate.audienceSummary?.trim() || `从客户确认的目标人群重新召回：${name} 与本轮 root audience 有网络或语义关联。`,
+      `Twitter241 discovery candidate. Source root: ${candidate.sourceRootHandle ?? "search"}.`,
+      candidate.whyIncluded?.trim() || `通过 Twitter241 从 ${candidate.sourceRootHandle ?? "root audience query"} 相关网络重新召回。`,
+      candidate.recommendedAngle?.trim() || inferRecommendedAngle(candidate),
+      "待确认",
+      candidate.contactStatus?.trim() || inferContactStatus(`${name} ${bio}`),
+      JSON.stringify(candidate.riskTags ?? []),
+      JSON.stringify(itemMetadata),
+      "twitter241_discovery",
+      input.timestamp,
+      input.timestamp
+    );
+    insertedItems += 1;
+    nextOrder += 1;
+  }
+
+  return { received: input.candidates.length, insertedProfiles, insertedItems, reusedItems, skipped };
+}
+
+function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Record<string, unknown>, limit?: number) {
   const decisionValues = readSnapshotDecisionValues(snapshot);
   const groupSignals = readSnapshotGroupSignals(snapshot);
   const approvedRoots = decisionValues.filter((decision) => decision.status === "approved");
@@ -1153,8 +1358,11 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
       const groupBoost = groupSignals.reduce((sum, group) => sum + groupApprovalBoost(text, group), 0);
       const groupPenalty = groupSignals.reduce((sum, group) => sum + groupRejectionPenalty(text, group), 0);
       const contactBoost = contactBoostFor(String(row.contact_status ?? ""));
+      const discoveryBoost = discoveryBoostFor(readJsonObject(row.item_metadata), kolMetadata);
       const riskPenalty = riskTags.filter((tag) => tag !== "none").length * 2;
-      const score = Math.round((audienceFit + approvedBoost + questionBoost + groupBoost + contactBoost - rejectedPenalty - groupPenalty - riskPenalty) * 100) / 100;
+      const score =
+        Math.round((audienceFit + approvedBoost + questionBoost + groupBoost + contactBoost + discoveryBoost - rejectedPenalty - groupPenalty - riskPenalty) * 100) /
+        100;
 
       return {
         itemId: String(row.item_id),
@@ -1170,12 +1378,14 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
           groupBoost,
           groupPenalty,
           contactBoost,
+          discoveryBoost,
           riskPenalty,
           originalDisplayOrder: Number(row.display_order ?? 0)
         }
       };
     })
-    .sort((a, b) => b.score - a.score || Number(a.explanation.originalDisplayOrder) - Number(b.explanation.originalDisplayOrder));
+    .sort((a, b) => b.score - a.score || Number(a.explanation.originalDisplayOrder) - Number(b.explanation.originalDisplayOrder))
+    .slice(0, limit);
 }
 
 function readSnapshotDecisionValues(snapshot: Record<string, unknown>) {
@@ -1270,6 +1480,84 @@ function contactBoostFor(contactStatus: string) {
   if (/明确|confirmed|contact|sponsor|commercial|booking|creator|可走/.test(contactStatus)) return 4;
   if (/需|待|unknown|验证|verification|required|bd/.test(contactStatus)) return 1;
   return 0;
+}
+
+function discoveryBoostFor(itemMetadata: Record<string, unknown>, kolMetadata: Record<string, unknown>) {
+  const itemDiscovery = readJsonObject(itemMetadata.discovery);
+  const profileDiscovery = readJsonObject(kolMetadata.discovery);
+  const scoreHint = Math.max(Number(itemDiscovery.scoreHint ?? 0), Number(profileDiscovery.scoreHint ?? 0));
+  if (!scoreHint) return 0;
+  return Math.min(28, Math.max(8, scoreHint / 4));
+}
+
+function inferContentCategory(text: string) {
+  const normalized = text.toLowerCase();
+  if (/vc|venture|investor|fund|startup/.test(normalized)) return "VC / Founder Network";
+  if (/newsletter|podcast|media|creator|youtube|writer/.test(normalized)) return "AI Media / Creator";
+  if (/research|scientist|professor|paper|agi|alignment/.test(normalized)) return "AI Research";
+  if (/agent|builder|engineer|developer|product|tool/.test(normalized)) return "Agent Builder";
+  return "Broad AI";
+}
+
+function inferContactStatus(text: string) {
+  const normalized = text.toLowerCase();
+  if (/sponsor|partnership|booking|speaking|advertise|newsletter|podcast|media kit|dm/.test(normalized)) return "商业路径待验证";
+  return "需 BD 验证";
+}
+
+function inferAudienceSummary(candidate: DiscoveredKolCandidateInput) {
+  const source = candidate.sourceRootHandle ? `源自 ${candidate.sourceRootHandle} 的网络` : "源自目标人群搜索";
+  const followers = Number(candidate.followers ?? 0);
+  const scale = followers > 0 ? `；X ${formatCompactNumber(followers)} followers` : "";
+  return `${source}${scale}，需补充商务可达性和内容质量验证。`;
+}
+
+function inferRecommendedAngle(candidate: DiscoveredKolCandidateInput) {
+  const text = `${candidate.name} ${candidate.bio ?? ""} ${candidate.contentCategory ?? ""}`.toLowerCase();
+  if (/vc|venture|investor|fund|startup/.test(text)) return "先验证投资/BD 路径，再判断是否适合 warm intro。";
+  if (/newsletter|podcast|media|creator|youtube|writer/.test(text)) return "优先确认 creator/media 合作路径和历史商业内容。";
+  if (/research|scientist|professor|paper|agi|alignment/.test(text)) return "用技术判断和 AI research 语境切入，避免普通投放话术。";
+  return "先做账号质量和商业可达性验证，再进入正式合作沟通。";
+}
+
+function formatCompactNumber(value: number) {
+  if (value >= 1_000_000) return `${Math.round((value / 1_000_000) * 10) / 10}M`;
+  if (value >= 1_000) return `${Math.round((value / 1_000) * 10) / 10}K`;
+  return String(value);
+}
+
+function normalizeHandle(value: string) {
+  let handle = value.trim();
+  if (!handle) return "";
+  handle = handle.replace(/^https?:\/\/(www\.)?(twitter|x)\.com\//i, "");
+  handle = handle.split(/[/?#]/)[0] ?? "";
+  return handle.replace(/^@/, "").trim().toLowerCase();
+}
+
+function slugify(value: string) {
+  return (
+    value
+      .toLowerCase()
+      .replace(/^@/, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 72) || "candidate"
+  );
+}
+
+function uniqueEntityId(db: DatabaseSync, table: "kol_profiles" | "campaign_kol_items", baseId: string) {
+  let id = baseId;
+  let suffix = 1;
+  while (db.prepare(`SELECT id FROM ${table} WHERE id = ?`).get(id)) {
+    suffix += 1;
+    id = `${baseId}-${suffix}`;
+  }
+  return id;
+}
+
+function clampRunItemLimit(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return undefined;
+  return Math.min(Math.floor(value), 250);
 }
 
 function csvEscape(value: string) {

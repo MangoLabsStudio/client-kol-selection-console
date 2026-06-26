@@ -371,6 +371,68 @@ test("root audience snapshot can create a versioned KOL generation run", () => {
   });
 });
 
+test("generation run can persist newly discovered KOL candidates", () => {
+  withDb((db) => {
+    const snapshot = createRootAudienceSnapshot(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      round: 1,
+      snapshot: {
+        round: 1,
+        decisions: {
+          "@sama": { status: "approved" }
+        },
+        summary: { total: 1, approved: 1, rejected: 0, question: 0, pending: 0 },
+        groups: [
+          {
+            name: "行业超级大佬",
+            people: [{ name: "Sam Altman", handle: "@sama", status: "approved" }]
+          }
+        ]
+      },
+      clientRequestId: "snapshot-discovery-round-1"
+    });
+
+    const run = createKolGenerationRun(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      sourceSnapshotId: snapshot.id,
+      clientRequestId: "generation-discovery-round-1",
+      itemLimit: 8,
+      discoveredCandidates: [
+        {
+          handle: "@new_ai_builder",
+          name: "New AI Builder",
+          bio: "Building AI agents, developer tools, and product workflows.",
+          followers: 88000,
+          sourceRootHandle: "@sama",
+          source: "twitter241_root_followings",
+          scoreHint: 118,
+          metadata: { restId: "991188" }
+        }
+      ],
+      discoveryMetadata: {
+        provider: "twitter241",
+        status: "succeeded",
+        candidateCount: 1
+      }
+    });
+
+    const board = getCampaignBoard(db, campaignId, "client");
+    assert.equal(run.itemCount, 8);
+    assert.equal(board.items.length, 8);
+    assert.equal(board.summary.total, 8);
+    assert.equal(board.items.some((item) => item.kol.handle === "new_ai_builder"), true);
+    assert.equal(board.activeGenerationRun?.metadata.generator, "twitter241_root_discovery_v1");
+
+    const discovered = board.items.find((item) => item.kol.handle === "new_ai_builder");
+    assert.equal(discovered?.metadata.discovery && typeof discovered.metadata.discovery === "object", true);
+    assert.equal(discovered?.kol.profileUrl, "https://x.com/new_ai_builder");
+  });
+});
+
 test("exports grouped JSON and CSV decision packages", () => {
   withDb((db) => {
     createSelectionEvent(db, {

@@ -174,17 +174,19 @@ async function syncOneRoot(
 
       cursor = extractBottomCursor(payload);
       const matchedKolCount = getRootTwitterMatchCount(db, state.campaignId, state.rootHandle);
+      const reachedEnd = !cursor || users.length === 0;
       updateState(db, state.id, {
-        cursor: cursor ?? null,
+        cursor: reachedEnd ? null : cursor,
         pagesScanned,
         followingsScanned,
         matchedKolCount,
-        status: cursor ? "in_progress" : "completed",
-        completedAt: cursor ? null : nowIso(),
+        status: reachedEnd ? "completed" : "in_progress",
+        completedAt: reachedEnd ? nowIso() : null,
         updatedAt: nowIso()
       });
-      if (!cursor || users.length === 0) {
+      if (reachedEnd) {
         status = "completed";
+        cursor = undefined;
         break;
       }
     }

@@ -140,9 +140,6 @@ export type RootAudienceConfig = {
   eyebrow: string;
   title: string;
   description: string;
-  roundLabel: string;
-  rerunButton: string;
-  rollbackButton: string;
   lockedCopy: string;
   groups: RootAudienceGroupConfig[];
 };

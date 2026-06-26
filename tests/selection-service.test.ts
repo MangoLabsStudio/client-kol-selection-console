@@ -15,7 +15,8 @@ import {
   getGenerationRuns,
   getLatestRootAudienceSnapshot,
   getSelectionHistory,
-  lockSelection
+  lockSelection,
+  resetKolReviewState
 } from "../server/selectionService.js";
 import { ApiError } from "../server/types.js";
 
@@ -483,6 +484,79 @@ test("rejected root audience removes KOLs that only depend on that root graph ed
 
     assert.equal(runItemIds.has("item-kol-startupideaspod"), false);
     assert.equal(runItemIds.has("item-kol-rohanpaul-ai"), true);
+  });
+});
+
+test("KOL reset restores the seed pool while preserving decision history", () => {
+  withDb((db) => {
+    const snapshot = createRootAudienceSnapshot(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      round: 1,
+      snapshot: {
+        round: 1,
+        decisions: {
+          "@sama": { status: "approved" }
+        }
+      },
+      clientRequestId: "snapshot-before-kol-reset"
+    });
+
+    createKolGenerationRun(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      sourceSnapshotId: snapshot.id,
+      clientRequestId: "generation-before-kol-reset"
+    });
+    createSelectionEvent(db, {
+      campaignId,
+      itemId: "item-kol-rohanpaul-ai",
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      toStatus: "approved",
+      decision: "approved",
+      clientRequestId: "approve-before-kol-reset"
+    });
+    createSelectionEvent(db, {
+      campaignId,
+      itemId: "item-kol-trungtphan",
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      toStatus: "rejected",
+      decision: "rejected",
+      reasonTags: ["本轮不优先"],
+      note: "测试 reset 保留排除历史。",
+      clientRequestId: "reject-before-kol-reset"
+    });
+
+    const resetBoard = resetKolReviewState(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      clientRequestId: "kol-reset-seed-pool"
+    });
+
+    assert.equal(resetBoard.activeGenerationRun?.versionLabel, "初始候选池");
+    assert.equal(resetBoard.activeGenerationRun?.metadata.generator, "seed_pool_reset_v1");
+    assert.equal(resetBoard.items.length, 107);
+    assert.equal(resetBoard.summary.pending, 107);
+    assert.equal(resetBoard.summary.approved, 0);
+    assert.equal(resetBoard.summary.rejected, 0);
+    assert.equal(resetBoard.items.some((item) => item.id === "item-kol-jonerlichman"), true);
+    assert.equal(getGenerationRuns(db, campaignId).length, 2);
+    assert.equal(getLatestRootAudienceSnapshot(db, campaignId)?.id, snapshot.id);
+
+    const rohanHistory = getSelectionHistory(db, campaignId, "item-kol-rohanpaul-ai");
+    assert.equal(rohanHistory.length, 2);
+    assert.equal(rohanHistory[0].eventType, "undo");
+    assert.equal(rohanHistory[0].toStatus, "pending");
+    assert.equal(rohanHistory[1].toStatus, "approved");
+
+    const resetActions = getClientActionEvents(db, campaignId, { surface: "kol_selection", entityType: "campaign" });
+    assert.equal(resetActions[0].actionType, "kol_list_reset");
+    assert.equal(resetActions[0].metadata.resetCurrentStateCount, 2);
   });
 });
 

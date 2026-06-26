@@ -20,6 +20,7 @@ import {
   getRootAudienceSnapshot,
   getSelectionHistory,
   lockSelection,
+  resetKolReviewState,
   resetCampaignReviewState
 } from "./selectionService.js";
 import { syncCampaignTwitter241 } from "./twitter241SyncService.js";
@@ -83,6 +84,24 @@ app.get("/api/campaigns/:campaignId/kol-selection/decision-history", (req, res, 
   try {
     const actorRole = parseActorRole(req.query.role ?? req.header("x-actor-role") ?? "client");
     res.json(getCampaignDecisionHistory(db, req.params.campaignId, actorRole));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/campaigns/:campaignId/kol-selection/reset-current-state", (req, res, next) => {
+  try {
+    const body = req.body ?? {};
+    const actorRole = parseActorRole(req.header("x-actor-role") ?? body.actor_role ?? body.actorRole ?? "client");
+    const actorId = String(req.header("x-actor-id") ?? body.actor_id ?? body.actorId ?? "client-reviewer-1");
+    const board = resetKolReviewState(db, {
+      campaignId: req.params.campaignId,
+      actorId,
+      actorRole,
+      note: body.note,
+      clientRequestId: body.client_request_id ?? body.clientRequestId
+    });
+    res.json({ board });
   } catch (error) {
     next(error);
   }

@@ -180,11 +180,8 @@
       "storageKey": "client-kol-selection-root-memory-ilands-aaa-v2",
       "eyebrow": "目标人群确认",
       "title": "先确认要让哪三类人看到，再反推可投放 KOL。",
-      "description": "root audience 是本轮传播希望影响到的人群，不等于要付费合作的 KOL。客户在这里确认、排除或要求补充 root，系统会保留通过项，并把排除原因用于下一轮重跑。",
-      "roundLabel": "Root 第",
-      "rerunButton": "重新跑一轮",
-      "rollbackButton": "回滚上一轮",
-      "lockedCopy": "已锁定，下一轮保留",
+      "description": "root audience 是本轮传播希望影响到的人群，不等于要付费合作的 KOL。客户在这里确认、排除或要求补充 root，系统会用确认结果更新下方 KOL list。",
+      "lockedCopy": "已确认，会用于 KOL list",
       "groups": [
         {
           "index": "01",

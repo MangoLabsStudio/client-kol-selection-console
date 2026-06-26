@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, MessageSquareText, RotateCcw, Sparkles, Trash2, Undo2, X, XCircle } from "lucide-react";
+import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, MessageSquareText, Sparkles, Undo2, X, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createRootAudienceGeneration, submitClientAction } from "../lib/api";
 import type { KolGenerationRun, RootAudienceConfig, RootAudienceSnapshotInput, RootPersonConfig } from "../lib/types";
@@ -265,38 +265,6 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
     });
   };
 
-  const rerun = () => {
-    const currentRound = state.round;
-    const decisionCount = Object.keys(state.decisions).length;
-    setState((current) => {
-      const nextMemory = [
-        ...current.memory,
-        {
-          id: crypto.randomUUID(),
-          round: current.round,
-          createdAt: new Date().toISOString(),
-          decisions: current.decisions
-        }
-      ].slice(-5);
-      const locked = Object.fromEntries(Object.entries(current.decisions).filter(([, decision]) => decision.status === "approved"));
-
-      return {
-        round: current.round + 1,
-        decisions: locked,
-        ruleComments: current.ruleComments,
-        memory: nextMemory
-      };
-    });
-    recordAction({
-      entityType: "root_round",
-      entityId: String(currentRound),
-      actionType: "rerun_next_round",
-      fromValue: String(currentRound),
-      toValue: String(currentRound + 1),
-      metadata: { round: currentRound, decisionCount }
-    });
-  };
-
   const confirmAndGenerate = useCallback(async () => {
     if (isGenerating) return;
     const snapshot = buildSnapshot(config, state, stats);
@@ -343,7 +311,6 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
   const actionableRootCount = stats.approved + stats.question + stats.rejected;
   const generateDisabled = isGenerating || actionableRootCount < 1;
   const generateLabel = isGenerating ? "更新中" : actionableRootCount < 1 ? "先标记 1 个 root 再更新" : "从 107 基础池更新 KOL list";
-  const resetDisabled = actionableRootCount === 0 && Object.keys(state.ruleComments).length === 0 && state.memory.length === 0 && state.round === 1;
 
   useEffect(() => {
     onGenerateControlChange?.({
@@ -357,51 +324,6 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
   useEffect(() => {
     return () => onGenerateControlChange?.(null);
   }, [onGenerateControlChange]);
-
-  const rollback = () => {
-    const previous = state.memory.at(-1);
-    setState((current) => {
-      const previous = current.memory.at(-1);
-      if (!previous) return current;
-      return {
-        round: previous.round,
-        decisions: previous.decisions,
-        ruleComments: current.ruleComments,
-        memory: current.memory.slice(0, -1)
-      };
-    });
-    if (previous) {
-      recordAction({
-        entityType: "root_round",
-        entityId: String(state.round),
-        actionType: "rollback_round",
-        fromValue: String(state.round),
-        toValue: String(previous.round),
-        metadata: { restoredRound: previous.round, restoredDecisionCount: Object.keys(previous.decisions).length }
-      });
-    }
-  };
-
-  const resetRootAudience = () => {
-    const previousRound = state.round;
-    const decisionCount = Object.keys(state.decisions).length;
-    const commentCount = Object.values(state.ruleComments).filter((comment) => comment.trim().length > 0).length;
-    setActiveHandle(null);
-    setState({
-      round: 1,
-      decisions: {},
-      ruleComments: {},
-      memory: []
-    });
-    recordAction({
-      entityType: "root_round",
-      entityId: String(previousRound),
-      actionType: "reset_root_audience",
-      fromValue: String(previousRound),
-      toValue: "1",
-      metadata: { previousRound, decisionCount, commentCount, memoryRounds: state.memory.length }
-    });
-  };
 
   const toggleRules = (groupName: string, open: boolean) => {
     setExpandedRules((current) => ({ ...current, [groupName]: !open }));
@@ -450,7 +372,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
             <p>{config.description}</p>
           </div>
           <div className="root-round-panel" aria-label="目标人群确认状态">
-            <span>{config.roundLabel} {state.round}</span>
+            <span>目标人群</span>
             <strong>{stats.approved}/{stats.total}</strong>
             <small>已通过 root</small>
           </div>
@@ -471,18 +393,6 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
             <button type="button" className="root-primary-action" onClick={confirmAndGenerate} disabled={generateDisabled}>
               <Sparkles size={15} />
               {isGenerating ? "更新中" : actionableRootCount < 1 ? "先标记 1 个 root 再更新" : "确认目标人群，更新 KOL list"}
-            </button>
-            <button type="button" onClick={rerun}>
-              <Sparkles size={15} />
-              {config.rerunButton}
-            </button>
-            <button type="button" onClick={rollback} disabled={state.memory.length === 0}>
-              <RotateCcw size={15} />
-              {config.rollbackButton}
-            </button>
-            <button type="button" onClick={resetRootAudience} disabled={resetDisabled}>
-              <Trash2 size={15} />
-              重置
             </button>
           </div>
         </div>

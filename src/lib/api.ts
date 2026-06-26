@@ -41,6 +41,20 @@ export function getDecisionHistory(campaignId: string, actorRole: ActorRole) {
   return request<DecisionHistoryResponse>(`/api/campaigns/${campaignId}/kol-selection/decision-history?role=${actorRole}`);
 }
 
+export function resetKolReviewState(campaignId: string, actorRole: ActorRole) {
+  return request<{ board: BoardResponse }>(`/api/campaigns/${campaignId}/kol-selection/reset-current-state`, {
+    method: "POST",
+    headers: {
+      "x-actor-role": actorRole,
+      "x-actor-id": actorRole === "agency" ? "agency-ops" : "client-reviewer-1"
+    },
+    body: JSON.stringify({
+      note: "KOL list reset to initial candidate pool.",
+      client_request_id: `kol-reset-${crypto.randomUUID()}`
+    })
+  });
+}
+
 export function submitDecision(input: {
   campaignId: string;
   itemId: string;

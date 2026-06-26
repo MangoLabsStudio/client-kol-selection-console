@@ -11,7 +11,7 @@ import { RuleBoard } from "./components/RuleBoard";
 import { SkeletonBoard } from "./components/SkeletonBoard";
 import { StrategyMethodBoard } from "./components/StrategyMethodBoard";
 import { ToastStack, type Toast } from "./components/ToastStack";
-import { exportBoard, getAppConfig, getBoardForCampaign, submitClientAction, submitDecision } from "./lib/api";
+import { exportBoard, getAppConfig, getBoardForCampaign, resetKolReviewState, submitClientAction, submitDecision } from "./lib/api";
 import type { AppConfig, BoardResponse, CampaignKolItem, Filters, SelectionStatus, Summary } from "./lib/types";
 import { useDebouncedValue } from "./lib/useDebouncedValue";
 
@@ -49,6 +49,7 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [exporting, setExporting] = useState(false);
   const [generatingPool, setGeneratingPool] = useState(false);
+  const [resettingKolPool, setResettingKolPool] = useState(false);
   const rootGenerateActionRef = useRef<(() => void) | null>(null);
   const [rootGenerateStatus, setRootGenerateStatus] = useState<{ disabled: boolean; label: string; approved: number } | null>(null);
   const debouncedQuery = useDebouncedValue(filters.query);
@@ -159,6 +160,9 @@ export default function App() {
       { value: String(board.summary.rejected), label: ui.hero.metricLabels.rejected },
       { value: String(board.summary.question), label: ui.hero.metricLabels.question }
     ];
+  const canResetKolPool =
+    Boolean(board.activeGenerationRun) || board.summary.approved + board.summary.rejected + board.summary.question + board.summary.hold > 0;
+  const kolPoolBusy = generatingPool || resettingKolPool;
 
   const decide = async (item: CampaignKolItem, toStatus: SelectionStatus, reasonTags: string[] = [], note = "", loadingStatus: SelectionStatus | "undo" = toStatus) => {
     const previous = board;
@@ -204,6 +208,22 @@ export default function App() {
       pushToast("danger", error instanceof Error ? error.message : "导出失败，请稍后重试。");
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleResetKolPool = async () => {
+    if (!canResetKolPool || kolPoolBusy) return;
+    setResettingKolPool(true);
+    try {
+      const result = await resetKolReviewState(board.campaign.id, "client");
+      setBoard(result.board);
+      setFilters(initialFilters);
+      setModal(null);
+      pushToast("success", "KOL list 已恢复到初始候选池，历史记录已保留。");
+    } catch (error) {
+      pushToast("danger", error instanceof Error ? error.message : "KOL list 重置失败，请稍后重试。");
+    } finally {
+      setResettingKolPool(false);
     }
   };
 
@@ -337,7 +357,7 @@ export default function App() {
           <RootAudienceBoard
             campaignId={board.campaign.id}
             config={ui.roots}
-            generating={generatingPool}
+            generating={kolPoolBusy}
             onGenerated={async (run) => {
               pushToast("success", `已更新 ${run.versionLabel}。`);
               await refreshBoard(board.campaign.id);
@@ -379,11 +399,20 @@ export default function App() {
                 <button
                   type="button"
                   className="pool-regenerate-action"
-                  disabled={!rootGenerateStatus || rootGenerateStatus.disabled}
+                  disabled={kolPoolBusy || !rootGenerateStatus || rootGenerateStatus.disabled}
                   onClick={() => rootGenerateActionRef.current?.()}
                 >
                   <Sparkles size={15} />
                   {rootGenerateStatus?.label ?? "从 107 基础池更新 KOL list"}
+                </button>
+                <button
+                  type="button"
+                  className="pool-reset-action"
+                  disabled={kolPoolBusy || !canResetKolPool}
+                  onClick={handleResetKolPool}
+                >
+                  <RefreshCw size={15} />
+                  {resettingKolPool ? "重置中" : "重置 KOL list"}
                 </button>
               </div>
 

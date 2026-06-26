@@ -720,6 +720,229 @@ export function createKolGenerationRun(db: DatabaseSync, input: CreateKolGenerat
   return getGenerationRunWithItems(db, runId);
 }
 
+export function resetKolReviewState(
+  db: DatabaseSync,
+  input: {
+    campaignId: string;
+    actorId: string;
+    actorRole: ActorRole;
+    clientRequestId?: string;
+    note?: string;
+  }
+) {
+  const existing = getClientActionEventByRequest(db, input.clientRequestId);
+  if (existing) return getCampaignBoard(db, input.campaignId, input.actorRole);
+
+  const campaign = db.prepare("SELECT id, client_id FROM campaigns WHERE id = ?").get(input.campaignId);
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
+
+  const activeRun = getLatestGenerationRun(db, input.campaignId);
+  const latestSnapshot = activeRun ? null : getLatestRootAudienceSnapshot(db, input.campaignId);
+  const sourceSnapshotId = activeRun?.sourceSnapshotId ?? latestSnapshot?.id ?? null;
+  const timestamp = nowIso();
+  const resetNote = input.note?.trim() || "KOL list reset to the initial candidate pool.";
+  const nonPendingItems = db
+    .prepare(
+      `SELECT
+        i.id AS item_id,
+        i.client_id,
+        i.campaign_id,
+        i.kol_id,
+        COALESCE(s.current_status, i.status_current, 'pending') AS effective_status
+      FROM campaign_kol_items i
+      LEFT JOIN kol_selection_current_state s ON s.campaign_kol_item_id = i.id
+      WHERE i.campaign_id = ?
+        AND COALESCE(s.current_status, i.status_current, 'pending') <> 'pending'
+      ORDER BY i.display_order ASC`
+    )
+    .all(input.campaignId);
+  const baseItems = sourceSnapshotId
+    ? db
+        .prepare(
+          `SELECT id, display_order
+          FROM campaign_kol_items
+          WHERE campaign_id = ? AND COALESCE(created_by, '') <> 'twitter241_discovery'
+          ORDER BY display_order ASC`
+        )
+        .all(input.campaignId)
+    : [];
+
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db
+      .prepare(
+        `INSERT INTO client_action_events (
+          id, client_id, campaign_id, surface, entity_type, entity_id, action_type,
+          actor_id, actor_role, from_value, to_value, reason_tags, note, metadata,
+          client_request_id, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        randomUUID(),
+        campaign.client_id,
+        input.campaignId,
+        "kol_selection",
+        "campaign",
+        input.campaignId,
+        "kol_list_reset",
+        input.actorId,
+        input.actorRole,
+        activeRun?.versionLabel ?? "initial_board",
+        "initial_seed_pool",
+        JSON.stringify(["kol_list_reset"]),
+        resetNote,
+        JSON.stringify({
+          previousGenerationRunId: activeRun?.id ?? null,
+          sourceSnapshotId,
+          basePoolItemCount: baseItems.length,
+          resetCurrentStateCount: nonPendingItems.length
+        }),
+        input.clientRequestId ?? null,
+        timestamp
+      );
+
+    const insertResetEvent = db.prepare(
+      `INSERT INTO kol_selection_events (
+        id, client_id, campaign_id, campaign_kol_item_id, kol_id, actor_id, actor_role,
+        event_type, from_status, to_status, decision, reason_tags, note, visibility,
+        client_request_id, metadata, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+    const upsertCurrentState = db.prepare(
+      `INSERT INTO kol_selection_current_state (
+        id, client_id, campaign_id, campaign_kol_item_id, kol_id, current_status, current_decision,
+        current_reason_tags, current_note, last_event_id, last_actor_id, last_actor_role,
+        last_updated_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(campaign_kol_item_id) DO UPDATE SET
+        current_status = excluded.current_status,
+        current_decision = excluded.current_decision,
+        current_reason_tags = excluded.current_reason_tags,
+        current_note = excluded.current_note,
+        last_event_id = excluded.last_event_id,
+        last_actor_id = excluded.last_actor_id,
+        last_actor_role = excluded.last_actor_role,
+        last_updated_at = excluded.last_updated_at,
+        updated_at = excluded.updated_at`
+    );
+
+    nonPendingItems.forEach((item) => {
+      const eventId = randomUUID();
+      insertResetEvent.run(
+        eventId,
+        item.client_id,
+        input.campaignId,
+        item.item_id,
+        item.kol_id,
+        input.actorId,
+        input.actorRole,
+        "undo",
+        item.effective_status,
+        "pending",
+        "pending",
+        JSON.stringify(["kol_list_reset"]),
+        resetNote,
+        "client_visible",
+        input.clientRequestId ? `${input.clientRequestId}:item:${String(item.item_id)}` : null,
+        JSON.stringify({ resetScope: "kol_current_state", previousStatus: item.effective_status }),
+        timestamp
+      );
+      upsertCurrentState.run(
+        randomUUID(),
+        item.client_id,
+        input.campaignId,
+        item.item_id,
+        item.kol_id,
+        "pending",
+        "pending",
+        JSON.stringify([]),
+        "",
+        eventId,
+        input.actorId,
+        input.actorRole,
+        timestamp,
+        timestamp,
+        timestamp
+      );
+    });
+
+    db
+      .prepare(
+        `UPDATE kol_selection_followups
+        SET status = 'reset', answer_text = COALESCE(NULLIF(answer_text, ''), ?), resolved_by = ?,
+          resolved_at = ?, updated_at = ?
+        WHERE campaign_id = ? AND status = 'open'`
+      )
+      .run("Closed by KOL list reset.", input.actorId, timestamp, timestamp, input.campaignId);
+    db
+      .prepare("UPDATE campaign_kol_items SET status_current = 'pending', updated_at = ? WHERE campaign_id = ?")
+      .run(timestamp, input.campaignId);
+
+    if (sourceSnapshotId && baseItems.length > 0) {
+      const runId = randomUUID();
+      const versionLabel = "初始候选池";
+      db
+        .prepare(
+          `INSERT INTO kol_generation_runs (
+            id, client_id, campaign_id, source_snapshot_id, status, version_label,
+            trigger_actor_id, trigger_actor_role, trigger_reason, metadata_json,
+            client_request_id, created_at, completed_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          runId,
+          campaign.client_id,
+          input.campaignId,
+          sourceSnapshotId,
+          "succeeded",
+          versionLabel,
+          input.actorId,
+          input.actorRole,
+          "kol_list_reset_to_seed_pool",
+          JSON.stringify({
+            source: "seed_pool_reset",
+            generator: "seed_pool_reset_v1",
+            itemLimit: baseItems.length,
+            reset: {
+              previousGenerationRunId: activeRun?.id ?? null,
+              currentStateEvents: nonPendingItems.length
+            }
+          }),
+          input.clientRequestId ? `${input.clientRequestId}:generation` : null,
+          timestamp,
+          timestamp
+        );
+
+      const insertRunItem = db.prepare(
+        `INSERT INTO kol_generation_run_items (
+          id, run_id, campaign_kol_item_id, display_order, score, explanation_json, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+      );
+      baseItems.forEach((item, index) => {
+        insertRunItem.run(
+          randomUUID(),
+          runId,
+          item.id,
+          index + 1,
+          0,
+          JSON.stringify({ reset: true, source: "seed_pool", baseDisplayOrder: Number(item.display_order ?? index + 1) }),
+          timestamp
+        );
+      });
+      db.prepare("UPDATE campaigns SET review_round = ?, last_updated_at = ? WHERE id = ?").run(versionLabel, timestamp, input.campaignId);
+    } else {
+      db.prepare("UPDATE campaigns SET last_updated_at = ? WHERE id = ?").run(timestamp, input.campaignId);
+    }
+
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+
+  return getCampaignBoard(db, input.campaignId, input.actorRole);
+}
+
 export function getGenerationRuns(db: DatabaseSync, campaignId: string) {
   const campaign = db.prepare("SELECT id FROM campaigns WHERE id = ?").get(campaignId);
   if (!campaign) throw new ApiError(404, "未找到该项目。");
@@ -731,7 +954,7 @@ export function getGenerationRuns(db: DatabaseSync, campaignId: string) {
       LEFT JOIN kol_generation_run_items i ON i.run_id = r.id
       WHERE r.campaign_id = ?
       GROUP BY r.id
-      ORDER BY r.created_at DESC`
+      ORDER BY r.created_at DESC, r.rowid DESC`
     )
     .all(campaignId)
     .map(normalizeGenerationRun);
@@ -770,7 +993,7 @@ export function getLatestGenerationRun(db: DatabaseSync, campaignId: string) {
       LEFT JOIN kol_generation_run_items i ON i.run_id = r.id
       WHERE r.campaign_id = ?
       GROUP BY r.id
-      ORDER BY r.created_at DESC
+      ORDER BY r.created_at DESC, r.rowid DESC
       LIMIT 1`
     )
     .get(campaignId);

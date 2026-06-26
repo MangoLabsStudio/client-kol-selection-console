@@ -2352,8 +2352,24 @@ body {
   box-shadow: 0 12px 26px rgba(13, 119, 117, 0.16);
 }
 
+.pool-reset-action {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 119, 117, 0.18);
+  background: #fffef8;
+  color: #466465;
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .root-title-generate:disabled,
-.pool-regenerate-action:disabled {
+.pool-regenerate-action:disabled,
+.pool-reset-action:disabled {
   cursor: not-allowed;
   border-color: rgba(13, 119, 117, 0.16);
   background: #dfe9e5;

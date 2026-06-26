@@ -10,12 +10,13 @@ const defaultHost = "twitter241.p.rapidapi.com";
 export function createTwitter241ClientFromEnv(): Twitter241Client | null {
   const primaryKey = process.env.TWITTER241_RAPIDAPI_KEY?.trim();
   const fallbackKey = process.env.TWITTER241_RAPIDAPI_KEY_FALLBACK?.trim();
+  const secondFallbackKey = process.env.TWITTER241_RAPIDAPI_KEY_FALLBACK_2?.trim();
   if (!primaryKey) return null;
 
   return new RapidApiTwitter241Client({
     baseUrl: process.env.TWITTER241_BASE_URL?.trim() || defaultBaseUrl,
     host: process.env.TWITTER241_RAPIDAPI_HOST?.trim() || defaultHost,
-    keys: [primaryKey, fallbackKey].filter((key): key is string => Boolean(key))
+    keys: [primaryKey, fallbackKey, secondFallbackKey].filter((key): key is string => Boolean(key))
   });
 }
 

@@ -6,9 +6,11 @@ type RootSeed = {
   name: string;
   role: string;
   groupName: string;
-  status: string;
+  status: RootSeedStatus;
   weight: number;
 };
+
+type RootSeedStatus = "approved" | "question" | "pending" | "rejected";
 
 type FlattenedUser = {
   restId: string;
@@ -48,6 +50,9 @@ type CommonFollowRow = {
   candidateType: string;
   commercialDecision: string;
   scoreHint: number;
+  selectedFollowedBy?: RootSeed[];
+  selectedWeightedScore?: number;
+  selectedScoreHint?: number;
 };
 
 export type Twitter241DiscoveryResult = {
@@ -56,14 +61,17 @@ export type Twitter241DiscoveryResult = {
   candidates: DiscoveredKolCandidateInput[];
   metadata: {
     provider: "twitter241";
-    strategy: "target_backed_common_follow_v1";
+    strategy: "kol_universe_then_root_filter_v1";
     status: "succeeded" | "partial" | "unavailable" | "failed";
     rootSeeds: Array<Pick<RootSeed, "handle" | "name" | "groupName" | "status" | "weight">>;
-    minCoverage: number;
+    selectedRootSeeds: Array<Pick<RootSeed, "handle" | "name" | "groupName" | "status" | "weight">>;
+    universeMinCoverage: number;
+    selectedMinCoverage: number;
     maxPages: number;
     pageCount: number;
     fetchedUserCount: number;
-    rankedAccountCount: number;
+    universeAccountCount: number;
+    filteredAccountCount: number;
     candidateCount: number;
     targetFetchStatus: Array<{ handle: string; status: string; fetchedFollowingsCount: number; pagesScanned: number; error?: string }>;
     errors: string[];
@@ -76,6 +84,7 @@ export type Twitter241DiscoveryOptions = {
   followingCount?: number;
   maxPages?: number;
   minCoverage?: number;
+  selectedMinCoverage?: number;
   maxCandidates?: number;
 };
 
@@ -84,22 +93,28 @@ export async function discoverRootAudienceKolCandidates(
   options: Twitter241DiscoveryOptions = {}
 ): Promise<Twitter241DiscoveryResult> {
   const client = options.client === undefined ? createTwitter241ClientFromEnv() : options.client;
-  const rootSeeds = readRootSeeds(snapshot).slice(0, clampCount(options.rootLimit ?? Number(process.env.TWITTER241_COMMON_FOLLOW_ROOT_LIMIT ?? 10), 1, 24));
+  const selectedSeeds = readSelectedRootSeeds(snapshot);
+  const selectedHandles = new Set(selectedSeeds.map((seed) => seed.handle));
+  const rootSeeds = readUniverseRootSeeds(snapshot, selectedHandles).slice(0, clampCount(options.rootLimit ?? Number(process.env.TWITTER241_KOL_UNIVERSE_ROOT_LIMIT ?? 36), 2, 80));
   const rootHandleExclusions = readRootHandleExclusions(snapshot);
-  const minCoverage = clampCount(options.minCoverage ?? Number(process.env.TWITTER241_COMMON_FOLLOW_MIN_COVERAGE ?? 2), 2, 8);
-  const maxPages = clampCount(options.maxPages ?? Number(process.env.TWITTER241_COMMON_FOLLOW_MAX_PAGES ?? 4), 1, 12);
-  const pageCount = clampCount(options.followingCount ?? Number(process.env.TWITTER241_COMMON_FOLLOW_PAGE_COUNT ?? 200), 20, 200);
+  const universeMinCoverage = clampCount(options.minCoverage ?? Number(process.env.TWITTER241_KOL_UNIVERSE_MIN_COVERAGE ?? 2), 2, 12);
+  const selectedMinCoverage = clampCount(options.selectedMinCoverage ?? Number(process.env.TWITTER241_KOL_SELECTED_MIN_COVERAGE ?? 1), 1, 8);
+  const maxPages = clampCount(options.maxPages ?? Number(process.env.TWITTER241_KOL_UNIVERSE_MAX_PAGES ?? 3), 1, 12);
+  const pageCount = clampCount(options.followingCount ?? Number(process.env.TWITTER241_KOL_UNIVERSE_PAGE_COUNT ?? 200), 20, 200);
   const maxCandidates = clampCount(options.maxCandidates ?? Number(process.env.TWITTER241_DISCOVERY_MAX_CANDIDATES ?? 80), 10, 200);
   const metadata: Twitter241DiscoveryResult["metadata"] = {
     provider: "twitter241",
-    strategy: "target_backed_common_follow_v1",
+    strategy: "kol_universe_then_root_filter_v1",
     status: "unavailable",
     rootSeeds: rootSeeds.map(({ handle, name, groupName, status, weight }) => ({ handle, name, groupName, status, weight })),
-    minCoverage,
+    selectedRootSeeds: selectedSeeds.map(({ handle, name, groupName, status, weight }) => ({ handle, name, groupName, status, weight })),
+    universeMinCoverage,
+    selectedMinCoverage,
     maxPages,
     pageCount,
     fetchedUserCount: 0,
-    rankedAccountCount: 0,
+    universeAccountCount: 0,
+    filteredAccountCount: 0,
     candidateCount: 0,
     targetFetchStatus: [],
     errors: []
@@ -110,8 +125,13 @@ export async function discoverRootAudienceKolCandidates(
     return { provider: "twitter241", status: "unavailable", candidates: [], metadata };
   }
 
-  if (rootSeeds.length < minCoverage) {
-    metadata.errors.push(`Common-follow discovery requires at least ${minCoverage} selected root accounts.`);
+  if (selectedSeeds.length === 0) {
+    metadata.errors.push("KOL filtering requires at least 1 selected root account.");
+    return { provider: "twitter241", status: "unavailable", candidates: [], metadata };
+  }
+
+  if (rootSeeds.length < universeMinCoverage) {
+    metadata.errors.push(`KOL universe discovery requires at least ${universeMinCoverage} non-rejected root accounts.`);
     return { provider: "twitter241", status: "unavailable", candidates: [], metadata };
   }
 
@@ -130,9 +150,11 @@ export async function discoverRootAudienceKolCandidates(
     if (record.status !== "ok") metadata.errors.push(`Root ${seed.handle}: ${record.error ?? record.status}`);
   }
 
-  const ranked = aggregateCommonFollowRows(records, rootSeeds, rootHandleExclusions, minCoverage);
-  metadata.rankedAccountCount = ranked.length;
-  const candidates = ranked.slice(0, maxCandidates).map(rowToCandidate);
+  const universeRows = aggregateCommonFollowRows(records, rootSeeds, rootHandleExclusions, universeMinCoverage);
+  metadata.universeAccountCount = universeRows.length;
+  const selectedRows = filterUniverseRowsForSelectedRoots(universeRows, selectedSeeds, selectedMinCoverage);
+  metadata.filteredAccountCount = selectedRows.length;
+  const candidates = selectedRows.slice(0, maxCandidates).map(rowToCandidate);
   metadata.candidateCount = candidates.length;
   metadata.status = candidates.length > 0 ? (metadata.errors.length > 0 ? "partial" : "succeeded") : metadata.errors.length > 0 ? "failed" : "unavailable";
 
@@ -247,8 +269,11 @@ function aggregateCommonFollowRows(records: TargetFollowingRecord[], rootSeeds: 
 }
 
 function rowToCandidate(row: CommonFollowRow): DiscoveredKolCandidateInput {
-  const followedByHandles = row.followedBy.map((seed) => `@${seed.handle}`);
-  const followedByPeople = row.followedBy.map((seed) => seed.name || `@${seed.handle}`).slice(0, 8);
+  const universeFollowedByHandles = row.followedBy.map((seed) => `@${seed.handle}`);
+  const universeFollowedByPeople = row.followedBy.map((seed) => seed.name || `@${seed.handle}`).slice(0, 12);
+  const selectedFollowedBy = row.selectedFollowedBy ?? [];
+  const selectedFollowedByHandles = selectedFollowedBy.map((seed) => `@${seed.handle}`);
+  const selectedFollowedByPeople = selectedFollowedBy.map((seed) => seed.name || `@${seed.handle}`).slice(0, 8);
   return {
     handle: row.handle,
     name: row.name || row.handle,
@@ -260,29 +285,61 @@ function rowToCandidate(row: CommonFollowRow): DiscoveredKolCandidateInput {
     region: "Global",
     language: "EN",
     contentCategory: inferContentCategory(`${row.name} ${row.description}`),
-    audienceSummary: `被 ${row.followedByCount} 个目标 root 共同关注（覆盖 ${row.coveragePct}%）：${followedByPeople.join("、")}。`,
-    whyIncluded: `来自目标人群共同关注网络，不是单个账号 followings：${followedByHandles.slice(0, 12).join("、")} 共同关注。`,
+    audienceSummary: `候选池覆盖 ${row.followedByCount} 个 root；命中已选 root ${selectedFollowedBy.length} 个：${selectedFollowedByPeople.join("、")}。`,
+    whyIncluded: `先进入全量 KOL universe，再按已选 Root Audience 筛选；已选 root 命中：${selectedFollowedByHandles.join("、")}。`,
     recommendedAngle: inferRecommendedAngle(`${row.name} ${row.description}`, row.commercialDecision),
     contactStatus: inferContactStatus(row.description),
     riskTags: riskTagsFor(row),
-    scoreHint: row.scoreHint,
-    source: "twitter241_common_follow",
-    sourceRootHandle: `${row.followedByCount} common roots`,
+    scoreHint: row.selectedScoreHint ?? row.scoreHint,
+    source: "twitter241_kol_universe_filter",
+    sourceRootHandle: `${selectedFollowedBy.length} selected roots / ${row.followedByCount} universe roots`,
     metadata: {
-      discoverySource: "target_backed_common_follow_v1",
+      discoverySource: "kol_universe_then_root_filter_v1",
       candidateType: row.candidateType,
       commercialDecision: row.commercialDecision,
-      followedByCount: row.followedByCount,
-      coveragePct: row.coveragePct,
-      weightedScore: row.weightedScore,
-      followedByHandles,
-      followedByPeople,
+      universeFollowedByCount: row.followedByCount,
+      universeCoveragePct: row.coveragePct,
+      universeWeightedScore: row.weightedScore,
+      universeFollowedByHandles,
+      universeFollowedByPeople,
+      selectedFollowedByCount: selectedFollowedBy.length,
+      selectedWeightedScore: row.selectedWeightedScore ?? 0,
+      selectedFollowedByHandles,
+      selectedFollowedByPeople,
       listed: row.listed,
       verified: row.verified,
       following: row.following,
       statuses: row.statuses
     }
   };
+}
+
+function filterUniverseRowsForSelectedRoots(rows: CommonFollowRow[], selectedSeeds: RootSeed[], selectedMinCoverage: number) {
+  const selectedHandles = new Set(selectedSeeds.map((seed) => seed.handle));
+  const effectiveMinCoverage = Math.min(selectedMinCoverage, selectedSeeds.length);
+  return rows
+    .map((row) => {
+      const selectedFollowedBy = row.followedBy.filter((seed) => selectedHandles.has(seed.handle));
+      const selectedWeightedScore = selectedFollowedBy.reduce((sum, seed) => sum + seed.weight, 0);
+      const selectedScoreHint =
+        Math.round(Math.min(120, row.scoreHint + selectedWeightedScore * 16 + selectedFollowedBy.length * 8) * 100) / 100;
+      return {
+        ...row,
+        selectedFollowedBy,
+        selectedWeightedScore: Math.round(selectedWeightedScore * 100) / 100,
+        selectedScoreHint
+      };
+    })
+    .filter((row) => (row.selectedFollowedBy?.length ?? 0) >= effectiveMinCoverage)
+    .sort(
+      (a, b) =>
+        (b.selectedScoreHint ?? b.scoreHint) - (a.selectedScoreHint ?? a.scoreHint) ||
+        (b.selectedWeightedScore ?? 0) - (a.selectedWeightedScore ?? 0) ||
+        (b.selectedFollowedBy?.length ?? 0) - (a.selectedFollowedBy?.length ?? 0) ||
+        b.weightedScore - a.weightedScore ||
+        b.followedByCount - a.followedByCount ||
+        b.followers - a.followers
+    );
 }
 
 function scoreCommonFollowCandidate(user: FlattenedUser, weightedScore: number, followedByCount: number, candidateType: string, commercialDecision: string) {
@@ -348,20 +405,34 @@ function riskTagsFor(row: CommonFollowRow) {
   return tags;
 }
 
-function readRootSeeds(snapshot: RootAudienceSnapshotPayload | Record<string, unknown>) {
+function readSelectedRootSeeds(snapshot: RootAudienceSnapshotPayload | Record<string, unknown>) {
+  return readRootSeeds(snapshot, (status) => status === "approved" || status === "question");
+}
+
+function readUniverseRootSeeds(snapshot: RootAudienceSnapshotPayload | Record<string, unknown>, selectedHandles: Set<string>) {
+  return readRootSeeds(snapshot, (status) => status !== "rejected").sort((a, b) => {
+    const aSelected = selectedHandles.has(a.handle) ? 0 : 1;
+    const bSelected = selectedHandles.has(b.handle) ? 0 : 1;
+    return aSelected - bSelected || b.weight - a.weight || a.handle.localeCompare(b.handle);
+  });
+}
+
+function readRootSeeds(snapshot: RootAudienceSnapshotPayload | Record<string, unknown>, includeStatus: (status: RootSeedStatus) => boolean) {
   const seeds: RootSeed[] = [];
   const seen = new Set<string>();
   const groups = Array.isArray(snapshot.groups) ? snapshot.groups : [];
+  const decisions = readObject(snapshot.decisions) ?? {};
   for (const group of groups) {
     const groupRecord = readObject(group) ?? {};
     const groupName = String(groupRecord.name ?? "");
     const people = Array.isArray(groupRecord.people) ? groupRecord.people : [];
     for (const person of people) {
       const personRecord = readObject(person) ?? {};
-      const status = String(personRecord.status ?? "pending");
-      if (status !== "approved" && status !== "question") continue;
       const handle = normalizeHandle(String(personRecord.handle ?? ""));
       if (!handle || seen.has(handle)) continue;
+      const decision = readObject(decisions[personRecord.handle as string]) ?? readObject(decisions[`@${handle}`]) ?? readObject(decisions[handle]);
+      const status = normalizeRootStatus(String(decision?.status ?? personRecord.status ?? "pending"));
+      if (!includeStatus(status)) continue;
       seen.add(handle);
       seeds.push({
         handle,
@@ -376,6 +447,11 @@ function readRootSeeds(snapshot: RootAudienceSnapshotPayload | Record<string, un
 
   const statusRank = { approved: 0, question: 1, pending: 2, rejected: 3 } as Record<string, number>;
   return seeds.sort((a, b) => (statusRank[a.status] ?? 9) - (statusRank[b.status] ?? 9) || b.weight - a.weight || a.handle.localeCompare(b.handle));
+}
+
+function normalizeRootStatus(value: string): RootSeedStatus {
+  if (value === "approved" || value === "question" || value === "rejected") return value;
+  return "pending";
 }
 
 function readRootHandleExclusions(snapshot: RootAudienceSnapshotPayload | Record<string, unknown>) {

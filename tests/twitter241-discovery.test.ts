@@ -42,7 +42,7 @@ function followingsPayload(users: Array<ReturnType<typeof user>>) {
   };
 }
 
-test("twitter241 discovery ranks common-follow KOL candidates instead of single-root followings", async () => {
+test("twitter241 discovery builds a KOL universe then filters by selected root audience", async () => {
   const calls: Array<{ endpoint: string; params: Twitter241Params }> = [];
   const client: Twitter241Client = {
     async get(endpoint, params) {
@@ -71,7 +71,14 @@ test("twitter241 discovery ranks common-follow KOL candidates instead of single-
         if (rootId === "root-pmarca") {
           return followingsPayload([
             user("candidate-common", "agentnewsletter", "Agent Newsletter", "AI agent newsletter, podcast, and sponsor partnerships.", 73_000),
+            user("candidate-unselected-common", "pmarcaonlycommon", "PMarca Network", "AI podcast, newsletter, and sponsor partnerships.", 81_000),
             user("candidate-official", "openai", "OpenAI", "Official company account.", 5_000_000)
+          ]);
+        }
+        if (rootId === "root-karpathy") {
+          return followingsPayload([
+            user("candidate-unselected-common", "pmarcaonlycommon", "PMarca Network", "AI podcast, newsletter, and sponsor partnerships.", 81_000),
+            user("candidate-research", "airesearchonly", "AI Research Only", "AI research notes without selected root coverage.", 66_000)
           ]);
         }
       }
@@ -82,37 +89,44 @@ test("twitter241 discovery ranks common-follow KOL candidates instead of single-
   const result = await discoverRootAudienceKolCandidates(
     {
       round: 1,
-      decisions: { "@sama": { status: "approved" }, "@pmarca": { status: "approved" } },
+      decisions: { "@sama": { status: "approved" } },
       groups: [
         {
           name: "行业超级大佬",
           people: [
             { name: "Sam Altman", handle: "@sama", role: "OpenAI", status: "approved" },
-            { name: "Marc Andreessen", handle: "@pmarca", role: "VC", status: "approved" },
+            { name: "Marc Andreessen", handle: "@pmarca", role: "VC", status: "pending" },
             { name: "Andrej Karpathy", handle: "@karpathy", role: "AI researcher", status: "pending" }
           ]
         }
       ]
     },
-    { client, rootLimit: 2, followingCount: 10, maxPages: 1, minCoverage: 2, maxCandidates: 10 }
+    { client, rootLimit: 3, followingCount: 10, maxPages: 1, minCoverage: 2, selectedMinCoverage: 1, maxCandidates: 10 }
   );
 
   assert.equal(result.status, "succeeded");
-  assert.equal(result.metadata.strategy, "target_backed_common_follow_v1");
+  assert.equal(result.metadata.strategy, "kol_universe_then_root_filter_v1");
+  assert.equal(result.metadata.rootSeeds.length, 3);
+  assert.equal(result.metadata.selectedRootSeeds.length, 1);
+  assert.equal(result.metadata.universeAccountCount, 2);
+  assert.equal(result.metadata.filteredAccountCount, 1);
   assert.equal(result.candidates.length, 1);
   const candidate = result.candidates[0];
   assert.ok(candidate);
   assert.ok(candidate.metadata);
   assert.equal(candidate.handle, "agentnewsletter");
-  assert.equal(candidate.metadata.followedByCount, 2);
+  assert.equal(candidate.source, "twitter241_kol_universe_filter");
+  assert.equal(candidate.metadata.universeFollowedByCount, 2);
+  assert.equal(candidate.metadata.selectedFollowedByCount, 1);
   assert.equal(result.candidates.some((candidate) => candidate.handle === "samaonly"), false);
+  assert.equal(result.candidates.some((candidate) => candidate.handle === "pmarcaonlycommon"), false);
   assert.equal(result.candidates.some((candidate) => candidate.handle === "karpathy"), false);
-  assert.equal(calls.filter((call) => call.endpoint === "/user").length, 2);
-  assert.equal(calls.filter((call) => call.endpoint === "/followings").length, 2);
+  assert.equal(calls.filter((call) => call.endpoint === "/user").length, 3);
+  assert.equal(calls.filter((call) => call.endpoint === "/followings").length, 3);
   assert.equal(calls.some((call) => call.endpoint === "/search" || call.endpoint === "/search-v2"), false);
 });
 
-test("twitter241 discovery requires at least two selected roots", async () => {
+test("twitter241 discovery requires at least one selected root", async () => {
   const client: Twitter241Client = {
     async get() {
       throw new Error("should not call twitter241");
@@ -121,14 +135,22 @@ test("twitter241 discovery requires at least two selected roots", async () => {
   const result = await discoverRootAudienceKolCandidates(
     {
       round: 1,
-      decisions: { "@sama": { status: "approved" } },
-      groups: [{ name: "行业超级大佬", people: [{ name: "Sam Altman", handle: "@sama", role: "OpenAI", status: "approved" }] }]
+      decisions: {},
+      groups: [
+        {
+          name: "行业超级大佬",
+          people: [
+            { name: "Sam Altman", handle: "@sama", role: "OpenAI", status: "pending" },
+            { name: "Marc Andreessen", handle: "@pmarca", role: "VC", status: "pending" }
+          ]
+        }
+      ]
     },
     { client, minCoverage: 2 }
   );
   assert.equal(result.status, "unavailable");
   assert.equal(result.candidates.length, 0);
-  assert.equal(result.metadata.errors[0]?.includes("at least 2"), true);
+  assert.equal(result.metadata.errors[0]?.includes("at least 1"), true);
 });
 
 test("twitter241 discovery reports unavailable when no client exists", async () => {

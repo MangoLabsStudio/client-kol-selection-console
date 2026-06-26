@@ -341,8 +341,8 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
   }, [campaignId, config, isGenerating, onActionError, onGenerated, state, stats]);
 
   const usableRootCount = stats.approved + stats.question;
-  const generateDisabled = isGenerating || usableRootCount < 2;
-  const generateLabel = isGenerating ? "爬取中" : usableRootCount < 2 ? "至少选 2 个 root 后重新爬取" : "重新爬取 KOL list";
+  const generateDisabled = isGenerating || usableRootCount < 1;
+  const generateLabel = isGenerating ? "筛选中" : usableRootCount < 1 ? "先选 1 个 root 后筛选" : "根据 root 筛选 KOL list";
 
   useEffect(() => {
     onGenerateControlChange?.({
@@ -448,7 +448,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
           <div className="root-memory-actions">
             <button type="button" className="root-primary-action" onClick={confirmAndGenerate} disabled={generateDisabled}>
               <Sparkles size={15} />
-              {isGenerating ? "爬取中" : "确认目标人群，重新爬取 KOL list"}
+              {isGenerating ? "筛选中" : "确认目标人群，筛选 KOL list"}
             </button>
             <button type="button" onClick={rerun}>
               <Sparkles size={15} />

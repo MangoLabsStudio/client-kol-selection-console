@@ -154,7 +154,7 @@ app.post("/api/campaigns/:campaignId/kol-generation-runs", async (req, res, next
 
     const discovery = await discoverRootAudienceKolCandidates(sourceSnapshot.snapshot);
     if (discovery.candidates.length === 0 && process.env.KOL_GENERATION_ALLOW_LOCAL_FALLBACK !== "1") {
-      throw new ApiError(503, "共同关注网络没有返回可用 KOL 候选，已停止本轮生成，避免把旧列表伪装成重新爬取。请至少通过 2 个 root，或增加 root 数量后再试。", discovery.metadata);
+      throw new ApiError(503, "KOL universe 没有返回可用候选，或已选 Root Audience 没有命中候选。已停止本轮生成，避免把旧列表伪装成重新筛选。请至少选择 1 个 root，并保留足够的待确认 root 作为全集种子后再试。", discovery.metadata);
     }
 
     const run = createKolGenerationRun(db, {

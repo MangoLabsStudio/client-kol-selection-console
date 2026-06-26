@@ -407,15 +407,15 @@ test("generation run can persist newly discovered KOL candidates", () => {
           name: "New AI Builder",
           bio: "Building AI agents, developer tools, and product workflows.",
           followers: 88000,
-          sourceRootHandle: "2 common roots",
-          source: "twitter241_common_follow",
+          sourceRootHandle: "1 selected roots / 2 universe roots",
+          source: "twitter241_kol_universe_filter",
           scoreHint: 118,
-          metadata: { followedByCount: 2, followedByHandles: ["@sama", "@pmarca"] }
+          metadata: { selectedFollowedByCount: 1, selectedFollowedByHandles: ["@sama"], universeFollowedByCount: 2 }
         }
       ],
       discoveryMetadata: {
         provider: "twitter241",
-        strategy: "target_backed_common_follow_v1",
+        strategy: "kol_universe_then_root_filter_v1",
         status: "succeeded",
         candidateCount: 1
       }
@@ -426,7 +426,7 @@ test("generation run can persist newly discovered KOL candidates", () => {
     assert.equal(board.items.length, 8);
     assert.equal(board.summary.total, 8);
     assert.equal(board.items.some((item) => item.kol.handle === "new_ai_builder"), true);
-    assert.equal(board.activeGenerationRun?.metadata.generator, "target_backed_common_follow_v1");
+    assert.equal(board.activeGenerationRun?.metadata.generator, "kol_universe_then_root_filter_v1");
 
     const discovered = board.items.find((item) => item.kol.handle === "new_ai_builder");
     assert.equal(discovered?.metadata.discovery && typeof discovered.metadata.discovery === "object", true);

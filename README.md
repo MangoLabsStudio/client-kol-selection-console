@@ -250,7 +250,18 @@ x-actor-role: client
 }
 ```
 
-The generation endpoint uses the target-backed common-follow workflow from the local `target-backed-kol-discovery` repo. It requires at least two approved/question root accounts, resolves each root through Twitter241 `/user`, crawls paginated `/followings`, aggregates accounts that are followed by multiple roots, filters out target/root accounts and institution accounts, keeps KOL-like creator/media/builder candidates, writes new candidates into `kol_profiles` and `campaign_kol_items`, then creates a versioned `kol_generation_run`. It does not use people search as a shortcut, and it does not accept accounts that only appear in one root's followings. If the common-follow network returns no usable KOL candidates, the request fails instead of silently re-ranking the old pool. Set `KOL_GENERATION_ALLOW_LOCAL_FALLBACK=1` only for local demos that must permit old-pool fallback.
+The generation endpoint uses a two-stage target-backed workflow from the local `target-backed-kol-discovery` repo. It first builds a broad KOL universe from all non-rejected root accounts, resolving each root through Twitter241 `/user` and crawling paginated `/followings`. It aggregates accounts followed by multiple roots, filters out target/root accounts and institution/product accounts, keeps KOL-like creator/media/builder candidates, then filters and reranks that universe by the client's approved/question root accounts. The selected roots are the filter signal; the non-rejected roots keep the initial universe broad enough to avoid random single-root followings. New candidates are written into `kol_profiles` and `campaign_kol_items`, then a versioned `kol_generation_run` is created. It does not use people search as a shortcut. If the KOL universe has no usable candidates, or the selected roots do not hit the universe, the request fails instead of silently re-ranking the old pool. Set `KOL_GENERATION_ALLOW_LOCAL_FALLBACK=1` only for local demos that must permit old-pool fallback.
+
+Relevant environment knobs:
+
+```bash
+TWITTER241_KOL_UNIVERSE_ROOT_LIMIT=36
+TWITTER241_KOL_UNIVERSE_MAX_PAGES=3
+TWITTER241_KOL_UNIVERSE_PAGE_COUNT=200
+TWITTER241_KOL_UNIVERSE_MIN_COVERAGE=2
+TWITTER241_KOL_SELECTED_MIN_COVERAGE=1
+TWITTER241_DISCOVERY_MAX_CANDIDATES=80
+```
 
 ## Validation
 

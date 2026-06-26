@@ -647,7 +647,7 @@ export function createKolGenerationRun(db: DatabaseSync, input: CreateKolGenerat
   const discoveryStrategy = typeof discoveryMetadata.strategy === "string" ? discoveryMetadata.strategy : undefined;
   const runMetadata: Record<string, unknown> = {
     source: "root_audience_snapshot",
-    generator: input.discoveredCandidates?.length ? discoveryStrategy ?? "twitter241_common_follow_v1" : "local_weighted_rerank_v1",
+    generator: input.discoveredCandidates?.length ? discoveryStrategy ?? "kol_universe_then_root_filter_v1" : "local_weighted_rerank_v1",
     itemLimit,
     ...input.metadata,
     discovery: discoveryMetadata

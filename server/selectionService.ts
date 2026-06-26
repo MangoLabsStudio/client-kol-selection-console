@@ -828,6 +828,93 @@ export function getCampaignEvents(db: DatabaseSync, campaignId: string) {
     }));
 }
 
+export function getRootKolEdges(db: DatabaseSync, campaignId: string) {
+  return db
+    .prepare(
+      `SELECT
+        e.*,
+        p.name AS kol_name,
+        p.platform AS kol_platform,
+        p.followers AS kol_followers,
+        p.content_category AS kol_content_category,
+        i.display_order AS kol_display_order
+      FROM root_kol_edges e
+      JOIN campaign_kol_items i ON i.id = e.campaign_kol_item_id
+      JOIN kol_profiles p ON p.id = e.kol_id
+      WHERE e.campaign_id = ?
+      ORDER BY e.root_group ASC, e.root_name ASC, e.confidence DESC, i.display_order ASC`
+    )
+    .all(campaignId)
+    .map(normalizeRootKolEdge);
+}
+
+export function getRootKolImpact(db: DatabaseSync, campaignId: string) {
+  const edges = getRootKolEdges(db, campaignId);
+  const edgesByRoot = new Map<string, typeof edges>();
+  const edgesByItem = new Map<string, typeof edges>();
+
+  for (const edge of edges) {
+    const rootKey = edge.rootHandle.toLowerCase();
+    if (!edgesByRoot.has(rootKey)) edgesByRoot.set(rootKey, []);
+    edgesByRoot.get(rootKey)?.push(edge);
+    if (!edgesByItem.has(edge.campaignKolItemId)) edgesByItem.set(edge.campaignKolItemId, []);
+    edgesByItem.get(edge.campaignKolItemId)?.push(edge);
+  }
+
+  const roots = Array.from(edgesByRoot.values())
+    .map((rootEdges) => {
+      const first = rootEdges[0];
+      const items = dedupeBy(rootEdges, (edge) => edge.campaignKolItemId).map((edge) => {
+        const itemEdges = edgesByItem.get(edge.campaignKolItemId) ?? [];
+        const rootEdgesForItem = itemEdges.filter((candidate) => candidate.rootHandle === edge.rootHandle);
+        const maxRootConfidence = Math.max(...rootEdgesForItem.map((candidate) => candidate.confidence));
+        const hasOtherStrongSupport = itemEdges.some((candidate) => candidate.rootHandle !== edge.rootHandle && candidate.confidence >= 0.5);
+        const hardRemoveIfRejected = maxRootConfidence >= 0.7 && !hasOtherStrongSupport;
+        return {
+          campaignKolItemId: edge.campaignKolItemId,
+          kolId: edge.kolId,
+          kolHandle: edge.kolHandle,
+          kolName: edge.kolName,
+          kolDisplayOrder: edge.kolDisplayOrder,
+          maxRootConfidence,
+          supportCount: itemEdges.length,
+          strongSupportCount: itemEdges.filter((candidate) => candidate.confidence >= 0.5).length,
+          hardRemoveIfRejected,
+          downgradeIfRejected: !hardRemoveIfRejected,
+          evidence: edge.evidence,
+          edgeSources: rootEdgesForItem.map((candidate) => ({
+            source: candidate.edgeSource,
+            type: candidate.edgeType,
+            confidence: candidate.confidence
+          }))
+        };
+      });
+
+      return {
+        rootHandle: first?.rootHandle ?? "",
+        rootName: first?.rootName ?? "",
+        rootGroup: first?.rootGroup ?? "",
+        matchedKolCount: items.length,
+        hardRemoveIfRejected: items.filter((item) => item.hardRemoveIfRejected),
+        downgradeIfRejected: items.filter((item) => item.downgradeIfRejected)
+      };
+    })
+    .sort((a, b) => a.rootGroup.localeCompare(b.rootGroup) || a.rootName.localeCompare(b.rootName));
+
+  return {
+    campaignId,
+    summary: {
+      edgeCount: edges.length,
+      rootCount: roots.length,
+      kolCount: new Set(edges.map((edge) => edge.campaignKolItemId)).size,
+      explicitEdgeCount: edges.filter((edge) => edge.edgeType === "explicit_signal").length,
+      archetypeEdgeCount: edges.filter((edge) => edge.edgeType === "signal_archetype").length,
+      inferredEdgeCount: edges.filter((edge) => edge.edgeType === "lane_inference").length
+    },
+    roots
+  };
+}
+
 export function getCurrentState(db: DatabaseSync, itemId: string) {
   const state = db.prepare("SELECT * FROM kol_selection_current_state WHERE campaign_kol_item_id = ?").get(itemId);
   if (!state) {
@@ -853,6 +940,7 @@ export function exportSelection(db: DatabaseSync, campaignId: string, format: "j
   const events = getCampaignEvents(db, campaignId);
   const clientActionLog = getClientActionEvents(db, campaignId, { limit: 1000 });
   const rootAudienceSnapshots = getRootAudienceSnapshots(db, campaignId);
+  const rootKolImpact = getRootKolImpact(db, campaignId);
   const generationRuns = getGenerationRuns(db, campaignId).map((run) => getGenerationRunWithItems(db, run.id));
   const generatedAt = nowIso();
 
@@ -862,6 +950,7 @@ export function exportSelection(db: DatabaseSync, campaignId: string, format: "j
     activeGenerationRun: board.activeGenerationRun,
     rootAudienceSnapshots,
     generationRuns,
+    rootKolImpact,
     approved: board.items.filter((item) => item.currentState.currentStatus === "approved"),
     rejected: board.items.filter((item) => item.currentState.currentStatus === "rejected"),
     question: board.items.filter((item) => item.currentState.currentStatus === "question"),
@@ -1170,6 +1259,33 @@ function normalizeDecisionHistoryEntry(row: Row) {
     kolProfileUrl: row.kol_profile_url ? String(row.kol_profile_url) : null,
     kolAvatarUrl: row.kol_avatar_url ? String(row.kol_avatar_url) : null,
     currentStatus
+  };
+}
+
+function normalizeRootKolEdge(row: Row) {
+  return {
+    id: String(row.id),
+    clientId: String(row.client_id),
+    campaignId: String(row.campaign_id),
+    rootHandle: String(row.root_handle),
+    rootName: String(row.root_name),
+    rootGroup: String(row.root_group),
+    campaignKolItemId: String(row.campaign_kol_item_id),
+    kolId: String(row.kol_id),
+    kolHandle: String(row.kol_handle),
+    kolName: String(row.kol_name ?? ""),
+    kolPlatform: String(row.kol_platform ?? ""),
+    kolFollowers: Number(row.kol_followers ?? 0),
+    kolContentCategory: String(row.kol_content_category ?? ""),
+    kolDisplayOrder: Number(row.kol_display_order ?? 0),
+    edgeType: String(row.edge_type),
+    edgeSource: String(row.edge_source),
+    confidence: Number(row.confidence ?? 0),
+    evidence: String(row.evidence ?? ""),
+    metadata: readJsonObject(row.metadata),
+    fetchedAt: row.fetched_at ? String(row.fetched_at) : null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at)
   };
 }
 
@@ -1707,4 +1823,16 @@ function clampRunItemLimit(value: number) {
 function csvEscape(value: string) {
   if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
   return value;
+}
+
+function dedupeBy<T>(items: T[], keyFor: (item: T) => string) {
+  const seen = new Set<string>();
+  const result: T[] = [];
+  for (const item of items) {
+    const key = keyFor(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
 }

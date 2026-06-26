@@ -15,6 +15,8 @@ import {
   getGenerationRuns,
   getGenerationRunWithItems,
   getLatestRootAudienceSnapshot,
+  getRootKolEdges,
+  getRootKolImpact,
   getRootAudienceSnapshot,
   getSelectionHistory,
   lockSelection,
@@ -95,6 +97,18 @@ app.get("/api/campaigns/:campaignId/client-actions", (req, res, next) => {
         entityId: typeof req.query.entity_id === "string" ? req.query.entity_id : typeof req.query.entityId === "string" ? req.query.entityId : undefined,
         limit
       })
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/campaigns/:campaignId/root-kol-edges", (req, res, next) => {
+  try {
+    const includeEdges = req.query.include_edges === "1" || req.query.includeEdges === "1";
+    res.json({
+      impact: getRootKolImpact(db, req.params.campaignId),
+      edges: includeEdges ? getRootKolEdges(db, req.params.campaignId) : undefined
     });
   } catch (error) {
     next(error);

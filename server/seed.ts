@@ -1,5 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import { getAllProjectConfigs, getProjectConfig, type ProjectConfig, type SeedKolConfig } from "./projectConfig.js";
+import { seedRootKolEdges } from "./rootKolEdges.js";
 
 export const seedCampaignId = getProjectConfig().campaign.id;
 
@@ -23,6 +24,7 @@ function seedProjectData(db: DatabaseSync, config: ProjectConfig) {
 
     if (hasCampaignItems) {
       syncExistingProjectCopy(db, config, timestamp);
+      seedRootKolEdges(db, config, timestamp);
       db.exec("COMMIT");
       return;
     }
@@ -180,6 +182,8 @@ function seedProjectData(db: DatabaseSync, config: ProjectConfig) {
         }
       }
     });
+
+    seedRootKolEdges(db, config, timestamp);
 
     db.exec("COMMIT");
   } catch (error) {

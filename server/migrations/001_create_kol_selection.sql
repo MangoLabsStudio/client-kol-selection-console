@@ -92,8 +92,8 @@ CREATE TABLE IF NOT EXISTS kol_selection_current_state (
   id TEXT PRIMARY KEY,
   client_id TEXT NOT NULL REFERENCES clients(id),
   campaign_id TEXT NOT NULL REFERENCES campaigns(id),
-  campaign_kol_item_id TEXT NOT NULL REFERENCES campaign_kol_items(id),
-  kol_id TEXT NOT NULL REFERENCES kol_profiles(id),
+  campaign_kol_item_id TEXT NOT NULL REFERENCES campaign_kol_items(id) ON DELETE CASCADE,
+  kol_id TEXT NOT NULL REFERENCES kol_profiles(id) ON DELETE CASCADE,
   current_status TEXT NOT NULL DEFAULT 'pending',
   current_decision TEXT NOT NULL DEFAULT 'pending',
   current_reason_tags TEXT NOT NULL DEFAULT '[]',
@@ -139,8 +139,8 @@ CREATE TABLE IF NOT EXISTS kol_selection_followups (
   id TEXT PRIMARY KEY,
   client_id TEXT NOT NULL REFERENCES clients(id),
   campaign_id TEXT NOT NULL REFERENCES campaigns(id),
-  campaign_kol_item_id TEXT NOT NULL REFERENCES campaign_kol_items(id),
-  kol_id TEXT NOT NULL REFERENCES kol_profiles(id),
+  campaign_kol_item_id TEXT NOT NULL REFERENCES campaign_kol_items(id) ON DELETE CASCADE,
+  kol_id TEXT NOT NULL REFERENCES kol_profiles(id) ON DELETE CASCADE,
   task_type TEXT NOT NULL,
   question_text TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'open',
@@ -171,6 +171,33 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_root_audience_snapshots_request
 
 CREATE INDEX IF NOT EXISTS idx_root_audience_snapshots_campaign
   ON root_audience_snapshots(campaign_id, round, created_at);
+
+CREATE TABLE IF NOT EXISTS root_kol_edges (
+  id TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL REFERENCES clients(id),
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id),
+  root_handle TEXT NOT NULL,
+  root_name TEXT NOT NULL DEFAULT '',
+  root_group TEXT NOT NULL DEFAULT '',
+  campaign_kol_item_id TEXT NOT NULL REFERENCES campaign_kol_items(id) ON DELETE CASCADE,
+  kol_id TEXT NOT NULL REFERENCES kol_profiles(id) ON DELETE CASCADE,
+  kol_handle TEXT NOT NULL,
+  edge_type TEXT NOT NULL DEFAULT 'inferred',
+  edge_source TEXT NOT NULL DEFAULT 'manual',
+  confidence REAL NOT NULL DEFAULT 0,
+  evidence TEXT NOT NULL DEFAULT '',
+  metadata TEXT NOT NULL DEFAULT '{}',
+  fetched_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(campaign_id, root_handle, campaign_kol_item_id, edge_source)
+);
+
+CREATE INDEX IF NOT EXISTS idx_root_kol_edges_campaign_root
+  ON root_kol_edges(campaign_id, root_handle, confidence);
+
+CREATE INDEX IF NOT EXISTS idx_root_kol_edges_campaign_kol
+  ON root_kol_edges(campaign_id, campaign_kol_item_id, confidence);
 
 CREATE TABLE IF NOT EXISTS kol_generation_runs (
   id TEXT PRIMARY KEY,
@@ -227,4 +254,3 @@ CREATE INDEX IF NOT EXISTS idx_kol_feedback_learning_events_campaign
 
 CREATE INDEX IF NOT EXISTS idx_kol_feedback_learning_events_item
   ON kol_feedback_learning_events(campaign_kol_item_id, created_at);
-

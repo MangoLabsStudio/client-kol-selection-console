@@ -1106,6 +1106,7 @@ function normalizeGenerationRunItem(row: Row | undefined) {
 
 function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Record<string, unknown>) {
   const decisionValues = readSnapshotDecisionValues(snapshot);
+  const groupSignals = readSnapshotGroupSignals(snapshot);
   const approvedRoots = decisionValues.filter((decision) => decision.status === "approved");
   const rejectedRoots = decisionValues.filter((decision) => decision.status === "rejected");
   const questionRoots = decisionValues.filter((decision) => decision.status === "question");
@@ -1149,9 +1150,11 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
       const approvedBoost = approvedRoots.reduce((sum, root) => sum + rootMatchScore(text, root), 0);
       const rejectedPenalty = rejectedRoots.reduce((sum, root) => sum + rootMatchScore(text, root) * 0.7, 0);
       const questionBoost = questionRoots.reduce((sum, root) => sum + rootMatchScore(text, root) * 0.25, 0);
+      const groupBoost = groupSignals.reduce((sum, group) => sum + groupApprovalBoost(text, group), 0);
+      const groupPenalty = groupSignals.reduce((sum, group) => sum + groupRejectionPenalty(text, group), 0);
       const contactBoost = contactBoostFor(String(row.contact_status ?? ""));
       const riskPenalty = riskTags.filter((tag) => tag !== "none").length * 2;
-      const score = Math.round((audienceFit + approvedBoost + questionBoost + contactBoost - rejectedPenalty - riskPenalty) * 100) / 100;
+      const score = Math.round((audienceFit + approvedBoost + questionBoost + groupBoost + contactBoost - rejectedPenalty - groupPenalty - riskPenalty) * 100) / 100;
 
       return {
         itemId: String(row.item_id),
@@ -1164,6 +1167,8 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
           approvedBoost,
           rejectedPenalty,
           questionBoost,
+          groupBoost,
+          groupPenalty,
           contactBoost,
           riskPenalty,
           originalDisplayOrder: Number(row.display_order ?? 0)
@@ -1186,6 +1191,27 @@ function readSnapshotDecisionValues(snapshot: Record<string, unknown>) {
   });
 }
 
+function readSnapshotGroupSignals(snapshot: Record<string, unknown>) {
+  if (!Array.isArray(snapshot.groups)) return [];
+  return snapshot.groups.map((group) => {
+    const groupRecord = group && typeof group === "object" && !Array.isArray(group) ? (group as Record<string, unknown>) : {};
+    const people = Array.isArray(groupRecord.people) ? groupRecord.people : [];
+    const counts = { total: 0, approved: 0, rejected: 0, question: 0 };
+    for (const person of people) {
+      const personRecord = person && typeof person === "object" && !Array.isArray(person) ? (person as Record<string, unknown>) : {};
+      const status = String(personRecord.status ?? "pending");
+      counts.total += 1;
+      if (status === "approved") counts.approved += 1;
+      if (status === "rejected") counts.rejected += 1;
+      if (status === "question") counts.question += 1;
+    }
+    return {
+      name: String(groupRecord.name ?? ""),
+      ...counts
+    };
+  });
+}
+
 function rootMatchScore(text: string, root: { handle: string; status: string; reason: string; note: string }) {
   const handle = root.handle.replace(/^@/, "").toLowerCase();
   const reason = root.reason.toLowerCase();
@@ -1198,6 +1224,46 @@ function rootMatchScore(text: string, root: { handle: string; status: string; re
   if (/newsletter|podcast|media|creator/.test(text) && /媒体|newsletter|podcast|creator/i.test(`${reason} ${note}`)) score += 2;
   if (/research|technical|engineer|builder|agent/.test(text) && /技术|agent|builder|research/i.test(`${reason} ${note}`)) score += 2;
   return score;
+}
+
+function groupApprovalBoost(text: string, group: { name: string; total: number; approved: number; rejected: number; question: number }) {
+  if (group.approved <= 0 && group.question <= 0) return 0;
+  const match = rootGroupMatchScore(text, group.name);
+  const approvedStrength = Math.min(group.approved, 4) * 0.85;
+  const questionStrength = Math.min(group.question, 3) * 0.25;
+  return Math.round(match * (approvedStrength + questionStrength) * 100) / 100;
+}
+
+function groupRejectionPenalty(text: string, group: { name: string; total: number; approved: number; rejected: number; question: number }) {
+  if (group.rejected <= 0) return 0;
+  const match = rootGroupMatchScore(text, group.name);
+  return Math.round(match * Math.min(group.rejected, 4) * 0.55 * 100) / 100;
+}
+
+function rootGroupMatchScore(text: string, groupName: string) {
+  const name = groupName.toLowerCase();
+  if (/行业|超级|大佬|founder|leader/.test(name)) {
+    let score = 0;
+    if (/agent|builder|founder|product|frontier|broad ai|deep ai|research|technical/.test(text)) score += 2.6;
+    if (/podcast|newsletter|media|discussion|education/.test(text)) score += 1.4;
+    if (/commercial|creator|booking|sponsor|bd/.test(text)) score += 0.7;
+    return score;
+  }
+  if (/vc|投资|venture|investor/.test(name)) {
+    let score = 0;
+    if (/vc|venture|investor|fund|founder|startup|business/.test(text)) score += 2.8;
+    if (/newsletter|podcast|media|bd|warm|intro|commercial|sponsor/.test(text)) score += 1.8;
+    if (/consumer|social|agent|ai-native/.test(text)) score += 0.7;
+    return score;
+  }
+  if (/垂类|专家|核心|builder|expert/.test(name)) {
+    let score = 0;
+    if (/builder|engineer|technical|research|tools|education|creative|agent|product/.test(text)) score += 2.8;
+    if (/tutorial|explain|demo|stack|workflow|developer/.test(text)) score += 1.4;
+    if (/commercial|sponsor|bd/.test(text)) score += 0.5;
+    return score;
+  }
+  return 0;
 }
 
 function contactBoostFor(contactStatus: string) {

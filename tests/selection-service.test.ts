@@ -317,7 +317,16 @@ test("root audience snapshot can create a versioned KOL generation run", () => {
         },
         ruleComments: {},
         summary: { total: 3, approved: 2, rejected: 1, question: 0, pending: 0 },
-        groups: []
+        groups: [
+          {
+            name: "行业超级大佬",
+            people: [
+              { name: "Elon Musk", handle: "@elonmusk", role: "xAI / Tesla / X", status: "rejected" },
+              { name: "Sam Altman", handle: "@sama", role: "OpenAI CEO", status: "approved" },
+              { name: "Marc Andreessen", handle: "@pmarca", role: "a16z co-founder", status: "approved" }
+            ]
+          }
+        ]
       },
       clientRequestId: "snapshot-round-1"
     });
@@ -355,13 +364,16 @@ test("root audience snapshot can create a versioned KOL generation run", () => {
 
     assert.equal(run.id, sameRun.id);
     assert.equal(run.status, "succeeded");
-    assert.equal(run.itemCount, 107);
-    assert.equal(run.items?.length, 107);
+    assert.equal(run.itemCount, 106);
+    assert.equal(run.items?.length, 106);
+    assert.equal(run.items?.some((item) => item.campaignKolItemId === "item-kol-jonerlichman"), false);
     assert.equal(getGenerationRuns(db, campaignId).length, 1);
 
     const board = getCampaignBoard(db, campaignId, "client");
     assert.equal(board.activeGenerationRun?.id, run.id);
-    assert.equal(board.items.length, 107);
+    assert.equal(board.items.length, 106);
+    assert.equal(board.items.some((item) => item.id === "item-kol-jonerlichman"), false);
+    assert.equal(board.activeGenerationRun?.metadata.generator, "seed_pool_root_filter_v1");
     assert.equal(board.items[0].metadata.generation && typeof board.items[0].metadata.generation === "object", true);
 
     const json = exportSelection(db, campaignId, "json") as Exclude<ReturnType<typeof exportSelection>, string>;

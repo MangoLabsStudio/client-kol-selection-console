@@ -639,15 +639,24 @@ export function createKolGenerationRun(db: DatabaseSync, input: CreateKolGenerat
   const timestamp = nowIso();
   const runId = randomUUID();
   const runCount = db.prepare("SELECT COUNT(*) AS count FROM kol_generation_runs WHERE campaign_id = ?").get(input.campaignId);
-  const versionLabel = input.versionLabel?.trim() || `Round ${Number(runCount?.count ?? 0) + 2} · 重新爬取 KOL list`;
+  const versionLabel = input.versionLabel?.trim() || `Round ${Number(runCount?.count ?? 0) + 2} · 107 基础池更新`;
   const snapshotPayload = readJsonObject(snapshot.snapshot_json);
-  const baseItemCount = Number(db.prepare("SELECT COUNT(*) AS count FROM campaign_kol_items WHERE campaign_id = ?").get(input.campaignId)?.count ?? 0);
+  const hasDiscoveredCandidates = (input.discoveredCandidates?.length ?? 0) > 0;
+  const baseItemCount = Number(
+    db
+      .prepare(
+        hasDiscoveredCandidates
+          ? "SELECT COUNT(*) AS count FROM campaign_kol_items WHERE campaign_id = ?"
+          : "SELECT COUNT(*) AS count FROM campaign_kol_items WHERE campaign_id = ? AND COALESCE(created_by, '') <> 'twitter241_discovery'"
+      )
+      .get(input.campaignId)?.count ?? 0
+  );
   const itemLimit = clampRunItemLimit(input.itemLimit ?? baseItemCount);
   const discoveryMetadata = input.discoveryMetadata ?? {};
   const discoveryStrategy = typeof discoveryMetadata.strategy === "string" ? discoveryMetadata.strategy : undefined;
   const runMetadata: Record<string, unknown> = {
     source: "root_audience_snapshot",
-    generator: input.discoveredCandidates?.length ? discoveryStrategy ?? "kol_universe_then_root_filter_v1" : "local_weighted_rerank_v1",
+    generator: discoveryStrategy ?? (hasDiscoveredCandidates ? "kol_universe_then_root_filter_v1" : "seed_pool_root_filter_v1"),
     itemLimit,
     ...input.metadata,
     discovery: discoveryMetadata
@@ -663,7 +672,7 @@ export function createKolGenerationRun(db: DatabaseSync, input: CreateKolGenerat
       candidates: input.discoveredCandidates ?? []
     });
     runMetadata.discoveryWrite = discoveryWrite;
-    const rankedItems = rankItemsForSnapshot(db, input.campaignId, snapshotPayload, itemLimit);
+    const rankedItems = rankItemsForSnapshot(db, input.campaignId, snapshotPayload, itemLimit, { includeDiscovered: hasDiscoveredCandidates });
 
     db
       .prepare(
@@ -1311,12 +1320,13 @@ function upsertDiscoveredCandidates(
   return { received: input.candidates.length, insertedProfiles, insertedItems, reusedItems, skipped };
 }
 
-function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Record<string, unknown>, limit?: number) {
+function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Record<string, unknown>, limit?: number, options: { includeDiscovered?: boolean } = {}) {
   const decisionValues = readSnapshotDecisionValues(snapshot);
   const groupSignals = readSnapshotGroupSignals(snapshot);
   const approvedRoots = decisionValues.filter((decision) => decision.status === "approved");
   const rejectedRoots = decisionValues.filter((decision) => decision.status === "rejected");
   const questionRoots = decisionValues.filter((decision) => decision.status === "question");
+  const rootAudienceHandles = new Set(decisionValues.map((decision) => normalizeHandle(decision.handle)).filter(Boolean));
 
   const rows = db
     .prepare(
@@ -1329,17 +1339,20 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
         i.recommended_angle,
         i.metadata AS item_metadata,
         p.followers,
+        p.handle,
         p.content_category,
         p.audience_summary,
         p.metadata AS kol_metadata
       FROM campaign_kol_items i
       JOIN kol_profiles p ON p.id = i.kol_id
-      WHERE i.campaign_id = ?`
+      WHERE i.campaign_id = ?
+        ${options.includeDiscovered ? "" : "AND COALESCE(i.created_by, '') <> 'twitter241_discovery'"}`
     )
     .all(campaignId);
 
   return rows
-    .map((row) => {
+    .flatMap((row) => {
+      if (rootAudienceHandles.has(normalizeHandle(String(row.handle ?? "")))) return [];
       const kolMetadata = readJsonObject(row.kol_metadata);
       const riskTags = readJsonArray(row.risk_tags);
       const audienceFit = Number(kolMetadata.audienceFit ?? 0);
@@ -1349,12 +1362,17 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
         row.contact_status,
         row.content_category,
         row.audience_summary,
+        row.item_metadata,
         kolMetadata.rootVisibilitySignal
       ]
         .join(" ")
         .toLowerCase();
 
       const approvedBoost = approvedRoots.reduce((sum, root) => sum + rootMatchScore(text, root), 0);
+      const rejectedMatches = rejectedRoots
+        .map((root) => ({ root, score: rootMatchScore(text, root) }))
+        .filter((match) => match.score >= 5);
+      if (rejectedMatches.length > 0) return [];
       const rejectedPenalty = rejectedRoots.reduce((sum, root) => sum + rootMatchScore(text, root) * 0.7, 0);
       const questionBoost = questionRoots.reduce((sum, root) => sum + rootMatchScore(text, root) * 0.25, 0);
       const groupBoost = groupSignals.reduce((sum, group) => sum + groupApprovalBoost(text, group), 0);
@@ -1390,28 +1408,77 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
     .slice(0, limit);
 }
 
-function readSnapshotDecisionValues(snapshot: Record<string, unknown>) {
+type SnapshotRootDecision = {
+  handle: string;
+  status: string;
+  reason: string;
+  note: string;
+  name: string;
+  role: string;
+  groupName: string;
+};
+
+function readSnapshotDecisionValues(snapshot: Record<string, unknown>): SnapshotRootDecision[] {
   const decisions = snapshot.decisions && typeof snapshot.decisions === "object" && !Array.isArray(snapshot.decisions) ? snapshot.decisions : {};
-  return Object.entries(decisions as Record<string, unknown>).map(([handle, value]) => {
+  const decisionRecords = decisions as Record<string, unknown>;
+  const roots = new Map<string, SnapshotRootDecision>();
+
+  if (Array.isArray(snapshot.groups)) {
+    for (const group of snapshot.groups) {
+      const groupRecord = group && typeof group === "object" && !Array.isArray(group) ? (group as Record<string, unknown>) : {};
+      const groupName = String(groupRecord.name ?? "");
+      const people = Array.isArray(groupRecord.people) ? groupRecord.people : [];
+      for (const person of people) {
+        const personRecord = person && typeof person === "object" && !Array.isArray(person) ? (person as Record<string, unknown>) : {};
+        const rawHandle = String(personRecord.handle ?? "");
+        const handle = normalizeHandle(rawHandle);
+        if (!handle) continue;
+        const decision = readJsonObject(decisionRecords[rawHandle] ?? decisionRecords[`@${handle}`] ?? decisionRecords[handle]);
+        roots.set(handle, {
+          handle: `@${handle}`,
+          status: String(decision.status ?? personRecord.status ?? "pending"),
+          reason: decision.reason ? String(decision.reason) : "",
+          note: decision.note ? String(decision.note) : "",
+          name: String(personRecord.name ?? ""),
+          role: String(personRecord.role ?? ""),
+          groupName
+        });
+      }
+    }
+  }
+
+  for (const [handle, value] of Object.entries(decisionRecords)) {
     const data = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-    return {
-      handle,
+    const normalized = normalizeHandle(handle);
+    if (!normalized) continue;
+    const existing = roots.get(normalized);
+    roots.set(normalized, {
+      handle: existing?.handle ?? `@${normalized}`,
       status: String(data.status ?? "pending"),
       reason: data.reason ? String(data.reason) : "",
-      note: data.note ? String(data.note) : ""
-    };
-  });
+      note: data.note ? String(data.note) : "",
+      name: existing?.name ?? "",
+      role: existing?.role ?? "",
+      groupName: existing?.groupName ?? ""
+    });
+  }
+
+  return Array.from(roots.values());
 }
 
 function readSnapshotGroupSignals(snapshot: Record<string, unknown>) {
   if (!Array.isArray(snapshot.groups)) return [];
+  const decisions = snapshot.decisions && typeof snapshot.decisions === "object" && !Array.isArray(snapshot.decisions) ? (snapshot.decisions as Record<string, unknown>) : {};
   return snapshot.groups.map((group) => {
     const groupRecord = group && typeof group === "object" && !Array.isArray(group) ? (group as Record<string, unknown>) : {};
     const people = Array.isArray(groupRecord.people) ? groupRecord.people : [];
     const counts = { total: 0, approved: 0, rejected: 0, question: 0 };
     for (const person of people) {
       const personRecord = person && typeof person === "object" && !Array.isArray(person) ? (person as Record<string, unknown>) : {};
-      const status = String(personRecord.status ?? "pending");
+      const rawHandle = String(personRecord.handle ?? "");
+      const handle = normalizeHandle(rawHandle);
+      const decision = readJsonObject(decisions[rawHandle] ?? decisions[`@${handle}`] ?? decisions[handle]);
+      const status = String(decision.status ?? personRecord.status ?? "pending");
       counts.total += 1;
       if (status === "approved") counts.approved += 1;
       if (status === "rejected") counts.rejected += 1;
@@ -1424,12 +1491,21 @@ function readSnapshotGroupSignals(snapshot: Record<string, unknown>) {
   });
 }
 
-function rootMatchScore(text: string, root: { handle: string; status: string; reason: string; note: string }) {
+function rootMatchScore(text: string, root: SnapshotRootDecision) {
   const handle = root.handle.replace(/^@/, "").toLowerCase();
   const reason = root.reason.toLowerCase();
   const note = root.note.toLowerCase();
+  const name = root.name.toLowerCase();
+  const nameTerms = name
+    .split(/[^a-z0-9]+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length >= 4);
   let score = 0;
   if (handle && text.includes(handle)) score += 8;
+  if (name && text.includes(name)) score += 10;
+  for (const term of nameTerms) {
+    if (text.includes(term)) score += 5;
+  }
   if (reason && text.includes(reason)) score += 3;
   if (note && text.includes(note)) score += 2;
   if (/vc|investor|fund|founder|a16z|venture/.test(text) && /vc|投资|investor|founder/i.test(`${reason} ${note}`)) score += 2;

@@ -334,24 +334,24 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
         }
       });
     } catch (error) {
-      onActionError?.(error instanceof Error ? error.message : "重新爬取 KOL list 失败，请稍后重试。");
+      onActionError?.(error instanceof Error ? error.message : "更新 KOL list 失败，请稍后重试。");
     } finally {
       setSubmittingGeneration(false);
     }
   }, [campaignId, config, isGenerating, onActionError, onGenerated, state, stats]);
 
-  const usableRootCount = stats.approved + stats.question;
-  const generateDisabled = isGenerating || usableRootCount < 1;
-  const generateLabel = isGenerating ? "筛选中" : usableRootCount < 1 ? "先选 1 个 root 后筛选" : "根据 root 筛选 KOL list";
+  const actionableRootCount = stats.approved + stats.question + stats.rejected;
+  const generateDisabled = isGenerating || actionableRootCount < 1;
+  const generateLabel = isGenerating ? "更新中" : actionableRootCount < 1 ? "先处理 1 个 root 后更新" : "从 107 基础池更新 KOL list";
 
   useEffect(() => {
     onGenerateControlChange?.({
       run: confirmAndGenerate,
       disabled: generateDisabled,
       label: generateLabel,
-      approved: usableRootCount
+      approved: actionableRootCount
     });
-  }, [confirmAndGenerate, generateDisabled, generateLabel, onGenerateControlChange, usableRootCount]);
+  }, [actionableRootCount, confirmAndGenerate, generateDisabled, generateLabel, onGenerateControlChange]);
 
   useEffect(() => {
     return () => onGenerateControlChange?.(null);
@@ -448,7 +448,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
           <div className="root-memory-actions">
             <button type="button" className="root-primary-action" onClick={confirmAndGenerate} disabled={generateDisabled}>
               <Sparkles size={15} />
-              {isGenerating ? "筛选中" : "确认目标人群，筛选 KOL list"}
+              {isGenerating ? "更新中" : "确认目标人群，更新 KOL list"}
             </button>
             <button type="button" onClick={rerun}>
               <Sparkles size={15} />

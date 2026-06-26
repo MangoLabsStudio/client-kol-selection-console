@@ -237,7 +237,7 @@ x-actor-role: agency
 
 The sync resolves each handle through `/user?username=...`, then fetches recent timeline data through `/user-tweets?user=<numeric_id>&count=...`. Results are written to `kol_profiles` and `campaign_kol_items.metadata.twitter241`.
 
-Regenerate a KOL list from the client's selected root audience:
+Update a KOL list from the client's root-audience feedback:
 
 ```http
 POST /api/campaigns/campaign-ilands-root-backed-kol-review/kol-generation-runs
@@ -250,9 +250,9 @@ x-actor-role: client
 }
 ```
 
-The generation endpoint uses a two-stage target-backed workflow from the local `target-backed-kol-discovery` repo. It first builds a broad KOL universe from all non-rejected root accounts, resolving each root through Twitter241 `/user` and crawling paginated `/followings`. It aggregates accounts followed by multiple roots, filters out target/root accounts and institution/product accounts, keeps KOL-like creator/media/builder candidates, then filters and reranks that universe by the client's approved/question root accounts. The selected roots are the filter signal; the non-rejected roots keep the initial universe broad enough to avoid random single-root followings. New candidates are written into `kol_profiles` and `campaign_kol_items`, then a versioned `kol_generation_run` is created. It does not use people search as a shortcut. If the KOL universe has no usable candidates, or the selected roots do not hit the universe, the request fails instead of silently re-ranking the old pool. Set `KOL_GENERATION_ALLOW_LOCAL_FALLBACK=1` only for local demos that must permit old-pool fallback.
+The default generation endpoint does not crawl Twitter. It treats the original 107 seeded candidates as the base candidate pool, applies the client's root-audience feedback, removes candidates that clearly match rejected roots, reranks the remaining pool by approved/question roots, and creates a versioned `kol_generation_run`. This keeps the client workflow deterministic: root feedback edits the original 107-candidate pool instead of replacing it with a noisy live crawl. Twitter241 remains available for profile sync and future expansion workflows, but it is not part of the default client-facing update path.
 
-Relevant environment knobs:
+Optional Twitter241 discovery knobs for future expansion jobs:
 
 ```bash
 TWITTER241_KOL_UNIVERSE_ROOT_LIMIT=36
@@ -278,7 +278,8 @@ Covered behavior:
 - Board load and summary counts
 - Template-backed project config loading for UI and seed data
 - Root audience config loading
-- Twitter241 root-audience discovery and new candidate insertion
+- 107-candidate seed-pool filtering from root-audience feedback
+- Optional Twitter241 discovery and new candidate insertion
 - Reject reason validation
 - Reject event persistence and current-state update
 - Question follow-up creation

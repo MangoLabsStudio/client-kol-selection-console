@@ -19,7 +19,6 @@ import {
   getSelectionHistory,
   lockSelection
 } from "./selectionService.js";
-import { discoverRootAudienceKolCandidates } from "./twitter241DiscoveryService.js";
 import { syncCampaignTwitter241 } from "./twitter241SyncService.js";
 import { ApiError, actorRoles, type ActorRole, type ApiErrorPayload, type SelectionStatus } from "./types.js";
 
@@ -152,11 +151,6 @@ app.post("/api/campaigns/:campaignId/kol-generation-runs", async (req, res, next
     const sourceSnapshot = getRootAudienceSnapshot(db, req.params.campaignId, sourceSnapshotId);
     if (!sourceSnapshot) throw new ApiError(404, "未找到目标人群确认快照。");
 
-    const discovery = await discoverRootAudienceKolCandidates(sourceSnapshot.snapshot);
-    if (discovery.candidates.length === 0 && process.env.KOL_GENERATION_ALLOW_LOCAL_FALLBACK !== "1") {
-      throw new ApiError(503, "KOL universe 没有返回可用候选，或已选 Root Audience 没有命中候选。已停止本轮生成，避免把旧列表伪装成重新筛选。请至少选择 1 个 root，并保留足够的待确认 root 作为全集种子后再试。", discovery.metadata);
-    }
-
     const run = createKolGenerationRun(db, {
       campaignId: req.params.campaignId,
       actorId,
@@ -166,10 +160,14 @@ app.post("/api/campaigns/:campaignId/kol-generation-runs", async (req, res, next
       triggerReason: body.trigger_reason ?? body.triggerReason,
       metadata: {
         ...(body.metadata ?? {}),
-        providerStatus: discovery.status
+        providerStatus: "seed_pool"
       },
-      discoveredCandidates: discovery.candidates,
-      discoveryMetadata: discovery.metadata,
+      discoveredCandidates: [],
+      discoveryMetadata: {
+        provider: "seed_pool",
+        strategy: "seed_pool_root_filter_v1",
+        status: "succeeded"
+      },
       clientRequestId: body.client_request_id ?? body.clientRequestId
     });
     res.status(201).json({ run });

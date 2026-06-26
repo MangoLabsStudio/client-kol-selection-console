@@ -347,7 +347,7 @@ export default function App() {
             config={ui.roots}
             generating={generatingPool}
             onGenerated={async (run) => {
-              pushToast("success", `已重新爬取 ${run.versionLabel}。`);
+              pushToast("success", `已更新 ${run.versionLabel}。`);
               await refreshBoard(board.campaign.id);
             }}
             onActionError={(message) => pushToast("danger", message)}
@@ -378,7 +378,7 @@ export default function App() {
                 <div className="pool-version-note">
                   <span>当前版本</span>
                   <strong>{board.activeGenerationRun?.versionLabel ?? "初始候选池"}</strong>
-                  <small>{board.activeGenerationRun ? `${board.activeGenerationRun.itemCount} 个候选 · ${formatDate(board.activeGenerationRun.createdAt)}` : "尚未基于目标人群重新爬取"}</small>
+                  <small>{board.activeGenerationRun ? `${board.activeGenerationRun.itemCount} 个候选 · ${formatDate(board.activeGenerationRun.createdAt)}` : "尚未基于目标人群更新"}</small>
                 </div>
                 <div className="pool-status-note">
                   <ShieldCheck size={17} />
@@ -391,7 +391,7 @@ export default function App() {
                   onClick={() => rootGenerateActionRef.current?.()}
                 >
                   <Sparkles size={15} />
-                  {rootGenerateStatus?.label ?? "重新爬取 KOL list"}
+                  {rootGenerateStatus?.label ?? "从 107 基础池更新 KOL list"}
                 </button>
               </div>
 

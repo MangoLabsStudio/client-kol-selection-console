@@ -342,7 +342,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
 
   const actionableRootCount = stats.approved + stats.question + stats.rejected;
   const generateDisabled = isGenerating || actionableRootCount < 1;
-  const generateLabel = isGenerating ? "更新中" : actionableRootCount < 1 ? "先处理 1 个 root 后更新" : "从 107 基础池更新 KOL list";
+  const generateLabel = isGenerating ? "更新中" : actionableRootCount < 1 ? "先标记 1 个 root 再更新" : "从 107 基础池更新 KOL list";
 
   useEffect(() => {
     onGenerateControlChange?.({
@@ -448,7 +448,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
           <div className="root-memory-actions">
             <button type="button" className="root-primary-action" onClick={confirmAndGenerate} disabled={generateDisabled}>
               <Sparkles size={15} />
-              {isGenerating ? "更新中" : "确认目标人群，更新 KOL list"}
+              {isGenerating ? "更新中" : actionableRootCount < 1 ? "先标记 1 个 root 再更新" : "确认目标人群，更新 KOL list"}
             </button>
             <button type="button" onClick={rerun}>
               <Sparkles size={15} />

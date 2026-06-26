@@ -189,7 +189,7 @@
         {
           "index": "01",
           "name": "行业超级大佬",
-          "count": 14,
+          "count": 12,
           "note": "他们决定 AI 圈公共议题的第一层声量。目标不是让他们接单，而是让内容有机会进入他们会看到、会回复或会转发的语境。",
           "use": "KOL 选择逻辑：优先找他们共同关注、或他们历史上愿意回复的人；内容必须短、有观点、有 demo 或能引发争议。",
           "people": [
@@ -237,15 +237,6 @@
               "behavior": "偏机构发布、研究里程碑和 quote/retweet；不适合评论区硬打。",
               "evidence": "打法：用 AI research / artificial life / agent behavior 的严肃语境二跳触达。",
               "avatarUrl": "https://pbs.twimg.com/profile_images/1990472620614053888/xrAu0wQL_normal.jpg"
-            },
-            {
-              "name": "Greg Brockman",
-              "handle": "@gdb",
-              "role": "OpenAI president / co-founder",
-              "why": "frontier AI founder 圈层入口，能影响 builder 和 AI product 人群。",
-              "behavior": "偏 quote/retweet 和产品/工程节点放大；适合清晰 demo 或开发者能力证明。",
-              "evidence": "打法：让内容看起来像 AI product capability，而不是普通 consumer launch。",
-              "avatarUrl": "https://pbs.twimg.com/profile_images/1347621377503711233/bHg3ipfD_normal.jpg"
             },
             {
               "name": "Mustafa Suleyman",
@@ -302,15 +293,6 @@
               "avatarUrl": "https://pbs.twimg.com/profile_images/1897858917507776512/TRVTyKFk_normal.jpg"
             },
             {
-              "name": "Noam Shazeer",
-              "handle": "@noamshazeer",
-              "role": "Character.AI co-founder",
-              "why": "social/consumer AI 方向的核心人物，和 ilands 的 AI community / AI character 语境高度接近。",
-              "behavior": "公开互动较少，更适合作为远端可见目标；需通过 consumer AI 圈层和可信媒体二跳。",
-              "evidence": "打法：围绕 AI characters 是否能形成社会关系，而不是单个 companion。",
-              "avatarUrl": "https://pbs.twimg.com/profile_images/1991028016471027714/bHMv9VwR_normal.jpg"
-            },
-            {
               "name": "Aidan Gomez",
               "handle": "@aidangomez",
               "role": "Cohere co-founder",
@@ -355,7 +337,7 @@
         {
           "index": "02",
           "name": "美国 VC 中高层",
-          "count": 30,
+          "count": 29,
           "note": "这类 root 的价值不是公开转发，而是看见之后可能发生 warm intro、投资兴趣、BD 或项目方联系。这里优先保留近期和 AI agent、character/social AI、consumer AI、AI-native app layer 有公开关联的人。",
           "use": "KOL 选择逻辑：用可信 AI 媒体、newsletter、podcast 和 builder creator 进入他们的信息流；硬件、纯芯片、纯机器人 VC 不作为主目标。",
           "people": [
@@ -603,15 +585,6 @@
               "avatarUrl": "https://pbs.twimg.com/profile_images/2024914480787062789/xFbwy8-9_normal.jpg"
             },
             {
-              "name": "Ron Conway",
-              "handle": "@RonConway",
-              "role": "SV Angel",
-              "why": "SV Angel 参与过非常贴近的 social AI 项目，适合作为投资/人脉转化目标。",
-              "behavior": "不追求公开互动；更适合通过 warm intro、创业者网络和可信媒体信息流触达。",
-              "evidence": "相关出手：Butterflies AI 公布 $4.8M seed，Coatue 领投、SV Angel 参与；产品是人类和 AI 共存的社交平台。",
-              "avatarUrl": "https://pbs.twimg.com/profile_images/434350068427018240/BYzAzB94_normal.jpeg"
-            },
-            {
               "name": "Alex Taussig",
               "handle": "@ataussig",
               "role": "Board Partner, Lightspeed",
@@ -665,7 +638,7 @@
         {
           "index": "03",
           "name": "垂类专家 / 核心人物",
-          "count": 18,
+          "count": 17,
           "note": "他们不一定最大众，但能让 ilands 的讨论变得可信、具体、有技术和产品含量。",
           "use": "KOL 选择逻辑：找能讲 agent memory、AI society、A2A、creative AI、robotics 或 AI adoption 的人，让讨论不是硬广。",
           "people": [
@@ -749,15 +722,6 @@
               "behavior": "偏研究发布和 robotics/learning systems；需要严肃技术语境二跳触达。",
               "evidence": "适合角度：数字 agent 与现实行动、环境反馈和长期目标之间的关系。",
               "avatarUrl": "https://pbs.twimg.com/profile_images/990434811662680064/BKCbJypl_normal.jpg"
-            },
-            {
-              "name": "Chelsea Finn",
-              "handle": "@chelsea_finn",
-              "role": "robot learning",
-              "why": "physical AI / learning systems 专家节点，适合补强现实世界 agent 和学习系统语境。",
-              "behavior": "偏研究和教学内容；适合通过 robotics/learning community 看到，不适合商业帖硬打。",
-              "evidence": "适合角度：agent 从互动中学习、适应环境和形成长期行为模式。",
-              "avatarUrl": "https://pbs.twimg.com/profile_images/356565126/5569_1156095221651_1205820201_30627105_976181_n_normal.jpg"
             },
             {
               "name": "Mckay Wrigley",

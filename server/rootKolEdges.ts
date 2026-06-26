@@ -20,7 +20,7 @@ export type RootKolEdgeSeed = {
 const laneRootRules: Record<string, Array<{ handles: string[]; confidence: number; evidence: string }>> = {
   agent_builder: [
     {
-      handles: ["@karpathy", "@gdb", "@amasad", "@hwchase17", "@simonw", "@swyx", "@mckaywrigley", "@yoheinakajima"],
+      handles: ["@karpathy", "@amasad", "@hwchase17", "@simonw", "@swyx", "@mckaywrigley", "@yoheinakajima"],
       confidence: 0.38,
       evidence: "lane=agent_builder maps to AI builder / engineering root audience."
     }
@@ -34,7 +34,7 @@ const laneRootRules: Record<string, Array<{ handles: string[]; confidence: numbe
   ],
   consumer_social_ai: [
     {
-      handles: ["@mustafasuleyman", "@noamshazeer", "@venturetwins", "@omooretweets", "@ekuyda", "@jasonyuan"],
+      handles: ["@mustafasuleyman", "@venturetwins", "@omooretweets", "@ekuyda", "@jasonyuan"],
       confidence: 0.38,
       evidence: "lane=consumer_social_ai maps to consumer AI / social AI root audience."
     }
@@ -85,7 +85,7 @@ const signalRootRules: Array<{ pattern: RegExp; handles: string[]; confidence: n
   },
   {
     pattern: /smallville_with_stakes/i,
-    handles: ["@noamshazeer", "@venturetwins", "@omooretweets", "@ekuyda", "@jasonyuan"],
+    handles: ["@venturetwins", "@omooretweets", "@ekuyda", "@jasonyuan"],
     confidence: 0.48,
     evidence: "rootVisibilitySignal=smallville_with_stakes maps to social / character AI roots."
   },
@@ -106,6 +106,7 @@ const signalRootRules: Array<{ pattern: RegExp; handles: string[]; confidence: n
 export function seedRootKolEdges(db: DatabaseSync, config: ProjectConfig, timestamp: string) {
   const edges = buildRootKolEdges(config);
   const seen = new Set<string>();
+  removeEdgesForUnconfiguredRoots(db, config);
   const insert = db.prepare(
     `INSERT INTO root_kol_edges (
       id, client_id, campaign_id, root_handle, root_name, root_group,
@@ -153,6 +154,17 @@ export function seedRootKolEdges(db: DatabaseSync, config: ProjectConfig, timest
   }
 
   return { insertedOrUpdated: seen.size };
+}
+
+function removeEdgesForUnconfiguredRoots(db: DatabaseSync, config: ProjectConfig) {
+  const rootHandles = getRoots(config).map((root) => `@${normalizeHandle(root.handle)}`);
+  if (rootHandles.length === 0) {
+    db.prepare("DELETE FROM root_kol_edges WHERE campaign_id = ?").run(config.campaign.id);
+    return;
+  }
+
+  const placeholders = rootHandles.map(() => "?").join(", ");
+  db.prepare(`DELETE FROM root_kol_edges WHERE campaign_id = ? AND root_handle NOT IN (${placeholders})`).run(config.campaign.id, ...rootHandles);
 }
 
 export function buildRootKolEdges(config: ProjectConfig): RootKolEdgeSeed[] {

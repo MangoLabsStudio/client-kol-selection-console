@@ -1509,6 +1509,7 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
   const rejectedRoots = decisionValues.filter((decision) => decision.status === "rejected");
   const questionRoots = decisionValues.filter((decision) => decision.status === "question");
   const rootAudienceHandles = new Set(decisionValues.map((decision) => normalizeHandle(decision.handle)).filter(Boolean));
+  const rootGraphFilter = buildRootGraphFilter(db, campaignId, rejectedRoots);
 
   const rows = db
     .prepare(
@@ -1534,7 +1535,9 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
 
   return rows
     .flatMap((row) => {
+      const itemId = String(row.item_id);
       if (rootAudienceHandles.has(normalizeHandle(String(row.handle ?? "")))) return [];
+      if (rootGraphFilter.hardRemoveItemIds.has(itemId)) return [];
       const kolMetadata = readJsonObject(row.kol_metadata);
       const riskTags = readJsonArray(row.risk_tags);
       const audienceFit = Number(kolMetadata.audienceFit ?? 0);
@@ -1562,12 +1565,25 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
       const contactBoost = contactBoostFor(String(row.contact_status ?? ""));
       const discoveryBoost = discoveryBoostFor(readJsonObject(row.item_metadata), kolMetadata);
       const riskPenalty = riskTags.filter((tag) => tag !== "none").length * 2;
+      const rootGraphPenalty = rootGraphFilter.downgradeItemIds.has(itemId) ? 8 : 0;
       const score =
-        Math.round((audienceFit + approvedBoost + questionBoost + groupBoost + contactBoost + discoveryBoost - rejectedPenalty - groupPenalty - riskPenalty) * 100) /
+        Math.round(
+          (audienceFit +
+            approvedBoost +
+            questionBoost +
+            groupBoost +
+            contactBoost +
+            discoveryBoost -
+            rejectedPenalty -
+            groupPenalty -
+            riskPenalty -
+            rootGraphPenalty) *
+            100
+        ) /
         100;
 
       return {
-        itemId: String(row.item_id),
+        itemId,
         score,
         explanation: {
           baseAudienceFit: audienceFit,
@@ -1582,12 +1598,45 @@ function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Re
           contactBoost,
           discoveryBoost,
           riskPenalty,
+          rootGraphPenalty,
           originalDisplayOrder: Number(row.display_order ?? 0)
         }
       };
     })
     .sort((a, b) => b.score - a.score || Number(a.explanation.originalDisplayOrder) - Number(b.explanation.originalDisplayOrder))
     .slice(0, limit);
+}
+
+function buildRootGraphFilter(db: DatabaseSync, campaignId: string, rejectedRoots: SnapshotRootDecision[]) {
+  const rejectedHandles = new Set(rejectedRoots.map((root) => normalizeHandle(root.handle)).filter(Boolean));
+  const hardRemoveItemIds = new Set<string>();
+  const downgradeItemIds = new Set<string>();
+  if (rejectedHandles.size === 0) return { hardRemoveItemIds, downgradeItemIds };
+
+  const edges = getRootKolEdges(db, campaignId);
+  const edgesByItem = new Map<string, typeof edges>();
+  for (const edge of edges) {
+    const list = edgesByItem.get(edge.campaignKolItemId) ?? [];
+    list.push(edge);
+    edgesByItem.set(edge.campaignKolItemId, list);
+  }
+
+  for (const [itemId, itemEdges] of edgesByItem.entries()) {
+    const rejectedRootConfidence = Math.max(
+      0,
+      ...itemEdges.filter((edge) => rejectedHandles.has(normalizeHandle(edge.rootHandle))).map((edge) => edge.confidence)
+    );
+    if (rejectedRootConfidence < 0.7) continue;
+
+    const hasOtherStrongSupport = itemEdges.some((edge) => !rejectedHandles.has(normalizeHandle(edge.rootHandle)) && edge.confidence >= 0.5);
+    if (hasOtherStrongSupport) {
+      downgradeItemIds.add(itemId);
+    } else {
+      hardRemoveItemIds.add(itemId);
+    }
+  }
+
+  return { hardRemoveItemIds, downgradeItemIds };
 }
 
 type SnapshotRootDecision = {

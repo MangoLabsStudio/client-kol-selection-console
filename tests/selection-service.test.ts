@@ -30,6 +30,51 @@ function withDb(run: (db: DatabaseSync) => void) {
   }
 }
 
+function insertRootKolEdge(
+  db: DatabaseSync,
+  input: {
+    rootHandle: string;
+    rootName: string;
+    rootGroup: string;
+    itemId: string;
+    kolId: string;
+    kolHandle: string;
+    confidence?: number;
+  }
+) {
+  const timestamp = "2026-06-26T00:00:00.000Z";
+  db.prepare(
+    `INSERT INTO root_kol_edges (
+      id, client_id, campaign_id, root_handle, root_name, root_group,
+      campaign_kol_item_id, kol_id, kol_handle, edge_type, edge_source,
+      confidence, evidence, metadata, fetched_at, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(campaign_id, root_handle, campaign_kol_item_id, edge_source) DO UPDATE SET
+      confidence = excluded.confidence,
+      evidence = excluded.evidence,
+      metadata = excluded.metadata,
+      updated_at = excluded.updated_at`
+  ).run(
+    `test-edge-${input.rootHandle.replace(/^@/, "")}-${input.itemId}`,
+    "client-ilands",
+    campaignId,
+    input.rootHandle,
+    input.rootName,
+    input.rootGroup,
+    input.itemId,
+    input.kolId,
+    input.kolHandle,
+    "twitter_following",
+    "twitter241_followings",
+    input.confidence ?? 0.95,
+    `${input.rootHandle} follows ${input.kolHandle}.`,
+    "{}",
+    timestamp,
+    timestamp,
+    timestamp
+  );
+}
+
 test("loads the seeded campaign board with current-state summary", () => {
   withDb((db) => {
     const board = getCampaignBoard(db, campaignId, "client");
@@ -380,6 +425,64 @@ test("root audience snapshot can create a versioned KOL generation run", () => {
     assert.equal(json.rootAudienceSnapshots.length, 1);
     assert.equal(json.generationRuns.length, 1);
     assert.equal(json.activeGenerationRun?.id, run.id);
+  });
+});
+
+test("rejected root audience removes KOLs that only depend on that root graph edge", () => {
+  withDb((db) => {
+    insertRootKolEdge(db, {
+      rootHandle: "@pmarca",
+      rootName: "Marc Andreessen",
+      rootGroup: "美国 VC 中高层",
+      itemId: "item-kol-startupideaspod",
+      kolId: "kol-startupideaspod",
+      kolHandle: "@startupideaspod"
+    });
+    insertRootKolEdge(db, {
+      rootHandle: "@pmarca",
+      rootName: "Marc Andreessen",
+      rootGroup: "美国 VC 中高层",
+      itemId: "item-kol-rohanpaul-ai",
+      kolId: "kol-rohanpaul-ai",
+      kolHandle: "@rohanpaul_ai"
+    });
+    insertRootKolEdge(db, {
+      rootHandle: "@sama",
+      rootName: "Sam Altman",
+      rootGroup: "行业超级大佬",
+      itemId: "item-kol-rohanpaul-ai",
+      kolId: "kol-rohanpaul-ai",
+      kolHandle: "@rohanpaul_ai"
+    });
+
+    const config = getProjectConfig("ilands-aaa-signal-map");
+    const snapshot = createRootAudienceSnapshot(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      round: 2,
+      snapshot: {
+        round: 2,
+        decisions: {
+          "@pmarca": { status: "rejected", reason: "本轮不优先" },
+          "@sama": { status: "approved" }
+        },
+        groups: config.ui.roots?.groups ?? []
+      },
+      clientRequestId: "snapshot-root-graph-reject"
+    });
+
+    const run = createKolGenerationRun(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      sourceSnapshotId: snapshot.id,
+      clientRequestId: "generation-root-graph-reject"
+    });
+    const runItemIds = new Set(run.items?.map((item) => item.campaignKolItemId) ?? []);
+
+    assert.equal(runItemIds.has("item-kol-startupideaspod"), false);
+    assert.equal(runItemIds.has("item-kol-rohanpaul-ai"), true);
   });
 });
 

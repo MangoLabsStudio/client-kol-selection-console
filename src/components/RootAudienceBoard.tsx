@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, MessageSquareText, RotateCcw, Sparkles, Undo2, X, XCircle } from "lucide-react";
+import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, MessageSquareText, RotateCcw, Sparkles, Trash2, Undo2, X, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createRootAudienceGeneration, submitClientAction } from "../lib/api";
 import type { KolGenerationRun, RootAudienceConfig, RootAudienceSnapshotInput, RootPersonConfig } from "../lib/types";
@@ -343,6 +343,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
   const actionableRootCount = stats.approved + stats.question + stats.rejected;
   const generateDisabled = isGenerating || actionableRootCount < 1;
   const generateLabel = isGenerating ? "更新中" : actionableRootCount < 1 ? "先标记 1 个 root 再更新" : "从 107 基础池更新 KOL list";
+  const resetDisabled = actionableRootCount === 0 && Object.keys(state.ruleComments).length === 0 && state.memory.length === 0 && state.round === 1;
 
   useEffect(() => {
     onGenerateControlChange?.({
@@ -379,6 +380,27 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
         metadata: { restoredRound: previous.round, restoredDecisionCount: Object.keys(previous.decisions).length }
       });
     }
+  };
+
+  const resetRootAudience = () => {
+    const previousRound = state.round;
+    const decisionCount = Object.keys(state.decisions).length;
+    const commentCount = Object.values(state.ruleComments).filter((comment) => comment.trim().length > 0).length;
+    setActiveHandle(null);
+    setState({
+      round: 1,
+      decisions: {},
+      ruleComments: {},
+      memory: []
+    });
+    recordAction({
+      entityType: "root_round",
+      entityId: String(previousRound),
+      actionType: "reset_root_audience",
+      fromValue: String(previousRound),
+      toValue: "1",
+      metadata: { previousRound, decisionCount, commentCount, memoryRounds: state.memory.length }
+    });
   };
 
   const toggleRules = (groupName: string, open: boolean) => {
@@ -457,6 +479,10 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
             <button type="button" onClick={rollback} disabled={state.memory.length === 0}>
               <RotateCcw size={15} />
               {config.rollbackButton}
+            </button>
+            <button type="button" onClick={resetRootAudience} disabled={resetDisabled}>
+              <Trash2 size={15} />
+              重置
             </button>
           </div>
         </div>

@@ -68,10 +68,11 @@ Optional Twitter241 sync environment:
 TWITTER241_RAPIDAPI_KEY=your_primary_key
 TWITTER241_RAPIDAPI_KEY_FALLBACK=your_fallback_key
 TWITTER241_SYNC_TWEET_COUNT=20
-TWITTER241_DISCOVERY_ROOT_LIMIT=5
-TWITTER241_DISCOVERY_FOLLOWING_COUNT=40
-TWITTER241_DISCOVERY_SEARCH_COUNT=25
-TWITTER241_DISCOVERY_MAX_CANDIDATES=140
+TWITTER241_COMMON_FOLLOW_ROOT_LIMIT=10
+TWITTER241_COMMON_FOLLOW_MAX_PAGES=4
+TWITTER241_COMMON_FOLLOW_PAGE_COUNT=200
+TWITTER241_COMMON_FOLLOW_MIN_COVERAGE=2
+TWITTER241_DISCOVERY_MAX_CANDIDATES=80
 ```
 
 Open a specific project:
@@ -249,7 +250,7 @@ x-actor-role: client
 }
 ```
 
-The generation endpoint reads approved/question root accounts from the snapshot, resolves each root through Twitter241 `/user`, crawls `/followings`, adds people-search recall through `/search` with `type=People`, de-duplicates by X handle, writes new candidates into `kol_profiles` and `campaign_kol_items`, then creates a versioned `kol_generation_run`. If Twitter241 returns no candidates, the request fails instead of silently re-ranking the old pool. Set `KOL_GENERATION_ALLOW_LOCAL_FALLBACK=1` only for local demos that must permit old-pool fallback.
+The generation endpoint uses the target-backed common-follow workflow from the local `target-backed-kol-discovery` repo. It requires at least two approved/question root accounts, resolves each root through Twitter241 `/user`, crawls paginated `/followings`, aggregates accounts that are followed by multiple roots, filters out target/root accounts and institution accounts, keeps KOL-like creator/media/builder candidates, writes new candidates into `kol_profiles` and `campaign_kol_items`, then creates a versioned `kol_generation_run`. It does not use people search as a shortcut, and it does not accept accounts that only appear in one root's followings. If the common-follow network returns no usable KOL candidates, the request fails instead of silently re-ranking the old pool. Set `KOL_GENERATION_ALLOW_LOCAL_FALLBACK=1` only for local demos that must permit old-pool fallback.
 
 ## Validation
 

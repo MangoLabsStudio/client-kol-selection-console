@@ -340,17 +340,18 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
     }
   }, [campaignId, config, isGenerating, onActionError, onGenerated, state, stats]);
 
-  const generateDisabled = isGenerating || stats.approved === 0;
-  const generateLabel = isGenerating ? "爬取中" : stats.approved === 0 ? "先通过 root 后重新爬取" : "重新爬取 KOL list";
+  const usableRootCount = stats.approved + stats.question;
+  const generateDisabled = isGenerating || usableRootCount < 2;
+  const generateLabel = isGenerating ? "爬取中" : usableRootCount < 2 ? "至少选 2 个 root 后重新爬取" : "重新爬取 KOL list";
 
   useEffect(() => {
     onGenerateControlChange?.({
       run: confirmAndGenerate,
       disabled: generateDisabled,
       label: generateLabel,
-      approved: stats.approved
+      approved: usableRootCount
     });
-  }, [confirmAndGenerate, generateDisabled, generateLabel, onGenerateControlChange, stats.approved]);
+  }, [confirmAndGenerate, generateDisabled, generateLabel, onGenerateControlChange, usableRootCount]);
 
   useEffect(() => {
     return () => onGenerateControlChange?.(null);

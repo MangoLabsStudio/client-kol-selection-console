@@ -643,12 +643,14 @@ export function createKolGenerationRun(db: DatabaseSync, input: CreateKolGenerat
   const snapshotPayload = readJsonObject(snapshot.snapshot_json);
   const baseItemCount = Number(db.prepare("SELECT COUNT(*) AS count FROM campaign_kol_items WHERE campaign_id = ?").get(input.campaignId)?.count ?? 0);
   const itemLimit = clampRunItemLimit(input.itemLimit ?? baseItemCount);
+  const discoveryMetadata = input.discoveryMetadata ?? {};
+  const discoveryStrategy = typeof discoveryMetadata.strategy === "string" ? discoveryMetadata.strategy : undefined;
   const runMetadata: Record<string, unknown> = {
     source: "root_audience_snapshot",
-    generator: input.discoveredCandidates?.length ? "twitter241_root_discovery_v1" : "local_weighted_rerank_v1",
+    generator: input.discoveredCandidates?.length ? discoveryStrategy ?? "twitter241_common_follow_v1" : "local_weighted_rerank_v1",
     itemLimit,
     ...input.metadata,
-    discovery: input.discoveryMetadata ?? null
+    discovery: discoveryMetadata
   };
 
   db.exec("BEGIN IMMEDIATE");

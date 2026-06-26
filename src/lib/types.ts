@@ -68,6 +68,7 @@ export type CampaignKolItem = {
 export type BoardResponse = {
   campaign: Campaign;
   summary: Summary;
+  activeGenerationRun: KolGenerationRun | null;
   items: CampaignKolItem[];
 };
 
@@ -122,6 +123,63 @@ export type ClientActionEvent = {
   metadata: Record<string, unknown>;
   clientRequestId: string | null;
   createdAt: string;
+};
+
+export type RootAudienceSnapshot = {
+  id: string;
+  clientId: string;
+  campaignId: string;
+  round: number;
+  snapshot: Record<string, unknown>;
+  createdBy: string;
+  clientRequestId: string | null;
+  createdAt: string;
+};
+
+export type KolGenerationRunItem = {
+  id: string;
+  runId: string;
+  campaignKolItemId: string;
+  displayOrder: number;
+  score: number;
+  explanation: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type KolGenerationRun = {
+  id: string;
+  clientId: string;
+  campaignId: string;
+  sourceSnapshotId: string;
+  status: string;
+  versionLabel: string;
+  triggerActorId: string;
+  triggerActorRole: string;
+  triggerReason: string;
+  metadata: Record<string, unknown>;
+  clientRequestId: string | null;
+  itemCount: number;
+  createdAt: string;
+  completedAt: string | null;
+  items?: KolGenerationRunItem[];
+};
+
+export type RootAudienceSnapshotInput = {
+  round: number;
+  decisions: Record<string, unknown>;
+  ruleComments: Record<string, string>;
+  summary: Record<string, number>;
+  groups: Array<{
+    name: string;
+    people: Array<{
+      name: string;
+      handle: string;
+      role: string;
+      status: string;
+      reason?: string;
+      note?: string;
+    }>;
+  }>;
 };
 
 export type Filters = {

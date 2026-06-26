@@ -53,6 +53,35 @@ export type CreateClientActionEventInput = {
   clientRequestId?: string;
 };
 
+export type RootAudienceSnapshotPayload = {
+  round: number;
+  decisions: Record<string, unknown>;
+  ruleComments?: Record<string, string>;
+  summary?: Record<string, number>;
+  groups?: unknown[];
+  [key: string]: unknown;
+};
+
+export type CreateRootAudienceSnapshotInput = {
+  campaignId: string;
+  actorId: string;
+  actorRole: ActorRole;
+  round: number;
+  snapshot: RootAudienceSnapshotPayload;
+  clientRequestId?: string;
+};
+
+export type CreateKolGenerationRunInput = {
+  campaignId: string;
+  actorId: string;
+  actorRole: ActorRole;
+  sourceSnapshotId: string;
+  versionLabel?: string;
+  triggerReason?: string;
+  metadata?: Record<string, unknown>;
+  clientRequestId?: string;
+};
+
 export type ApiErrorPayload = {
   error: string;
   details?: unknown;

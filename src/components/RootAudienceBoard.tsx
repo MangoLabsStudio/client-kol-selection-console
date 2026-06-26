@@ -1,7 +1,7 @@
 import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, MessageSquareText, RotateCcw, Sparkles, Undo2, X, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { submitClientAction } from "../lib/api";
-import type { RootAudienceConfig, RootPersonConfig } from "../lib/types";
+import { createRootAudienceGeneration, submitClientAction } from "../lib/api";
+import type { KolGenerationRun, RootAudienceConfig, RootAudienceSnapshotInput, RootPersonConfig } from "../lib/types";
 
 type RootStatus = "pending" | "approved" | "rejected" | "question";
 
@@ -29,15 +29,19 @@ type RootAudienceState = {
 type RootAudienceBoardProps = {
   campaignId: string;
   config: RootAudienceConfig;
+  generating?: boolean;
+  onGenerated?: (run: KolGenerationRun) => void;
   onActionError?: (message: string) => void;
 };
 
 const rejectReasons = ["目标层级不匹配", "议题关联不足", "本轮不优先", "需要换一批"];
 
-export function RootAudienceBoard({ campaignId, config, onActionError }: RootAudienceBoardProps) {
+export function RootAudienceBoard({ campaignId, config, generating = false, onGenerated, onActionError }: RootAudienceBoardProps) {
   const [state, setState] = useState<RootAudienceState>(() => readState(config.storageKey));
   const [expandedRules, setExpandedRules] = useState<Record<string, boolean>>({});
   const [activeHandle, setActiveHandle] = useState<string | null>(null);
+  const [submittingGeneration, setSubmittingGeneration] = useState(false);
+  const isGenerating = generating || submittingGeneration;
 
   useEffect(() => {
     localStorage.setItem(config.storageKey, JSON.stringify(state));
@@ -285,6 +289,49 @@ export function RootAudienceBoard({ campaignId, config, onActionError }: RootAud
     });
   };
 
+  const confirmAndGenerate = async () => {
+    if (isGenerating) return;
+    const snapshot = buildSnapshot(config, state, stats);
+    recordAction({
+      entityType: "root_round",
+      entityId: String(state.round),
+      actionType: "kol_generation_confirm_click",
+      fromValue: "root_selection",
+      toValue: "generation_requested",
+      metadata: {
+        round: state.round,
+        summary: stats
+      }
+    });
+
+    try {
+      setSubmittingGeneration(true);
+      const result = await createRootAudienceGeneration({
+        campaignId,
+        actorRole: "client",
+        snapshot
+      });
+      onGenerated?.(result.run);
+      recordAction({
+        entityType: "generation_run",
+        entityId: result.run.id,
+        actionType: "kol_generation_created",
+        fromValue: "generation_requested",
+        toValue: result.run.status,
+        metadata: {
+          round: state.round,
+          versionLabel: result.run.versionLabel,
+          itemCount: result.run.itemCount,
+          sourceSnapshotId: result.snapshot.id
+        }
+      });
+    } catch (error) {
+      onActionError?.(error instanceof Error ? error.message : "生成 KOL list 失败，请稍后重试。");
+    } finally {
+      setSubmittingGeneration(false);
+    }
+  };
+
   const rollback = () => {
     const previous = state.memory.at(-1);
     setState((current) => {
@@ -370,6 +417,10 @@ export function RootAudienceBoard({ campaignId, config, onActionError }: RootAud
             <span>待补充 <strong>{stats.question}</strong></span>
           </div>
           <div className="root-memory-actions">
+            <button type="button" className="root-primary-action" onClick={confirmAndGenerate} disabled={isGenerating || stats.approved === 0}>
+              <Sparkles size={15} />
+              {isGenerating ? "生成中" : "确认目标人群，生成 KOL list"}
+            </button>
             <button type="button" onClick={rerun}>
               <Sparkles size={15} />
               {config.rerunButton}
@@ -597,6 +648,29 @@ function summarizeRootDecisions(config: RootAudienceConfig, decisions: Record<st
     });
   });
   return summary;
+}
+
+function buildSnapshot(config: RootAudienceConfig, state: RootAudienceState, summary: ReturnType<typeof summarizeRootDecisions>): RootAudienceSnapshotInput {
+  return {
+    round: state.round,
+    decisions: state.decisions,
+    ruleComments: state.ruleComments,
+    summary,
+    groups: config.groups.map((group) => ({
+      name: group.name,
+      people: group.people.map((person) => {
+        const decision = state.decisions[person.handle];
+        return {
+          name: person.name,
+          handle: person.handle,
+          role: person.role,
+          status: decision?.status ?? "pending",
+          reason: decision?.reason,
+          note: decision?.note
+        };
+      })
+    }))
+  };
 }
 
 function readState(storageKey: string): RootAudienceState {

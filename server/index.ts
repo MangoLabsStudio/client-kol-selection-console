@@ -5,11 +5,16 @@ import { createDatabase } from "./db.js";
 import { getClientAppConfig, getDefaultProjectId, getProjectConfig } from "./projectConfig.js";
 import {
   createClientActionEvent,
+  createKolGenerationRun,
+  createRootAudienceSnapshot,
   createSelectionEvent,
   getCampaignDecisionHistory,
   exportSelection,
   getCampaignBoard,
   getClientActionEvents,
+  getGenerationRuns,
+  getGenerationRunWithItems,
+  getLatestRootAudienceSnapshot,
   getSelectionHistory,
   lockSelection
 } from "./selectionService.js";
@@ -104,6 +109,72 @@ app.post("/api/campaigns/:campaignId/client-actions", (req, res, next) => {
       clientRequestId: body.client_request_id ?? body.clientRequestId
     });
     res.status(201).json({ event });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/campaigns/:campaignId/root-audience/snapshots", (req, res, next) => {
+  try {
+    const body = req.body ?? {};
+    const actorRole = parseActorRole(req.header("x-actor-role") ?? body.actor_role ?? body.actorRole ?? "client");
+    const actorId = String(req.header("x-actor-id") ?? body.actor_id ?? body.actorId ?? "client-reviewer-1");
+    const snapshot = createRootAudienceSnapshot(db, {
+      campaignId: req.params.campaignId,
+      actorId,
+      actorRole,
+      round: Number(body.round ?? body.snapshot?.round ?? 1),
+      snapshot: body.snapshot ?? {},
+      clientRequestId: body.client_request_id ?? body.clientRequestId
+    });
+    res.status(201).json({ snapshot });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/campaigns/:campaignId/root-audience/snapshots/latest", (req, res, next) => {
+  try {
+    res.json({ snapshot: getLatestRootAudienceSnapshot(db, req.params.campaignId) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/campaigns/:campaignId/kol-generation-runs", (req, res, next) => {
+  try {
+    const body = req.body ?? {};
+    const actorRole = parseActorRole(req.header("x-actor-role") ?? body.actor_role ?? body.actorRole ?? "client");
+    const actorId = String(req.header("x-actor-id") ?? body.actor_id ?? body.actorId ?? "client-reviewer-1");
+    const run = createKolGenerationRun(db, {
+      campaignId: req.params.campaignId,
+      actorId,
+      actorRole,
+      sourceSnapshotId: String(body.source_snapshot_id ?? body.sourceSnapshotId ?? ""),
+      versionLabel: body.version_label ?? body.versionLabel,
+      triggerReason: body.trigger_reason ?? body.triggerReason,
+      metadata: body.metadata ?? {},
+      clientRequestId: body.client_request_id ?? body.clientRequestId
+    });
+    res.status(201).json({ run });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/campaigns/:campaignId/kol-generation-runs", (req, res, next) => {
+  try {
+    res.json({ runs: getGenerationRuns(db, req.params.campaignId) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/campaigns/:campaignId/kol-generation-runs/:runId/items", (req, res, next) => {
+  try {
+    const run = getGenerationRunWithItems(db, req.params.runId);
+    if (run.campaignId !== req.params.campaignId) throw new ApiError(404, "未找到 KOL 生成版本。");
+    res.json({ run });
   } catch (error) {
     next(error);
   }

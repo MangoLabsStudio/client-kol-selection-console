@@ -51,6 +51,7 @@ export default function App() {
   const [modal, setModal] = useState<FeedbackModalState | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [exporting, setExporting] = useState(false);
+  const [generatingPool, setGeneratingPool] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query);
 
   useEffect(() => {
@@ -317,7 +318,18 @@ export default function App() {
           }}
         />
 
-        {ui.roots && <RootAudienceBoard campaignId={board.campaign.id} config={ui.roots} onActionError={(message) => pushToast("danger", message)} />}
+        {ui.roots && (
+          <RootAudienceBoard
+            campaignId={board.campaign.id}
+            config={ui.roots}
+            generating={generatingPool}
+            onGenerated={async (run) => {
+              pushToast("success", `已生成 ${run.versionLabel}。`);
+              await refreshBoard(board.campaign.id);
+            }}
+            onActionError={(message) => pushToast("danger", message)}
+          />
+        )}
 
         <StrategyMethodBoard method={ui.method} />
 
@@ -338,6 +350,11 @@ export default function App() {
                 <div>
                   <strong>{filteredItems.length}</strong>
                   <span>{filteredItems.length === board.items.length ? ui.pool.allCandidatesLabel : `共 ${board.items.length} 项`}</span>
+                </div>
+                <div className="pool-version-note">
+                  <span>当前版本</span>
+                  <strong>{board.activeGenerationRun?.versionLabel ?? "初始候选池"}</strong>
+                  <small>{board.activeGenerationRun ? `${board.activeGenerationRun.itemCount} 个候选 · ${formatDate(board.activeGenerationRun.createdAt)}` : "尚未基于目标人群重跑"}</small>
                 </div>
                 <div className="pool-status-note">
                   <ShieldCheck size={17} />
@@ -455,6 +472,19 @@ export default function App() {
       setHistoryLoading(false);
     }
   }
+
+  async function refreshBoard(campaignId: string) {
+    setGeneratingPool(true);
+    try {
+      const [boardData, historyData] = await Promise.all([getBoardForCampaign(campaignId, "client"), getDecisionHistory(campaignId, "client")]);
+      setBoard(boardData);
+      setDecisionHistory(historyData);
+    } catch (error) {
+      pushToast("danger", error instanceof Error ? error.message : "KOL list 刷新失败。");
+    } finally {
+      setGeneratingPool(false);
+    }
+  }
 }
 
 function getInitialProjectId() {
@@ -518,4 +548,13 @@ function toastMessage(status: SelectionStatus) {
   if (status === "rejected") return "已保存排除意见。";
   if (status === "question") return "补充请求已保存。";
   return "已撤回至待评审。";
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
 }

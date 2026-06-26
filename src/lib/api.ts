@@ -1,4 +1,15 @@
-import type { ActorRole, AppConfig, BoardResponse, ClientActionEvent, DecisionHistoryResponse, SelectionEvent, SelectionStatus } from "./types";
+import type {
+  ActorRole,
+  AppConfig,
+  BoardResponse,
+  ClientActionEvent,
+  DecisionHistoryResponse,
+  KolGenerationRun,
+  RootAudienceSnapshot,
+  RootAudienceSnapshotInput,
+  SelectionEvent,
+  SelectionStatus
+} from "./types";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -90,6 +101,50 @@ export function submitClientAction(input: {
       client_request_id: crypto.randomUUID()
     })
   });
+}
+
+export async function createRootAudienceGeneration(input: {
+  campaignId: string;
+  actorRole: ActorRole;
+  snapshot: RootAudienceSnapshotInput;
+}) {
+  const requestId = crypto.randomUUID();
+  const snapshotResponse = await request<{ snapshot: RootAudienceSnapshot }>(`/api/campaigns/${input.campaignId}/root-audience/snapshots`, {
+    method: "POST",
+    headers: {
+      "x-actor-role": input.actorRole,
+      "x-actor-id": input.actorRole === "agency" ? "agency-ops" : "client-reviewer-1"
+    },
+    body: JSON.stringify({
+      round: input.snapshot.round,
+      snapshot: input.snapshot,
+      client_request_id: `root-snapshot-${requestId}`
+    })
+  });
+
+  const runResponse = await request<{ run: KolGenerationRun }>(`/api/campaigns/${input.campaignId}/kol-generation-runs`, {
+    method: "POST",
+    headers: {
+      "x-actor-role": input.actorRole,
+      "x-actor-id": input.actorRole === "agency" ? "agency-ops" : "client-reviewer-1"
+    },
+    body: JSON.stringify({
+      source_snapshot_id: snapshotResponse.snapshot.id,
+      trigger_reason: "root_audience_confirmed",
+      metadata: {
+        rootRound: input.snapshot.round,
+        approvedRootCount: input.snapshot.summary.approved ?? 0,
+        rejectedRootCount: input.snapshot.summary.rejected ?? 0,
+        questionRootCount: input.snapshot.summary.question ?? 0
+      },
+      client_request_id: `kol-generation-${requestId}`
+    })
+  });
+
+  return {
+    snapshot: snapshotResponse.snapshot,
+    run: runResponse.run
+  };
 }
 
 export async function exportBoard(campaignId: string, projectId: string, format: "json" | "csv") {

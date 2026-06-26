@@ -1,6 +1,16 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
-import { ApiError, selectionStatuses, type ActorRole, type CreateClientActionEventInput, type CreateSelectionEventInput, type SelectionStatus, type Summary } from "./types.js";
+import {
+  ApiError,
+  selectionStatuses,
+  type ActorRole,
+  type CreateClientActionEventInput,
+  type CreateKolGenerationRunInput,
+  type CreateRootAudienceSnapshotInput,
+  type CreateSelectionEventInput,
+  type SelectionStatus,
+  type Summary
+} from "./types.js";
 
 const statusSet = new Set<string>(selectionStatuses);
 
@@ -69,6 +79,16 @@ function getClientActionEventByRequest(db: DatabaseSync, clientRequestId?: strin
   return db.prepare("SELECT * FROM client_action_events WHERE client_request_id = ?").get(clientRequestId);
 }
 
+function getRootSnapshotByRequest(db: DatabaseSync, clientRequestId?: string) {
+  if (!clientRequestId) return undefined;
+  return db.prepare("SELECT * FROM root_audience_snapshots WHERE client_request_id = ?").get(clientRequestId);
+}
+
+function getGenerationRunByRequest(db: DatabaseSync, clientRequestId?: string) {
+  if (!clientRequestId) return undefined;
+  return db.prepare("SELECT * FROM kol_generation_runs WHERE client_request_id = ?").get(clientRequestId);
+}
+
 export function getCampaignBoard(db: DatabaseSync, campaignId: string, actorRole: ActorRole = "client") {
   const campaign = db
     .prepare(
@@ -91,13 +111,17 @@ export function getCampaignBoard(db: DatabaseSync, campaignId: string, actorRole
 
   if (!campaign) throw new ApiError(404, "未找到该项目。");
 
-  const itemRows = db
-    .prepare(
-      `SELECT
+  const activeRun = getLatestGenerationRun(db, campaignId);
+  const itemRows = activeRun
+    ? db
+        .prepare(
+          `SELECT
         i.id AS item_id,
         i.client_id AS item_client_id,
         i.campaign_id AS item_campaign_id,
-        i.display_order,
+        gri.display_order,
+        gri.run_id AS generation_run_id,
+        i.display_order AS base_display_order,
         i.status_current,
         i.client_facing_note,
         i.agency_internal_note,
@@ -121,6 +145,59 @@ export function getCampaignBoard(db: DatabaseSync, campaignId: string, actorRole
         p.content_category,
         p.audience_summary,
         p.metadata AS kol_metadata,
+        gri.score AS generation_score,
+        gri.explanation_json AS generation_explanation,
+        s.id AS state_id,
+        s.current_status,
+        s.current_decision,
+        s.current_reason_tags,
+        s.current_note,
+        s.last_event_id,
+        s.last_actor_id,
+        s.last_actor_role,
+        s.last_updated_at
+      FROM campaign_kol_items i
+      JOIN kol_generation_run_items gri ON gri.campaign_kol_item_id = i.id
+      JOIN kol_profiles p ON p.id = i.kol_id
+      LEFT JOIN kol_selection_current_state s ON s.campaign_kol_item_id = i.id
+      WHERE i.campaign_id = ? AND gri.run_id = ?
+      ORDER BY gri.display_order ASC`
+        )
+        .all(campaignId, activeRun.id)
+    : db
+        .prepare(
+          `SELECT
+        i.id AS item_id,
+        i.client_id AS item_client_id,
+        i.campaign_id AS item_campaign_id,
+        i.display_order,
+        NULL AS generation_run_id,
+        i.display_order AS base_display_order,
+        i.status_current,
+        i.client_facing_note,
+        i.agency_internal_note,
+        i.why_included,
+        i.recommended_angle,
+        i.estimated_price,
+        i.contact_status,
+        i.risk_tags,
+        i.metadata AS item_metadata,
+        i.updated_at AS item_updated_at,
+        p.id AS kol_id,
+        p.name AS kol_name,
+        p.handle,
+        p.platform,
+        p.profile_url,
+        p.avatar_url,
+        p.bio,
+        p.followers,
+        p.region,
+        p.language,
+        p.content_category,
+        p.audience_summary,
+        p.metadata AS kol_metadata,
+        NULL AS generation_score,
+        NULL AS generation_explanation,
         s.id AS state_id,
         s.current_status,
         s.current_decision,
@@ -135,12 +212,13 @@ export function getCampaignBoard(db: DatabaseSync, campaignId: string, actorRole
       LEFT JOIN kol_selection_current_state s ON s.campaign_kol_item_id = i.id
       WHERE i.campaign_id = ?
       ORDER BY i.display_order ASC`
-    )
-    .all(campaignId);
+        )
+        .all(campaignId);
 
   return {
     campaign: normalizeCampaign(campaign),
     summary: getCampaignSelectionSummary(db, campaignId),
+    activeGenerationRun: activeRun,
     items: itemRows.map((row) => normalizeBoardItem(row, actorRole))
   };
 }
@@ -313,6 +391,33 @@ export function createSelectionEvent(db: DatabaseSync, input: CreateSelectionEve
         );
     }
 
+    if (input.toStatus === "rejected" || input.toStatus === "question") {
+      db
+        .prepare(
+          `INSERT INTO kol_feedback_learning_events (
+            id, client_id, campaign_id, campaign_kol_item_id, action_type, reason_tags,
+            note, source_event_id, metadata, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          randomUUID(),
+          item.client_id,
+          input.campaignId,
+          input.itemId,
+          input.toStatus,
+          JSON.stringify(tags),
+          note,
+          eventId,
+          JSON.stringify({
+            fromStatus,
+            toStatus: input.toStatus,
+            decision,
+            actorRole: input.actorRole
+          }),
+          timestamp
+        );
+    }
+
     db.exec("COMMIT");
   } catch (error) {
     db.exec("ROLLBACK");
@@ -437,6 +542,191 @@ export function getClientActionEvents(
     .map(normalizeClientActionEvent);
 }
 
+export function createRootAudienceSnapshot(db: DatabaseSync, input: CreateRootAudienceSnapshotInput) {
+  const existing = getRootSnapshotByRequest(db, input.clientRequestId);
+  if (existing) return normalizeRootAudienceSnapshot(existing);
+
+  const campaign = db.prepare("SELECT id, client_id FROM campaigns WHERE id = ?").get(input.campaignId);
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
+
+  const round = Math.max(1, Number(input.round || input.snapshot.round || 1));
+  const timestamp = nowIso();
+  const snapshotId = randomUUID();
+  const snapshot = {
+    ...input.snapshot,
+    round,
+    capturedAt: timestamp,
+    capturedBy: input.actorId,
+    actorRole: input.actorRole
+  };
+
+  db
+    .prepare(
+      `INSERT INTO root_audience_snapshots (
+        id, client_id, campaign_id, round, snapshot_json, created_by, client_request_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(snapshotId, campaign.client_id, input.campaignId, round, JSON.stringify(snapshot), input.actorId, input.clientRequestId ?? null, timestamp);
+  db.prepare("UPDATE campaigns SET last_updated_at = ? WHERE id = ?").run(timestamp, input.campaignId);
+
+  return normalizeRootAudienceSnapshot(db.prepare("SELECT * FROM root_audience_snapshots WHERE id = ?").get(snapshotId));
+}
+
+export function getLatestRootAudienceSnapshot(db: DatabaseSync, campaignId: string) {
+  const row = db
+    .prepare(
+      `SELECT * FROM root_audience_snapshots
+      WHERE campaign_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1`
+    )
+    .get(campaignId);
+  return row ? normalizeRootAudienceSnapshot(row) : null;
+}
+
+export function getRootAudienceSnapshots(db: DatabaseSync, campaignId: string) {
+  const campaign = db.prepare("SELECT id FROM campaigns WHERE id = ?").get(campaignId);
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
+
+  return db
+    .prepare(
+      `SELECT * FROM root_audience_snapshots
+      WHERE campaign_id = ?
+      ORDER BY created_at DESC`
+    )
+    .all(campaignId)
+    .map(normalizeRootAudienceSnapshot);
+}
+
+export function createKolGenerationRun(db: DatabaseSync, input: CreateKolGenerationRunInput) {
+  const existing = getGenerationRunByRequest(db, input.clientRequestId);
+  if (existing) return getGenerationRunWithItems(db, String(existing.id));
+
+  const snapshot = db
+    .prepare("SELECT * FROM root_audience_snapshots WHERE campaign_id = ? AND id = ?")
+    .get(input.campaignId, input.sourceSnapshotId);
+  if (!snapshot) throw new ApiError(404, "未找到目标人群确认快照。");
+
+  const campaign = db.prepare("SELECT id, client_id FROM campaigns WHERE id = ?").get(input.campaignId);
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
+
+  const timestamp = nowIso();
+  const runId = randomUUID();
+  const runCount = db.prepare("SELECT COUNT(*) AS count FROM kol_generation_runs WHERE campaign_id = ?").get(input.campaignId);
+  const versionLabel = input.versionLabel?.trim() || `Round ${Number(runCount?.count ?? 0) + 2} · 基于目标人群重跑`;
+  const snapshotPayload = readJsonObject(snapshot.snapshot_json);
+  const runMetadata = {
+    source: "root_audience_snapshot",
+    generator: "local_weighted_rerank_v1",
+    ...input.metadata
+  };
+  const rankedItems = rankItemsForSnapshot(db, input.campaignId, snapshotPayload);
+
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db
+      .prepare(
+        `INSERT INTO kol_generation_runs (
+          id, client_id, campaign_id, source_snapshot_id, status, version_label,
+          trigger_actor_id, trigger_actor_role, trigger_reason, metadata_json,
+          client_request_id, created_at, completed_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        runId,
+        campaign.client_id,
+        input.campaignId,
+        input.sourceSnapshotId,
+        "succeeded",
+        versionLabel,
+        input.actorId,
+        input.actorRole,
+        input.triggerReason?.trim() || "root_audience_confirmed",
+        JSON.stringify(runMetadata),
+        input.clientRequestId ?? null,
+        timestamp,
+        timestamp
+      );
+
+    const insertRunItem = db.prepare(
+      `INSERT INTO kol_generation_run_items (
+        id, run_id, campaign_kol_item_id, display_order, score, explanation_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    );
+    rankedItems.forEach((item, index) => {
+      insertRunItem.run(randomUUID(), runId, item.itemId, index + 1, item.score, JSON.stringify(item.explanation), timestamp);
+    });
+
+    db
+      .prepare("UPDATE campaigns SET review_round = ?, last_updated_at = ? WHERE id = ?")
+      .run(versionLabel, timestamp, input.campaignId);
+
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+
+  return getGenerationRunWithItems(db, runId);
+}
+
+export function getGenerationRuns(db: DatabaseSync, campaignId: string) {
+  const campaign = db.prepare("SELECT id FROM campaigns WHERE id = ?").get(campaignId);
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
+
+  return db
+    .prepare(
+      `SELECT r.*, COUNT(i.id) AS item_count
+      FROM kol_generation_runs r
+      LEFT JOIN kol_generation_run_items i ON i.run_id = r.id
+      WHERE r.campaign_id = ?
+      GROUP BY r.id
+      ORDER BY r.created_at DESC`
+    )
+    .all(campaignId)
+    .map(normalizeGenerationRun);
+}
+
+export function getGenerationRunWithItems(db: DatabaseSync, runId: string) {
+  const runRow = db
+    .prepare(
+      `SELECT r.*, COUNT(i.id) AS item_count
+      FROM kol_generation_runs r
+      LEFT JOIN kol_generation_run_items i ON i.run_id = r.id
+      WHERE r.id = ?
+      GROUP BY r.id`
+    )
+    .get(runId);
+  if (!runRow) throw new ApiError(404, "未找到 KOL 生成版本。");
+
+  const run = normalizeGenerationRun(runRow);
+  const items = db
+    .prepare(
+      `SELECT * FROM kol_generation_run_items
+      WHERE run_id = ?
+      ORDER BY display_order ASC`
+    )
+    .all(runId)
+    .map(normalizeGenerationRunItem);
+
+  return { ...run, items };
+}
+
+export function getLatestGenerationRun(db: DatabaseSync, campaignId: string) {
+  const row = db
+    .prepare(
+      `SELECT r.*, COUNT(i.id) AS item_count
+      FROM kol_generation_runs r
+      LEFT JOIN kol_generation_run_items i ON i.run_id = r.id
+      WHERE r.campaign_id = ?
+      GROUP BY r.id
+      ORDER BY r.created_at DESC
+      LIMIT 1`
+    )
+    .get(campaignId);
+  return row ? normalizeGenerationRun(row) : null;
+}
+
 export function getCampaignDecisionHistory(db: DatabaseSync, campaignId: string, actorRole: ActorRole = "client") {
   const campaign = db.prepare("SELECT id FROM campaigns WHERE id = ?").get(campaignId);
   if (!campaign) throw new ApiError(404, "未找到该项目。");
@@ -512,11 +802,16 @@ export function exportSelection(db: DatabaseSync, campaignId: string, format: "j
   const board = getCampaignBoard(db, campaignId, "agency");
   const events = getCampaignEvents(db, campaignId);
   const clientActionLog = getClientActionEvents(db, campaignId, { limit: 1000 });
+  const rootAudienceSnapshots = getRootAudienceSnapshots(db, campaignId);
+  const generationRuns = getGenerationRuns(db, campaignId).map((run) => getGenerationRunWithItems(db, run.id));
   const generatedAt = nowIso();
 
   const payload = {
     generatedAt,
     campaign: board.campaign,
+    activeGenerationRun: board.activeGenerationRun,
+    rootAudienceSnapshots,
+    generationRuns,
     approved: board.items.filter((item) => item.currentState.currentStatus === "approved"),
     rejected: board.items.filter((item) => item.currentState.currentStatus === "rejected"),
     question: board.items.filter((item) => item.currentState.currentStatus === "question"),
@@ -633,6 +928,19 @@ function normalizeCampaign(row: Row) {
 function normalizeBoardItem(row: Row, actorRole: ActorRole) {
   const currentStatus = String(row.current_status ?? row.status_current ?? "pending");
   assertStatus(currentStatus);
+  const baseMetadata = readJsonObject(row.item_metadata);
+  const generationExplanation = readJsonObject(row.generation_explanation);
+  const itemMetadata = row.generation_run_id
+    ? {
+        ...baseMetadata,
+        generation: {
+          runId: String(row.generation_run_id),
+          score: Number(row.generation_score ?? 0),
+          explanation: generationExplanation,
+          baseDisplayOrder: Number(row.base_display_order ?? row.display_order ?? 0)
+        }
+      }
+    : baseMetadata;
 
   return {
     id: String(row.item_id),
@@ -646,7 +954,7 @@ function normalizeBoardItem(row: Row, actorRole: ActorRole) {
     estimatedPrice: String(row.estimated_price ?? ""),
     contactStatus: String(row.contact_status ?? ""),
     riskTags: readJsonArray(row.risk_tags),
-    metadata: readJsonObject(row.item_metadata),
+    metadata: itemMetadata,
     currentState: {
       id: row.state_id ? String(row.state_id) : null,
       currentStatus,
@@ -747,6 +1055,155 @@ function normalizeDecisionHistoryEntry(row: Row) {
     kolAvatarUrl: row.kol_avatar_url ? String(row.kol_avatar_url) : null,
     currentStatus
   };
+}
+
+function normalizeRootAudienceSnapshot(row: Row | undefined) {
+  if (!row) throw new ApiError(404, "未找到目标人群确认快照。");
+  return {
+    id: String(row.id),
+    clientId: String(row.client_id),
+    campaignId: String(row.campaign_id),
+    round: Number(row.round ?? 1),
+    snapshot: readJsonObject(row.snapshot_json),
+    createdBy: String(row.created_by),
+    clientRequestId: row.client_request_id ? String(row.client_request_id) : null,
+    createdAt: String(row.created_at)
+  };
+}
+
+function normalizeGenerationRun(row: Row | undefined) {
+  if (!row) throw new ApiError(404, "未找到 KOL 生成版本。");
+  return {
+    id: String(row.id),
+    clientId: String(row.client_id),
+    campaignId: String(row.campaign_id),
+    sourceSnapshotId: String(row.source_snapshot_id),
+    status: String(row.status),
+    versionLabel: String(row.version_label),
+    triggerActorId: String(row.trigger_actor_id),
+    triggerActorRole: String(row.trigger_actor_role),
+    triggerReason: String(row.trigger_reason),
+    metadata: readJsonObject(row.metadata_json),
+    clientRequestId: row.client_request_id ? String(row.client_request_id) : null,
+    itemCount: Number(row.item_count ?? 0),
+    createdAt: String(row.created_at),
+    completedAt: row.completed_at ? String(row.completed_at) : null
+  };
+}
+
+function normalizeGenerationRunItem(row: Row | undefined) {
+  if (!row) throw new ApiError(404, "未找到 KOL 生成结果。");
+  return {
+    id: String(row.id),
+    runId: String(row.run_id),
+    campaignKolItemId: String(row.campaign_kol_item_id),
+    displayOrder: Number(row.display_order ?? 0),
+    score: Number(row.score ?? 0),
+    explanation: readJsonObject(row.explanation_json),
+    createdAt: String(row.created_at)
+  };
+}
+
+function rankItemsForSnapshot(db: DatabaseSync, campaignId: string, snapshot: Record<string, unknown>) {
+  const decisionValues = readSnapshotDecisionValues(snapshot);
+  const approvedRoots = decisionValues.filter((decision) => decision.status === "approved");
+  const rejectedRoots = decisionValues.filter((decision) => decision.status === "rejected");
+  const questionRoots = decisionValues.filter((decision) => decision.status === "question");
+
+  const rows = db
+    .prepare(
+      `SELECT
+        i.id AS item_id,
+        i.display_order,
+        i.contact_status,
+        i.risk_tags,
+        i.why_included,
+        i.recommended_angle,
+        i.metadata AS item_metadata,
+        p.followers,
+        p.content_category,
+        p.audience_summary,
+        p.metadata AS kol_metadata
+      FROM campaign_kol_items i
+      JOIN kol_profiles p ON p.id = i.kol_id
+      WHERE i.campaign_id = ?`
+    )
+    .all(campaignId);
+
+  return rows
+    .map((row) => {
+      const kolMetadata = readJsonObject(row.kol_metadata);
+      const riskTags = readJsonArray(row.risk_tags);
+      const audienceFit = Number(kolMetadata.audienceFit ?? 0);
+      const text = [
+        row.why_included,
+        row.recommended_angle,
+        row.contact_status,
+        row.content_category,
+        row.audience_summary,
+        kolMetadata.rootVisibilitySignal
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      const approvedBoost = approvedRoots.reduce((sum, root) => sum + rootMatchScore(text, root), 0);
+      const rejectedPenalty = rejectedRoots.reduce((sum, root) => sum + rootMatchScore(text, root) * 0.7, 0);
+      const questionBoost = questionRoots.reduce((sum, root) => sum + rootMatchScore(text, root) * 0.25, 0);
+      const contactBoost = contactBoostFor(String(row.contact_status ?? ""));
+      const riskPenalty = riskTags.filter((tag) => tag !== "none").length * 2;
+      const score = Math.round((audienceFit + approvedBoost + questionBoost + contactBoost - rejectedPenalty - riskPenalty) * 100) / 100;
+
+      return {
+        itemId: String(row.item_id),
+        score,
+        explanation: {
+          baseAudienceFit: audienceFit,
+          approvedRootCount: approvedRoots.length,
+          rejectedRootCount: rejectedRoots.length,
+          questionRootCount: questionRoots.length,
+          approvedBoost,
+          rejectedPenalty,
+          questionBoost,
+          contactBoost,
+          riskPenalty,
+          originalDisplayOrder: Number(row.display_order ?? 0)
+        }
+      };
+    })
+    .sort((a, b) => b.score - a.score || Number(a.explanation.originalDisplayOrder) - Number(b.explanation.originalDisplayOrder));
+}
+
+function readSnapshotDecisionValues(snapshot: Record<string, unknown>) {
+  const decisions = snapshot.decisions && typeof snapshot.decisions === "object" && !Array.isArray(snapshot.decisions) ? snapshot.decisions : {};
+  return Object.entries(decisions as Record<string, unknown>).map(([handle, value]) => {
+    const data = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+    return {
+      handle,
+      status: String(data.status ?? "pending"),
+      reason: data.reason ? String(data.reason) : "",
+      note: data.note ? String(data.note) : ""
+    };
+  });
+}
+
+function rootMatchScore(text: string, root: { handle: string; status: string; reason: string; note: string }) {
+  const handle = root.handle.replace(/^@/, "").toLowerCase();
+  const reason = root.reason.toLowerCase();
+  const note = root.note.toLowerCase();
+  let score = 0;
+  if (handle && text.includes(handle)) score += 8;
+  if (reason && text.includes(reason)) score += 3;
+  if (note && text.includes(note)) score += 2;
+  if (/vc|investor|fund|founder|a16z|venture/.test(text) && /vc|投资|investor|founder/i.test(`${reason} ${note}`)) score += 2;
+  if (/newsletter|podcast|media|creator/.test(text) && /媒体|newsletter|podcast|creator/i.test(`${reason} ${note}`)) score += 2;
+  if (/research|technical|engineer|builder|agent/.test(text) && /技术|agent|builder|research/i.test(`${reason} ${note}`)) score += 2;
+  return score;
+}
+
+function contactBoostFor(contactStatus: string) {
+  if (/明确|confirmed|contact|sponsor|可走/.test(contactStatus)) return 4;
+  if (/需|待|unknown|验证/.test(contactStatus)) return 1;
+  return 0;
 }
 
 function csvEscape(value: string) {

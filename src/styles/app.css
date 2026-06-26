@@ -2003,6 +2003,29 @@ body {
   background: #f6faf7;
 }
 
+.pool-version-note {
+  display: grid;
+  gap: 2px;
+  min-width: min(360px, 100%);
+  padding: 9px 12px;
+  border: 1px solid rgba(13, 119, 117, 0.14);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.pool-version-note span,
+.pool-version-note small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.pool-version-note strong {
+  color: var(--teal);
+  font-size: 14px;
+  line-height: 1.25;
+}
+
 .decision-history-panel {
   display: grid;
   gap: 10px;
@@ -2547,6 +2570,12 @@ body {
 
 .root-memory-actions button {
   color: var(--teal);
+}
+
+.root-memory-actions .root-primary-action {
+  border-color: rgba(13, 119, 117, 0.35);
+  background: #e7f3ef;
+  color: #0d7775;
 }
 
 .root-groups {

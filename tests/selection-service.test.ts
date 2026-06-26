@@ -6,10 +6,14 @@ import { getClientAppConfig, getProjectConfig } from "../server/projectConfig.js
 import { seedDemoData } from "../server/seed.js";
 import {
   createClientActionEvent,
+  createKolGenerationRun,
+  createRootAudienceSnapshot,
   createSelectionEvent,
   exportSelection,
   getCampaignBoard,
   getClientActionEvents,
+  getGenerationRuns,
+  getLatestRootAudienceSnapshot,
   getSelectionHistory,
   lockSelection
 } from "../server/selectionService.js";
@@ -294,6 +298,76 @@ test("root audience client actions are append-only and idempotent", () => {
     assert.equal(events[0].actionType, "decision_undo");
     assert.equal(events[1].actionType, "decision_set");
     assert.equal(events[1].metadata.personName, "Sam Altman");
+  });
+});
+
+test("root audience snapshot can create a versioned KOL generation run", () => {
+  withDb((db) => {
+    const snapshot = createRootAudienceSnapshot(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      round: 1,
+      snapshot: {
+        round: 1,
+        decisions: {
+          "@sama": { status: "approved" },
+          "@pmarca": { status: "approved" },
+          "@elonmusk": { status: "rejected", reason: "本轮不优先" }
+        },
+        ruleComments: {},
+        summary: { total: 3, approved: 2, rejected: 1, question: 0, pending: 0 },
+        groups: []
+      },
+      clientRequestId: "snapshot-round-1"
+    });
+    const sameSnapshot = createRootAudienceSnapshot(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      round: 1,
+      snapshot: {
+        round: 1,
+        decisions: {
+          "@sama": { status: "approved" }
+        }
+      },
+      clientRequestId: "snapshot-round-1"
+    });
+
+    assert.equal(snapshot.id, sameSnapshot.id);
+    assert.equal(getLatestRootAudienceSnapshot(db, campaignId)?.id, snapshot.id);
+
+    const run = createKolGenerationRun(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      sourceSnapshotId: snapshot.id,
+      clientRequestId: "generation-round-1"
+    });
+    const sameRun = createKolGenerationRun(db, {
+      campaignId,
+      actorId: "client-reviewer-1",
+      actorRole: "client",
+      sourceSnapshotId: snapshot.id,
+      clientRequestId: "generation-round-1"
+    });
+
+    assert.equal(run.id, sameRun.id);
+    assert.equal(run.status, "succeeded");
+    assert.equal(run.itemCount, 107);
+    assert.equal(run.items?.length, 107);
+    assert.equal(getGenerationRuns(db, campaignId).length, 1);
+
+    const board = getCampaignBoard(db, campaignId, "client");
+    assert.equal(board.activeGenerationRun?.id, run.id);
+    assert.equal(board.items.length, 107);
+    assert.equal(board.items[0].metadata.generation && typeof board.items[0].metadata.generation === "object", true);
+
+    const json = exportSelection(db, campaignId, "json") as Exclude<ReturnType<typeof exportSelection>, string>;
+    assert.equal(json.rootAudienceSnapshots.length, 1);
+    assert.equal(json.generationRuns.length, 1);
+    assert.equal(json.activeGenerationRun?.id, run.id);
   });
 });
 

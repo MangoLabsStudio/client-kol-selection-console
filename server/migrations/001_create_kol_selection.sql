@@ -152,3 +152,79 @@ CREATE TABLE IF NOT EXISTS kol_selection_followups (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+
+CREATE TABLE IF NOT EXISTS root_audience_snapshots (
+  id TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL REFERENCES clients(id),
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id),
+  round INTEGER NOT NULL DEFAULT 1,
+  snapshot_json TEXT NOT NULL DEFAULT '{}',
+  created_by TEXT NOT NULL DEFAULT 'system',
+  client_request_id TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_root_audience_snapshots_request
+  ON root_audience_snapshots(client_request_id)
+  WHERE client_request_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_root_audience_snapshots_campaign
+  ON root_audience_snapshots(campaign_id, round, created_at);
+
+CREATE TABLE IF NOT EXISTS kol_generation_runs (
+  id TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL REFERENCES clients(id),
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id),
+  source_snapshot_id TEXT NOT NULL REFERENCES root_audience_snapshots(id),
+  status TEXT NOT NULL DEFAULT 'pending',
+  version_label TEXT NOT NULL,
+  trigger_actor_id TEXT NOT NULL,
+  trigger_actor_role TEXT NOT NULL,
+  trigger_reason TEXT NOT NULL DEFAULT 'root_audience_confirmed',
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  client_request_id TEXT,
+  created_at TEXT NOT NULL,
+  completed_at TEXT
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_kol_generation_runs_request
+  ON kol_generation_runs(client_request_id)
+  WHERE client_request_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_kol_generation_runs_campaign
+  ON kol_generation_runs(campaign_id, created_at);
+
+CREATE TABLE IF NOT EXISTS kol_generation_run_items (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES kol_generation_runs(id),
+  campaign_kol_item_id TEXT NOT NULL REFERENCES campaign_kol_items(id),
+  display_order INTEGER NOT NULL,
+  score REAL NOT NULL DEFAULT 0,
+  explanation_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL,
+  UNIQUE(run_id, campaign_kol_item_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_kol_generation_run_items_run
+  ON kol_generation_run_items(run_id, display_order);
+
+CREATE TABLE IF NOT EXISTS kol_feedback_learning_events (
+  id TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL REFERENCES clients(id),
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id),
+  campaign_kol_item_id TEXT NOT NULL REFERENCES campaign_kol_items(id),
+  action_type TEXT NOT NULL,
+  reason_tags TEXT NOT NULL DEFAULT '[]',
+  note TEXT NOT NULL DEFAULT '',
+  source_event_id TEXT REFERENCES kol_selection_events(id),
+  metadata TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_kol_feedback_learning_events_campaign
+  ON kol_feedback_learning_events(campaign_id, created_at);
+
+CREATE INDEX IF NOT EXISTS idx_kol_feedback_learning_events_item
+  ON kol_feedback_learning_events(campaign_kol_item_id, created_at);
+

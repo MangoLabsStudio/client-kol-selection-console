@@ -17,7 +17,8 @@ import {
   getLatestRootAudienceSnapshot,
   getRootAudienceSnapshot,
   getSelectionHistory,
-  lockSelection
+  lockSelection,
+  resetCampaignReviewState
 } from "./selectionService.js";
 import { syncCampaignTwitter241 } from "./twitter241SyncService.js";
 import { ApiError, actorRoles, type ActorRole, type ApiErrorPayload, type SelectionStatus } from "./types.js";
@@ -59,6 +60,17 @@ app.get("/api/campaigns/:campaignId/kol-selection", (req, res, next) => {
   try {
     const actorRole = parseActorRole(req.query.role ?? req.header("x-actor-role") ?? "client");
     res.json(getCampaignBoard(db, req.params.campaignId, actorRole));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/admin/campaigns/:campaignId/reset-review-state", (req, res, next) => {
+  try {
+    const expectedToken = process.env.ADMIN_RESET_TOKEN?.trim();
+    const token = String(req.header("x-admin-reset-token") ?? req.body?.token ?? "");
+    if (!expectedToken || token !== expectedToken) throw new ApiError(403, "无权执行重置操作。");
+    res.json({ reset: resetCampaignReviewState(db, req.params.campaignId) });
   } catch (error) {
     next(error);
   }

@@ -960,6 +960,72 @@ export function lockSelection(db: DatabaseSync, campaignId: string, actorId: str
   return getCampaignBoard(db, campaignId, actorRole);
 }
 
+export function resetCampaignReviewState(db: DatabaseSync, campaignId: string) {
+  const campaign = db.prepare("SELECT id FROM campaigns WHERE id = ?").get(campaignId);
+  if (!campaign) throw new ApiError(404, "未找到该项目。");
+
+  const before = {
+    totalItems: Number(db.prepare("SELECT COUNT(*) AS count FROM campaign_kol_items WHERE campaign_id = ?").get(campaignId)?.count ?? 0),
+    discoveredItems: Number(
+      db.prepare("SELECT COUNT(*) AS count FROM campaign_kol_items WHERE campaign_id = ? AND created_by = 'twitter241_discovery'").get(campaignId)?.count ?? 0
+    ),
+    currentStates: Number(db.prepare("SELECT COUNT(*) AS count FROM kol_selection_current_state WHERE campaign_id = ?").get(campaignId)?.count ?? 0),
+    generationRuns: Number(db.prepare("SELECT COUNT(*) AS count FROM kol_generation_runs WHERE campaign_id = ?").get(campaignId)?.count ?? 0),
+    rootSnapshots: Number(db.prepare("SELECT COUNT(*) AS count FROM root_audience_snapshots WHERE campaign_id = ?").get(campaignId)?.count ?? 0)
+  };
+  const timestamp = nowIso();
+
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db
+      .prepare(
+        `DELETE FROM kol_generation_run_items
+        WHERE run_id IN (SELECT id FROM kol_generation_runs WHERE campaign_id = ?)`
+      )
+      .run(campaignId);
+    db.prepare("DELETE FROM kol_generation_runs WHERE campaign_id = ?").run(campaignId);
+    db.prepare("DELETE FROM root_audience_snapshots WHERE campaign_id = ?").run(campaignId);
+    db.prepare("DELETE FROM kol_selection_followups WHERE campaign_id = ?").run(campaignId);
+    db.prepare("DELETE FROM kol_feedback_learning_events WHERE campaign_id = ?").run(campaignId);
+    db.prepare("DELETE FROM kol_selection_current_state WHERE campaign_id = ?").run(campaignId);
+    db
+      .prepare(
+        `UPDATE kol_selection_events
+        SET campaign_kol_item_id = NULL, kol_id = NULL
+        WHERE campaign_id = ?
+          AND campaign_kol_item_id IN (
+            SELECT id FROM campaign_kol_items WHERE campaign_id = ? AND created_by = 'twitter241_discovery'
+          )`
+      )
+      .run(campaignId, campaignId);
+    db.prepare("DELETE FROM campaign_kol_items WHERE campaign_id = ? AND created_by = 'twitter241_discovery'").run(campaignId);
+    db
+      .prepare(
+        `UPDATE campaign_kol_items
+        SET status_current = 'pending', updated_at = ?
+        WHERE campaign_id = ?`
+      )
+      .run(timestamp, campaignId);
+    db.prepare("UPDATE campaigns SET locked_at = NULL, last_updated_at = ? WHERE id = ?").run(timestamp, campaignId);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+
+  const after = {
+    totalItems: Number(db.prepare("SELECT COUNT(*) AS count FROM campaign_kol_items WHERE campaign_id = ?").get(campaignId)?.count ?? 0),
+    discoveredItems: Number(
+      db.prepare("SELECT COUNT(*) AS count FROM campaign_kol_items WHERE campaign_id = ? AND created_by = 'twitter241_discovery'").get(campaignId)?.count ?? 0
+    ),
+    currentStates: Number(db.prepare("SELECT COUNT(*) AS count FROM kol_selection_current_state WHERE campaign_id = ?").get(campaignId)?.count ?? 0),
+    generationRuns: Number(db.prepare("SELECT COUNT(*) AS count FROM kol_generation_runs WHERE campaign_id = ?").get(campaignId)?.count ?? 0),
+    rootSnapshots: Number(db.prepare("SELECT COUNT(*) AS count FROM root_audience_snapshots WHERE campaign_id = ?").get(campaignId)?.count ?? 0)
+  };
+
+  return { campaignId, resetAt: timestamp, before, after };
+}
+
 function normalizeCampaign(row: Row) {
   return {
     id: String(row.id),

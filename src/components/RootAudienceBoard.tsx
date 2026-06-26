@@ -1,5 +1,5 @@
 import { CheckCircle2, CircleHelp, ExternalLink, LockKeyhole, MessageSquareText, RotateCcw, Sparkles, Undo2, X, XCircle } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createRootAudienceGeneration, submitClientAction } from "../lib/api";
 import type { KolGenerationRun, RootAudienceConfig, RootAudienceSnapshotInput, RootPersonConfig } from "../lib/types";
 
@@ -32,11 +32,19 @@ type RootAudienceBoardProps = {
   generating?: boolean;
   onGenerated?: (run: KolGenerationRun) => void;
   onActionError?: (message: string) => void;
+  onGenerateControlChange?: (
+    control: {
+      run: () => void;
+      disabled: boolean;
+      label: string;
+      approved: number;
+    } | null
+  ) => void;
 };
 
 const rejectReasons = ["目标层级不匹配", "议题关联不足", "本轮不优先", "需要换一批"];
 
-export function RootAudienceBoard({ campaignId, config, generating = false, onGenerated, onActionError }: RootAudienceBoardProps) {
+export function RootAudienceBoard({ campaignId, config, generating = false, onGenerated, onActionError, onGenerateControlChange }: RootAudienceBoardProps) {
   const [state, setState] = useState<RootAudienceState>(() => readState(config.storageKey));
   const [expandedRules, setExpandedRules] = useState<Record<string, boolean>>({});
   const [activeHandle, setActiveHandle] = useState<string | null>(null);
@@ -289,7 +297,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
     });
   };
 
-  const confirmAndGenerate = async () => {
+  const confirmAndGenerate = useCallback(async () => {
     if (isGenerating) return;
     const snapshot = buildSnapshot(config, state, stats);
     recordAction({
@@ -330,7 +338,23 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
     } finally {
       setSubmittingGeneration(false);
     }
-  };
+  }, [campaignId, config, isGenerating, onActionError, onGenerated, state, stats]);
+
+  const generateDisabled = isGenerating || stats.approved === 0;
+  const generateLabel = isGenerating ? "爬取中" : stats.approved === 0 ? "先通过 root 后重新爬取" : "重新爬取 KOL list";
+
+  useEffect(() => {
+    onGenerateControlChange?.({
+      run: confirmAndGenerate,
+      disabled: generateDisabled,
+      label: generateLabel,
+      approved: stats.approved
+    });
+  }, [confirmAndGenerate, generateDisabled, generateLabel, onGenerateControlChange, stats.approved]);
+
+  useEffect(() => {
+    return () => onGenerateControlChange?.(null);
+  }, [onGenerateControlChange]);
 
   const rollback = () => {
     const previous = state.memory.at(-1);
@@ -407,6 +431,10 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
             <strong>{stats.approved}/{stats.total}</strong>
             <small>已通过 root</small>
           </div>
+          <button type="button" className="root-title-generate" onClick={confirmAndGenerate} disabled={generateDisabled}>
+            <Sparkles size={16} />
+            {generateLabel}
+          </button>
         </div>
 
         <div className="root-control-bar">
@@ -417,7 +445,7 @@ export function RootAudienceBoard({ campaignId, config, generating = false, onGe
             <span>待补充 <strong>{stats.question}</strong></span>
           </div>
           <div className="root-memory-actions">
-            <button type="button" className="root-primary-action" onClick={confirmAndGenerate} disabled={isGenerating || stats.approved === 0}>
+            <button type="button" className="root-primary-action" onClick={confirmAndGenerate} disabled={generateDisabled}>
               <Sparkles size={15} />
               {isGenerating ? "爬取中" : "确认目标人群，重新爬取 KOL list"}
             </button>

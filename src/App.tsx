@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, FileJson, Inbox, RefreshCw, ShieldCheck } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Download, FileJson, Inbox, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DecisionModal } from "./components/DecisionModal";
 import type { FeedbackAnchor } from "./components/DecisionModal";
 import { DecisionHistoryPanel } from "./components/DecisionHistoryPanel";
@@ -52,7 +52,29 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [exporting, setExporting] = useState(false);
   const [generatingPool, setGeneratingPool] = useState(false);
+  const rootGenerateActionRef = useRef<(() => void) | null>(null);
+  const [rootGenerateStatus, setRootGenerateStatus] = useState<{ disabled: boolean; label: string; approved: number } | null>(null);
   const debouncedQuery = useDebouncedValue(filters.query);
+
+  const registerRootGenerateControl = useCallback(
+    (
+      control: {
+        run: () => void;
+        disabled: boolean;
+        label: string;
+        approved: number;
+      } | null
+    ) => {
+      rootGenerateActionRef.current = control?.run ?? null;
+      setRootGenerateStatus((current) => {
+        const next = control ? { disabled: control.disabled, label: control.label, approved: control.approved } : null;
+        if (!current && !next) return current;
+        if (current && next && current.disabled === next.disabled && current.label === next.label && current.approved === next.approved) return current;
+        return next;
+      });
+    },
+    []
+  );
 
   useEffect(() => {
     let active = true;
@@ -329,6 +351,7 @@ export default function App() {
               await refreshBoard(board.campaign.id);
             }}
             onActionError={(message) => pushToast("danger", message)}
+            onGenerateControlChange={registerRootGenerateControl}
           />
         )}
 
@@ -361,6 +384,15 @@ export default function App() {
                   <ShieldCheck size={17} />
                   {board.summary.pending === 0 ? ui.pool.reviewedLabel : `${board.summary.pending} ${ui.pool.pendingDecisionLabel}`}
                 </div>
+                <button
+                  type="button"
+                  className="pool-regenerate-action"
+                  disabled={!rootGenerateStatus || rootGenerateStatus.disabled}
+                  onClick={() => rootGenerateActionRef.current?.()}
+                >
+                  <Sparkles size={15} />
+                  {rootGenerateStatus?.label ?? "重新爬取 KOL list"}
+                </button>
               </div>
 
               <DecisionHistoryPanel history={decisionHistory} loading={historyLoading} />

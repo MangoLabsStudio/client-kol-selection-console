@@ -2503,8 +2503,34 @@ body {
 }
 
 .root-title-row {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: end;
+}
+
+.root-title-generate,
+.pool-regenerate-action {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 119, 117, 0.32);
+  background: #0d7775;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 12px 26px rgba(13, 119, 117, 0.16);
+}
+
+.root-title-generate:disabled,
+.pool-regenerate-action:disabled {
+  cursor: not-allowed;
+  border-color: rgba(13, 119, 117, 0.16);
+  background: #dfe9e5;
+  color: #78908d;
+  box-shadow: none;
 }
 
 .root-round-panel {

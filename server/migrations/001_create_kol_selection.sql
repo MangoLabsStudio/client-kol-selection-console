@@ -199,6 +199,31 @@ CREATE INDEX IF NOT EXISTS idx_root_kol_edges_campaign_root
 CREATE INDEX IF NOT EXISTS idx_root_kol_edges_campaign_kol
   ON root_kol_edges(campaign_id, campaign_kol_item_id, confidence);
 
+CREATE TABLE IF NOT EXISTS root_kol_graph_sync_state (
+  id TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL REFERENCES clients(id),
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id),
+  root_handle TEXT NOT NULL,
+  root_name TEXT NOT NULL DEFAULT '',
+  root_group TEXT NOT NULL DEFAULT '',
+  root_rest_id TEXT NOT NULL DEFAULT '',
+  sync_source TEXT NOT NULL DEFAULT 'twitter241_followings',
+  status TEXT NOT NULL DEFAULT 'pending',
+  cursor TEXT,
+  pages_scanned INTEGER NOT NULL DEFAULT 0,
+  followings_scanned INTEGER NOT NULL DEFAULT 0,
+  matched_kol_count INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT NOT NULL DEFAULT '',
+  started_at TEXT,
+  completed_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(campaign_id, root_handle, sync_source)
+);
+
+CREATE INDEX IF NOT EXISTS idx_root_kol_graph_sync_state_campaign
+  ON root_kol_graph_sync_state(campaign_id, sync_source, status, updated_at);
+
 CREATE TABLE IF NOT EXISTS kol_generation_runs (
   id TEXT PRIMARY KEY,
   client_id TEXT NOT NULL REFERENCES clients(id),

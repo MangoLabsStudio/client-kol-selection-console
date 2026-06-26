@@ -23,6 +23,7 @@ import {
   resetCampaignReviewState
 } from "./selectionService.js";
 import { syncCampaignTwitter241 } from "./twitter241SyncService.js";
+import { getRootKolGraphSyncStatus, syncRootKolGraphTwitter241 } from "./twitter241RootGraphService.js";
 import { ApiError, actorRoles, type ActorRole, type ApiErrorPayload, type SelectionStatus } from "./types.js";
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
@@ -110,6 +111,35 @@ app.get("/api/campaigns/:campaignId/root-kol-edges", (req, res, next) => {
       impact: getRootKolImpact(db, req.params.campaignId),
       edges: includeEdges ? getRootKolEdges(db, req.params.campaignId) : undefined
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/campaigns/:campaignId/root-kol-edges/sync-twitter241", (req, res, next) => {
+  try {
+    res.json(getRootKolGraphSyncStatus(db, req.params.campaignId));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/campaigns/:campaignId/root-kol-edges/sync-twitter241", async (req, res, next) => {
+  try {
+    const actorRole = parseActorRole(req.header("x-actor-role") ?? req.body?.actorRole ?? "agency");
+    if (actorRole === "client") throw new ApiError(403, "当前客户评审版不能同步 Twitter241 关系图。");
+
+    res.json(
+      await syncRootKolGraphTwitter241(db, req.params.campaignId, {
+        rootLimit: Number(req.body?.root_limit ?? req.body?.rootLimit ?? req.query.root_limit ?? req.query.rootLimit ?? undefined),
+        maxPagesPerRoot: Number(
+          req.body?.max_pages_per_root ?? req.body?.maxPagesPerRoot ?? req.query.max_pages_per_root ?? req.query.maxPagesPerRoot ?? undefined
+        ),
+        pageCount: Number(req.body?.page_count ?? req.body?.pageCount ?? req.query.page_count ?? req.query.pageCount ?? undefined),
+        retryFailed: parseBoolean(req.body?.retry_failed ?? req.body?.retryFailed ?? req.query.retry_failed ?? req.query.retryFailed),
+        force: parseBoolean(req.body?.force ?? req.query.force)
+      })
+    );
   } catch (error) {
     next(error);
   }
@@ -320,6 +350,12 @@ function parseActorRole(value: unknown): ActorRole {
   const role = String(value);
   if (actorRoles.includes(role as ActorRole)) return role as ActorRole;
   return "client";
+}
+
+function parseBoolean(value: unknown) {
+  if (value === true) return true;
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
 }
 
 async function attachFrontend(expressApp: express.Express) {
